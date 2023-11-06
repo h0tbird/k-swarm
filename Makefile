@@ -88,16 +88,13 @@ lint-fix: golangci-lint ## Run golangci-lint linter and perform fixes
 ##@ Build
 #------------------------------------------------------------------------------
 
-ARCH = $(shell go env GOARCH)
-OS = $(shell go env GOOS)
-
 .PHONY: build-devel
 build-devel: generate ## Build a manager binary without optimizations and inlining for Alpine musl linux/ARCH.
-	CGO_ENABLED=0 GOOS=linux GOARCH=$(ARCH) GO111MODULE=on go build -gcflags "-N -l" -o bin/manager-linux-$(ARCH) cmd/main.go
+	GO111MODULE=on go build -gcflags "-N -l" -o bin/manager cmd/main.go
 
 .PHONY: build
 build: manifests generate fmt vet ## Build manager binary.
-	GOOS=$(OS) GOARCH=$(ARCH) go build -o bin/manager-$(OS)-$(ARCH) cmd/main.go
+	go build -o bin/manager cmd/main.go
 
 .PHONY: run
 run: manifests generate fmt vet ## Run a controller from your host.
@@ -163,6 +160,11 @@ create-cluster: ctlptl  ## Create a kind cluster with a local registry.
 .PHONY: delete-cluster
 delete-cluster: ctlptl ## Delete the local development cluster.
 	$(CTLPTL) delete --cascade true -f hack/dev-cluster.yaml
+
+.PHONY: overlay
+overlay: kustomize ## Render a kustomize overlay to stdout.
+	@ cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
+	@ $(KUSTOMIZE) build config/overlays/$(OVERLAY)
 
 #------------------------------------------------------------------------------
 ##@ Build Dependencies
