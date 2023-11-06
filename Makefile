@@ -150,10 +150,12 @@ undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/confi
 	$(KUSTOMIZE) build config/default | $(KUBECTL) delete --ignore-not-found=$(ignore-not-found) -f -
 
 .PHONY: create-cluster
-create-cluster: ctlptl clusterctl ## Create a kind cluster with a local registry and CAPI/CAPD.
+create-cluster: ctlptl  ## Create a kind cluster with a local registry.
 	$(CTLPTL) apply -f hack/dev-cluster.yaml
-	CLUSTER_TOPOLOGY=true $(CLUSTERCTL) init --infrastructure docker
-	kubectl wait --for=condition=Ready --timeout=300s pods --all -A
+
+.PHONY: delete-cluster
+delete-cluster: ctlptl ## Delete the local development cluster.
+	$(CTLPTL) delete --cascade true -f hack/dev-cluster.yaml
 
 #------------------------------------------------------------------------------
 ##@ Build Dependencies
