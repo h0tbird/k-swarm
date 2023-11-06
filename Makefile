@@ -25,7 +25,9 @@ SHELL = /usr/bin/env bash -o pipefail
 .PHONY: all
 all: build
 
+#------------------------------------------------------------------------------
 ##@ General
+#------------------------------------------------------------------------------
 
 # The help target prints out all targets with their descriptions organized
 # beneath their categories. The categories are represented by '##@' and the
@@ -42,7 +44,9 @@ all: build
 help: ## Display this help.
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z_0-9-]+:.*?##/ { printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
 
+#------------------------------------------------------------------------------
 ##@ Development
+#------------------------------------------------------------------------------
 
 .PHONY: manifests
 manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
@@ -80,7 +84,9 @@ lint: golangci-lint ## Run golangci-lint linter & yamllint
 lint-fix: golangci-lint ## Run golangci-lint linter and perform fixes
 	$(GOLANGCI_LINT) run --fix
 
+#------------------------------------------------------------------------------
 ##@ Build
+#------------------------------------------------------------------------------
 
 .PHONY: build
 build: manifests generate fmt vet ## Build manager binary.
@@ -118,7 +124,9 @@ docker-buildx: ## Build and push docker image for the manager for cross-platform
 	- $(CONTAINER_TOOL) buildx rm project-v3-builder
 	rm Dockerfile.cross
 
+#------------------------------------------------------------------------------
 ##@ Deployment
+#------------------------------------------------------------------------------
 
 ifndef ignore-not-found
   ignore-not-found = false
@@ -141,7 +149,15 @@ deploy: manifests kustomize ## Deploy controller to the K8s cluster specified in
 undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
 	$(KUSTOMIZE) build config/default | $(KUBECTL) delete --ignore-not-found=$(ignore-not-found) -f -
 
+.PHONY: create-cluster
+create-cluster: ctlptl clusterctl ## Create a kind cluster with a local registry and CAPI/CAPD.
+	$(CTLPTL) apply -f hack/dev-cluster.yaml
+	CLUSTER_TOPOLOGY=true $(CLUSTERCTL) init --infrastructure docker
+	kubectl wait --for=condition=Ready --timeout=300s pods --all -A
+
+#------------------------------------------------------------------------------
 ##@ Build Dependencies
+#------------------------------------------------------------------------------
 
 ## Location to install dependencies to
 LOCALBIN ?= $(shell pwd)/bin
@@ -153,10 +169,12 @@ KUBECTL ?= kubectl
 KUSTOMIZE ?= $(LOCALBIN)/kustomize
 CONTROLLER_GEN ?= $(LOCALBIN)/controller-gen
 ENVTEST ?= $(LOCALBIN)/setup-envtest
+CTLPTL ?= $(LOCALBIN)/ctlptl
 
 ## Tool Versions
 KUSTOMIZE_VERSION ?= v5.2.1
 CONTROLLER_TOOLS_VERSION ?= v0.13.0
+CTLPTL_VERSION ?= v0.8.22
 
 .PHONY: kustomize
 kustomize: $(KUSTOMIZE) ## Download kustomize locally if necessary. If wrong version is installed, it will be removed before downloading.
@@ -177,3 +195,8 @@ $(CONTROLLER_GEN): $(LOCALBIN)
 envtest: $(ENVTEST) ## Download envtest-setup locally if necessary.
 $(ENVTEST): $(LOCALBIN)
 	test -s $(LOCALBIN)/setup-envtest || GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
+
+.PHONY: ctlptl
+ctlptl: $(CTLPTL) ## Download ctlptl locally if necessary.
+$(CTLPTL): $(LOCALBIN)
+	@ test -s $(LOCALBIN)/ctlptl || GOBIN=$(LOCALBIN) go install github.com/tilt-dev/ctlptl/cmd/ctlptl@$(CTLPTL_VERSION)
