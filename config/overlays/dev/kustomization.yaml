@@ -4,5 +4,8 @@ kind: Kustomization
 resources:
 - ../../default
 
-patchesStrategicMerge:
-- patch-manager-deployment.yaml
+patches:
+  - path: ./patches/deployments/swarm-controller-manager.yaml
+    target:
+      kind: Deployment
+      name: swarm-controller-manager
