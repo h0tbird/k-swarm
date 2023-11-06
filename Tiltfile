@@ -33,17 +33,15 @@ ARCH = str(local("go env GOARCH")).rstrip("\n")
 IMG = 'dev-registry:5000/swarm'
 
 if debug:
-  ENTRYPOINT = ['/go/bin/dlv', '--listen=:40000', '--api-version=2', '--headless=true', 'exec', '/home/debug/manager', '--'] + flags
+  ENTRYPOINT = ['/go/bin/dlv', '--listen=:40000', '--api-version=2', '--headless=true', 'exec', '/manager', '--'] + flags
 else:
-  ENTRYPOINT = ['/home/debug/manager'] + flags
+  ENTRYPOINT = ['/manager'] + flags
 
 DOCKERFILE = '''FROM golang:alpine
 RUN apk add gcc musl-dev curl && \
 go install github.com/go-delve/delve/cmd/dlv@latest
-RUN adduser -D -u 1000 -s /bin/sh debug
-WORKDIR /home/debug
-COPY manager /home/debug/manager
-USER 1000:1000
+COPY manager /manager
+WORKDIR /
 '''
 
 #------------------------------------------------------------------------------
@@ -66,7 +64,7 @@ docker_build_with_restart(
   ref=IMG,
   context='./bin',
   entrypoint=ENTRYPOINT,
-  live_update=[sync('./bin/manager' , '/home/debug/manager')],
+  live_update=[sync('./bin/manager' , '/manager')],
   dockerfile_contents=DOCKERFILE,
   only=['manager'],
 )
