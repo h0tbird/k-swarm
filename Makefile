@@ -1,6 +1,10 @@
 
-# Image URL to use all building/pushing image targets
-IMG ?= controller:latest
+# Local registry host:port
+REGISTRY_HOST = $(shell $(CTLPTL) get cluster kind-dev -o template --template '{{.status.localRegistryHosting.host}}' || echo 'localhost:5000')
+# Image URL to use for pushing image targets
+PUSH_IMG ?= ${REGISTRY_HOST}/swarm:latest
+# Image URL to use for pulling image targets
+PULL_IMG ?= dev-registry:5000/swarm:latest
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.28.0
 
@@ -105,11 +109,11 @@ run: manifests generate fmt vet ## Run a controller from your host.
 # More info: https://docs.docker.com/develop/develop-images/build_enhancements/
 .PHONY: docker-build
 docker-build: ## Build docker image with the manager.
-	$(CONTAINER_TOOL) build -t ${IMG} .
+	$(CONTAINER_TOOL) build -t ${PUSH_IMG} .
 
 .PHONY: docker-push
 docker-push: ## Push docker image with the manager.
-	$(CONTAINER_TOOL) push ${IMG}
+	$(CONTAINER_TOOL) push ${PUSH_IMG}
 
 # PLATFORMS defines the target platforms for the manager image be built to provide support to multiple
 # architectures. (i.e. make docker-buildx IMG=myregistry/mypoperator:0.0.1). To use this option you need to:
@@ -124,7 +128,7 @@ docker-buildx: ## Build and push docker image for the manager for cross-platform
 	sed -e '1 s/\(^FROM\)/FROM --platform=\$$\{BUILDPLATFORM\}/; t' -e ' 1,// s//FROM --platform=\$$\{BUILDPLATFORM\}/' Dockerfile > Dockerfile.cross
 	- $(CONTAINER_TOOL) buildx create --name project-v3-builder
 	$(CONTAINER_TOOL) buildx use project-v3-builder
-	- $(CONTAINER_TOOL) buildx build --push --platform=$(PLATFORMS) --tag ${IMG} -f Dockerfile.cross .
+	- $(CONTAINER_TOOL) buildx build --push --platform=$(PLATFORMS) --tag ${PUSH_IMG} -f Dockerfile.cross .
 	- $(CONTAINER_TOOL) buildx rm project-v3-builder
 	rm Dockerfile.cross
 
@@ -146,7 +150,7 @@ uninstall: manifests kustomize ## Uninstall CRDs from the K8s cluster specified 
 
 .PHONY: deploy
 deploy: manifests kustomize ## Deploy controller to the K8s cluster specified in ~/.kube/config.
-	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
+	cd config/manager && $(KUSTOMIZE) edit set image controller=${PULL_IMG}
 	$(KUSTOMIZE) build config/default | $(KUBECTL) apply -f -
 
 .PHONY: undeploy
@@ -163,7 +167,7 @@ delete-cluster: ctlptl ## Delete the local development cluster.
 
 .PHONY: overlay
 overlay: kustomize ## Render a kustomize overlay to stdout.
-	@ cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
+	@ cd config/manager && $(KUSTOMIZE) edit set image controller=${PULL_IMG}
 	@ $(KUSTOMIZE) build config/overlays/$(OVERLAY)
 
 #------------------------------------------------------------------------------
