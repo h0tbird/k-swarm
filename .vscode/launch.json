@@ -1,0 +1,19 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Launch a local manager",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "cmd"
+        },
+        {
+            "name": "Attach to remote",
+            "type": "go",
+            "request": "attach",
+            "mode": "remote",
+            "port": 40000
+        }
+    ]
+}
