@@ -88,9 +88,16 @@ lint-fix: golangci-lint ## Run golangci-lint linter and perform fixes
 ##@ Build
 #------------------------------------------------------------------------------
 
+ARCH = $(shell go env GOARCH)
+OS = $(shell go env GOOS)
+
+.PHONY: build-devel
+build-devel: generate ## Build a manager binary without optimizations and inlining for Alpine musl linux/ARCH.
+	CGO_ENABLED=0 GOOS=linux GOARCH=$(ARCH) GO111MODULE=on go build -gcflags "-N -l" -o bin/manager-linux-$(ARCH) cmd/main.go
+
 .PHONY: build
 build: manifests generate fmt vet ## Build manager binary.
-	go build -o bin/manager cmd/main.go
+	GOOS=$(OS) GOARCH=$(ARCH) go build -o bin/manager-$(OS)-$(ARCH) cmd/main.go
 
 .PHONY: run
 run: manifests generate fmt vet ## Run a controller from your host.
