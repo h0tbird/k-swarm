@@ -172,7 +172,7 @@ kind-create: ctlptl  ## Create a kind cluster with a local registry.
 
 .PHONY: tilt-up
 tilt-up: kind-create ## Start kind and tilt.
-	tilt up -- --flags '--zap-devel'
+	tilt up -- --flags '--enable-informer=true --enable-worker=true --zap-devel'
 
 .PHONY: kind-delete
 kind-delete: ctlptl ## Delete the local development cluster.

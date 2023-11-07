@@ -19,76 +19,69 @@ package main
 import (
 
 	// Stdlib
+	"context"
 	"flag"
-	"os"
+	"sync"
 	"time"
 
 	// Community
 	"github.com/spf13/pflag"
-	"k8s.io/apimachinery/pkg/runtime"
-	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
-	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
 	// Internal
-	"github.com/octoroot/swarm/internal/controller"
+	"github.com/octoroot/swarm/pkg/common"
+	"github.com/octoroot/swarm/pkg/informer"
+	"github.com/octoroot/swarm/pkg/worker"
 	//+kubebuilder:scaffold:imports
-)
-
-var (
-	scheme   = runtime.NewScheme()
-	setupLog = ctrl.Log.WithName("setup")
-)
-
-func init() {
-	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
-
-	//+kubebuilder:scaffold:scheme
-}
-
-//-----------------------------------------------------------------------------
-// Global variables
-//-----------------------------------------------------------------------------
-
-var (
-	metricsAddr          string
-	enableLeaderElection bool
-	probeAddr            string
-	syncPeriod           time.Duration
 )
 
 //-----------------------------------------------------------------------------
 // initFlags initializes the command line flags.
 //-----------------------------------------------------------------------------
 
-func initFlags(fs *pflag.FlagSet) {
-	flag.StringVar(
-		&metricsAddr,
+func initFlags(fs *pflag.FlagSet) *common.FlagPack {
+
+	flags := &common.FlagPack{}
+
+	fs.StringVar(
+		&flags.MetricsAddr,
 		"metrics-bind-address",
 		":8080",
 		"The address the metric endpoint binds to.")
 
-	flag.StringVar(
-		&probeAddr,
+	fs.StringVar(
+		&flags.ProbeAddr,
 		"health-probe-bind-address",
 		":8081",
 		"The address the probe endpoint binds to.")
 
-	flag.BoolVar(
-		&enableLeaderElection,
+	fs.BoolVar(
+		&flags.EnableLeaderElection,
 		"leader-elect",
 		false,
 		"Enable leader election for controller manager. Enabling this will ensure there is only one active controller manager.")
 
 	fs.DurationVar(
-		&syncPeriod,
+		&flags.SyncPeriod,
 		"sync-period",
 		10*time.Hour,
 		"The minimum interval at which watched resources are reconciled.")
+
+	fs.BoolVar(
+		&flags.EnableInformer,
+		"enable-informer",
+		false,
+		"Enable the swarm /services endpoint informer.")
+
+	fs.BoolVar(
+		&flags.EnableWorker,
+		"enable-worker",
+		false,
+		"Enable the swarm /data endpoint worker.")
+
+	return flags
 }
 
 //-----------------------------------------------------------------------------
@@ -98,9 +91,10 @@ func initFlags(fs *pflag.FlagSet) {
 func main() {
 
 	zapOpts := zap.Options{}
+	var wg sync.WaitGroup
 
 	// Handle flags
-	initFlags(pflag.CommandLine)
+	flags := initFlags(pflag.CommandLine)
 	zapOpts.BindFlags(flag.CommandLine)
 	pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
 	pflag.Parse()
@@ -109,43 +103,20 @@ func main() {
 	logr := zap.New(zap.UseFlagOptions(&zapOpts))
 	ctrl.SetLogger(logr)
 
-	// Initializes a new controller manager
-	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
-		Scheme:                 scheme,
-		Metrics:                metricsserver.Options{BindAddress: metricsAddr},
-		HealthProbeBindAddress: probeAddr,
-		LeaderElection:         enableLeaderElection,
-		LeaderElectionID:       "bb4dbf8a.github.com",
-	})
-	if err != nil {
-		setupLog.Error(err, "unable to start manager")
-		os.Exit(1)
+	// Run as an informer
+	if flags.EnableInformer {
+		wg.Add(1)
+		logr.Info("Starting informer")
+		go informer.Start(context.TODO(), &wg, flags)
 	}
 
-	// Register the service controller
-	if err = (&controller.ServiceReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Service")
-		os.Exit(1)
-	}
-	//+kubebuilder:scaffold:builder
-
-	// Add health and ready checks
-	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
-		setupLog.Error(err, "unable to set up health check")
-		os.Exit(1)
-	}
-	if err := mgr.AddReadyzCheck("readyz", healthz.Ping); err != nil {
-		setupLog.Error(err, "unable to set up ready check")
-		os.Exit(1)
+	// Run as a worker
+	if flags.EnableWorker {
+		wg.Add(1)
+		logr.Info("Starting worker")
+		go worker.Start(context.TODO(), &wg, flags)
 	}
 
-	// Start the manager
-	setupLog.Info("starting manager")
-	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
-		setupLog.Error(err, "problem running manager")
-		os.Exit(1)
-	}
+	// Wait
+	wg.Wait()
 }

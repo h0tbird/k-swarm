@@ -6,7 +6,8 @@
             "type": "go",
             "request": "launch",
             "mode": "auto",
-            "program": "cmd"
+            "program": "cmd",
+            "args": ["--enable-informer", "--enable-worker", "--sync-period=1m"],
         },
         {
             "name": "Attach to remote",

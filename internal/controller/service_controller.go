@@ -33,6 +33,7 @@ import (
 type ServiceReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
+	// SrvChan chan<- []string
 }
 
 const (
