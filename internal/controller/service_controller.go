@@ -36,8 +36,20 @@ type ServiceReconciler struct {
 }
 
 const (
-	appLabel = "swarm"
+	controllerName = "swarm"
+	appLabel       = "swarm"
 )
+
+//-----------------------------------------------------------------------------
+// SetupWithManager sets up the controller with the Manager.
+//-----------------------------------------------------------------------------
+
+func (r *ServiceReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	return ctrl.NewControllerManagedBy(mgr).
+		Named(controllerName).
+		For(&corev1.Service{}).
+		Complete(r)
+}
 
 //+kubebuilder:rbac:groups=core,resources=services,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=core,resources=services/status,verbs=get;update;patch
@@ -48,7 +60,9 @@ const (
 //-----------------------------------------------------------------------------
 
 func (r *ServiceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	log := log.FromContext(ctx)
+
+	// Set up logging
+	log := log.Log.WithName(controllerName).WithValues("service", req.Name)
 
 	// Get all the swarm services
 	var services corev1.ServiceList
@@ -59,14 +73,4 @@ func (r *ServiceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 	// Return on success
 	return ctrl.Result{}, nil
-}
-
-//-----------------------------------------------------------------------------
-// SetupWithManager sets up the controller with the Manager.
-//-----------------------------------------------------------------------------
-
-func (r *ServiceReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewControllerManagedBy(mgr).
-		For(&corev1.Service{}).
-		Complete(r)
 }
