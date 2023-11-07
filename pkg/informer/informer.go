@@ -51,11 +51,14 @@ func Start(ctx context.Context, wg *sync.WaitGroup, flags *common.FlagPack) {
 		os.Exit(1)
 	}
 
+	// Create a channel to communicate with the reconciler
+	svcChan := make(chan []string)
+
 	// Register the swarm controller
 	if err = (&controller.ServiceReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-		// SrvChan: svcChan,
+		Client:  mgr.GetClient(),
+		Scheme:  mgr.GetScheme(),
+		SrvChan: svcChan,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "swarm")
 		os.Exit(1)

@@ -32,8 +32,8 @@ import (
 // ServiceReconciler reconciles a Service object
 type ServiceReconciler struct {
 	client.Client
-	Scheme *runtime.Scheme
-	// SrvChan chan<- []string
+	Scheme  *runtime.Scheme
+	SrvChan chan<- []string
 }
 
 const (
