@@ -157,18 +157,26 @@ deploy: manifests kustomize ## Deploy controller to the K8s cluster specified in
 undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
 	$(KUSTOMIZE) build config/default | $(KUBECTL) delete --ignore-not-found=$(ignore-not-found) -f -
 
-.PHONY: create-cluster
-create-cluster: ctlptl  ## Create a kind cluster with a local registry.
-	$(CTLPTL) apply -f hack/dev-cluster.yaml
-
-.PHONY: delete-cluster
-delete-cluster: ctlptl ## Delete the local development cluster.
-	$(CTLPTL) delete --cascade true -f hack/dev-cluster.yaml
-
 .PHONY: overlay
 overlay: kustomize ## Render a kustomize overlay to stdout.
 	@ cd config/manager && $(KUSTOMIZE) edit set image controller=${PULL_IMG}
 	@ $(KUSTOMIZE) build config/overlays/$(OVERLAY)
+
+#------------------------------------------------------------------------------
+##@ Tilt / Kind
+#------------------------------------------------------------------------------
+
+.PHONY: kind-create
+kind-create: ctlptl  ## Create a kind cluster with a local registry.
+	$(CTLPTL) apply -f hack/dev-cluster.yaml
+
+.PHONY: tilt-up
+tilt-up: kind-create ## Start kind and tilt.
+	tilt up
+
+.PHONY: kind-delete
+kind-delete: ctlptl ## Delete the local development cluster.
+	$(CTLPTL) delete --cascade true -f hack/dev-cluster.yaml
 
 #------------------------------------------------------------------------------
 ##@ Build Dependencies
