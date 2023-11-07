@@ -8,6 +8,8 @@ type FlagPack struct {
 	EnableLeaderElection bool
 	EnableInformer       bool
 	EnableWorker         bool
+	InformerAddr         string
+	WorkerAddr           string
 	ProbeAddr            string
 	SyncPeriod           time.Duration
 }

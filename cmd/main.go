@@ -80,6 +80,16 @@ func initFlags(fs *pflag.FlagSet) *common.FlagPack {
 		false,
 		"Enable the swarm /data endpoint worker.")
 
+	fs.StringVar(
+		&flags.InformerAddr,
+		"informer-bind-address", ":8081",
+		"The address the informer binds to.")
+
+	fs.StringVar(
+		&flags.WorkerAddr,
+		"worker-bind-address", ":8082",
+		"The address the worker binds to.")
+
 	return flags
 }
 
