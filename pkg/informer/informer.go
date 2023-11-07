@@ -54,6 +54,10 @@ func Start(ctx context.Context, wg *sync.WaitGroup, flags *common.FlagPack) {
 	// Create a channel to communicate with the reconciler
 	svcChan := make(chan []string)
 
+	//--------------------------
+	// Register the controllers
+	//--------------------------
+
 	// Register the swarm controller
 	if err = (&controller.ServiceReconciler{
 		Client:  mgr.GetClient(),
@@ -65,17 +69,28 @@ func Start(ctx context.Context, wg *sync.WaitGroup, flags *common.FlagPack) {
 	}
 	//+kubebuilder:scaffold:builder
 
-	// Add health and ready checks
+	//------------------------
+	// Register the runnables
+	//------------------------
+
+	// TODO: Register the informer runnable
+
+	// Add health checks
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
 		setupLog.Error(err, "unable to set up health check")
 		os.Exit(1)
 	}
+
+	// Add ready checks
 	if err := mgr.AddReadyzCheck("readyz", healthz.Ping); err != nil {
 		setupLog.Error(err, "unable to set up ready check")
 		os.Exit(1)
 	}
 
+	//-------------------
 	// Start the manager
+	//-------------------
+
 	setupLog.Info("starting manager")
 	if err := mgr.Start(ctx); err != nil {
 		setupLog.Error(err, "problem running manager")
