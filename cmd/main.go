@@ -19,7 +19,6 @@ package main
 import (
 
 	// Stdlib
-	"context"
 	"flag"
 	"sync"
 	"time"
@@ -100,21 +99,24 @@ func main() {
 	pflag.Parse()
 
 	// Logger setup
-	logr := zap.New(zap.UseFlagOptions(&zapOpts))
-	ctrl.SetLogger(logr)
+	log := zap.New(zap.UseFlagOptions(&zapOpts))
+	ctrl.SetLogger(log)
+
+	// Setup a common context
+	ctx := ctrl.SetupSignalHandler()
 
 	// Run as an informer
 	if flags.EnableInformer {
 		wg.Add(1)
-		logr.Info("Starting informer")
-		go informer.Start(context.TODO(), &wg, flags)
+		log.Info("Starting informer")
+		go informer.Start(ctx, &wg, flags)
 	}
 
 	// Run as a worker
 	if flags.EnableWorker {
 		wg.Add(1)
-		logr.Info("Starting worker")
-		go worker.Start(context.TODO(), &wg, flags)
+		log.Info("Starting worker")
+		go worker.Start(ctx, &wg, flags)
 	}
 
 	// Wait
