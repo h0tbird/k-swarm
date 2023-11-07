@@ -73,7 +73,7 @@ func Start(ctx context.Context, wg *sync.WaitGroup, flags *common.FlagPack) {
 	// Register the runnables
 	//------------------------
 
-	// TODO: Register the informer runnable
+	// TODO: Register the informer runnable that will publish the /services endpoint
 
 	// Add health checks
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {

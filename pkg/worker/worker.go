@@ -22,6 +22,10 @@ func Start(ctx context.Context, wg *sync.WaitGroup, flags *common.FlagPack) {
 
 	defer wg.Done()
 
+	//--------------------------
+	// Server
+	//--------------------------
+
 	// Setup the router
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
@@ -32,6 +36,12 @@ func Start(ctx context.Context, wg *sync.WaitGroup, flags *common.FlagPack) {
 
 	// Start the server
 	endless.ListenAndServe(flags.WorkerAddr, router)
+
+	//--------------------------
+	// Client
+	//--------------------------
+
+	// TODO: Implement the client
 }
 
 //-----------------------------------------------------------------------------
@@ -39,6 +49,8 @@ func Start(ctx context.Context, wg *sync.WaitGroup, flags *common.FlagPack) {
 //-----------------------------------------------------------------------------
 
 func getData(c *gin.Context) {
+
+	// TODO: Report real data.
 	c.JSON(200, gin.H{
 		"message": "pong",
 	})
