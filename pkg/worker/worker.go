@@ -4,6 +4,10 @@ import (
 
 	// Stdlib
 	"context"
+	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
 	"os"
 	"sync"
 	"time"
@@ -25,6 +29,14 @@ var (
 	serviceList = []string{}
 	log         = ctrl.Log.WithName("worker")
 )
+
+//-----------------------------------------------------------------------------
+// Structs
+//-----------------------------------------------------------------------------
+
+type InformerData struct {
+	Services []string `json:"services"`
+}
 
 //-----------------------------------------------------------------------------
 // Start starts the worker
@@ -109,9 +121,49 @@ func pollServiceList(ctx context.Context, flags *common.FlagPack, serviceList *[
 		select {
 		case <-ticker.C:
 			log.Info("polling service list", "url", flags.InformerURL+"/services")
+			newServices, err := fetchServices(flags.InformerURL + "/services")
+			if err != nil {
+				log.Error(err, "failed to fetch services")
+				continue
+			}
+			*serviceList = newServices
 		case <-ctx.Done():
 			log.Info("client context done")
 			return
 		}
 	}
+}
+
+//-----------------------------------------------------------------------------
+// fetchServices fetches the services from the informer
+//-----------------------------------------------------------------------------
+
+func fetchServices(url string) ([]string, error) {
+
+	// Get the services
+	resp, err := http.Get(url)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	// Check the status code
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("server returned non-200 status code: %d", resp.StatusCode)
+	}
+
+	// Read the body
+	bodyBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	// Unmarshal the body
+	var data InformerData
+	if err := json.Unmarshal(bodyBytes, &data); err != nil {
+		return nil, err
+	}
+
+	// Return the list
+	return data.Services, nil
 }
