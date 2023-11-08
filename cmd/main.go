@@ -90,6 +90,12 @@ func initFlags(fs *pflag.FlagSet) *common.FlagPack {
 		"worker-bind-address", ":8082",
 		"The address the worker binds to.")
 
+	fs.StringVar(
+		&flags.InformerURL,
+		"informer-url",
+		"http://localhost:8083",
+		"The URL of the informer.")
+
 	return flags
 }
 

@@ -22,11 +22,19 @@ import (
 	"github.com/octoroot/swarm/pkg/common"
 )
 
+//-----------------------------------------------------------------------------
+// Global variables
+//-----------------------------------------------------------------------------
+
 var (
 	scheme   = runtime.NewScheme()
 	setupLog = ctrl.Log.WithName("setup")
 	services = []string{}
 )
+
+//-----------------------------------------------------------------------------
+// init
+//-----------------------------------------------------------------------------
 
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))

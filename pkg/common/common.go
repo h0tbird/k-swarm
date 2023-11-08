@@ -8,6 +8,7 @@ type FlagPack struct {
 	EnableLeaderElection bool
 	EnableInformer       bool
 	EnableWorker         bool
+	InformerURL          string
 	InformerAddr         string
 	WorkerAddr           string
 	ProbeAddr            string
