@@ -4,6 +4,7 @@ import (
 
 	// Stdlib
 	"context"
+	"os"
 	"sync"
 
 	// Community
@@ -49,9 +50,11 @@ func Start(ctx context.Context, wg *sync.WaitGroup, flags *common.FlagPack) {
 //-----------------------------------------------------------------------------
 
 func getData(c *gin.Context) {
-
-	// TODO: Report real data.
 	c.JSON(200, gin.H{
-		"message": "pong",
+		"clusterName":  os.Getenv("CLUSTER_NAME"),
+		"podName":      os.Getenv("POD_NAME"),
+		"podNamespace": os.Getenv("POD_NAMESPACE"),
+		"podIP":        os.Getenv("POD_IP"),
+		"nodeName":     os.Getenv("NODE_NAME"),
 	})
 }
