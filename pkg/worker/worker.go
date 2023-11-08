@@ -12,6 +12,7 @@ import (
 	// Community
 	"github.com/fvbock/endless"
 	"github.com/gin-gonic/gin"
+	ctrl "sigs.k8s.io/controller-runtime"
 
 	// Internal
 	"github.com/octoroot/swarm/pkg/common"
@@ -22,7 +23,7 @@ import (
 //-----------------------------------------------------------------------------
 
 var (
-	services = []string{}
+	serviceList = []string{}
 )
 
 //-----------------------------------------------------------------------------
@@ -78,7 +79,8 @@ func getData(c *gin.Context) {
 
 func client(ctx context.Context, flags *common.FlagPack) {
 
-	// TODO: Get service list from informer
+	// Get the service list from the informer
+	go pollServiceList(ctx, flags, &serviceList, 10*time.Second)
 
 	for {
 		select {
@@ -86,8 +88,30 @@ func client(ctx context.Context, flags *common.FlagPack) {
 			log.Println("worker client context done")
 			return
 		default:
-			log.Println("worker client doing something")
-			time.Sleep(10 * time.Second)
+			ctrl.Log.WithName("worker").Info("sending a request", "service", "TODO")
+			time.Sleep(2 * time.Second)
+		}
+	}
+}
+
+//-----------------------------------------------------------------------------
+// pollServiceList polls the service list from the informer
+//-----------------------------------------------------------------------------
+
+func pollServiceList(ctx context.Context, flags *common.FlagPack, serviceList *[]string, interval time.Duration) {
+
+	// Setup a ticker
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
+
+	// Loop
+	for {
+		select {
+		case <-ticker.C:
+			ctrl.Log.WithName("worker").Info("polling service list", "url", flags.InformerURL+"/services")
+		case <-ctx.Done():
+			log.Println("worker client context done")
+			return
 		}
 	}
 }

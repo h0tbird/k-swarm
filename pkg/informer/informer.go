@@ -27,9 +27,9 @@ import (
 //-----------------------------------------------------------------------------
 
 var (
-	scheme   = runtime.NewScheme()
-	setupLog = ctrl.Log.WithName("setup")
-	services = []string{}
+	scheme      = runtime.NewScheme()
+	setupLog    = ctrl.Log.WithName("setup")
+	serviceList = []string{}
 )
 
 //-----------------------------------------------------------------------------
@@ -145,8 +145,8 @@ func (i Informer) Start(ctx context.Context) error {
 	go func() {
 		for {
 			select {
-			case services = <-i.commChan:
-				ctrl.Log.WithName("informer").Info("new update", "services", services)
+			case serviceList = <-i.commChan:
+				ctrl.Log.WithName("informer").Info("new update", "services", serviceList)
 			case <-ctx.Done():
 				setupLog.Info("stopping informer runnable")
 				return
@@ -175,6 +175,6 @@ func (i Informer) Start(ctx context.Context) error {
 
 func getServices(c *gin.Context) {
 	c.JSON(200, gin.H{
-		"services": services,
+		"services": serviceList,
 	})
 }
