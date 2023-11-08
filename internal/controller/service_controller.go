@@ -20,6 +20,7 @@ import (
 
 	// Stdlib
 	"context"
+	"fmt"
 
 	// Community
 	corev1 "k8s.io/api/core/v1"
@@ -87,7 +88,11 @@ func (r *ServiceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	// Send the services to the comm channel
 	var serviceNames []string
 	for _, service := range services.Items {
-		serviceNames = append(serviceNames, service.Name)
+		for _, port := range service.Spec.Ports {
+			if port.Name == "http" {
+				serviceNames = append(serviceNames, service.Name+"."+service.Namespace+":"+fmt.Sprint(port.Port))
+			}
+		}
 	}
 	r.CommChan <- serviceNames
 

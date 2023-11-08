@@ -100,8 +100,15 @@ func client(ctx context.Context, flags *common.FlagPack) {
 			log.Info("client context done")
 			return
 		default:
-			log.Info("sending a request", "service", "TODO")
 			time.Sleep(flags.WorkerRequestInterval)
+			for _, service := range serviceList {
+				log.Info("sending a request", "service", service)
+				_, err := http.Get(fmt.Sprintf("http://%s/data", service))
+				if err != nil {
+					log.Error(err, "failed to send request", "service", service)
+					continue
+				}
+			}
 		}
 	}
 }
