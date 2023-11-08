@@ -6,6 +6,7 @@ import (
 	"context"
 	"os"
 	"sync"
+	"time"
 
 	// Community
 	"k8s.io/apimachinery/pkg/runtime"
@@ -23,6 +24,7 @@ import (
 var (
 	scheme   = runtime.NewScheme()
 	setupLog = ctrl.Log.WithName("setup")
+	services = []string{}
 )
 
 func init() {
@@ -126,14 +128,22 @@ func (i Informer) Start(ctx context.Context) error {
 
 	setupLog.Info("starting informer runnable")
 
-	// Read from the channel and print the services
-	for {
-		select {
-		case services := <-i.commChan:
-			setupLog.Info("services", "services", services)
-		case <-ctx.Done():
-			setupLog.Info("stopping informer runnable")
-			return nil
+	// Retrieve the services from the comm channel
+	go func() {
+		for {
+			select {
+			case services = <-i.commChan:
+				setupLog.Info("services", "services", services)
+			case <-ctx.Done():
+				setupLog.Info("stopping informer runnable")
+				return
+			}
 		}
+	}()
+
+	// TODO: Serve the services via HTTP
+	// TODO: Honor the context
+	for {
+		time.Sleep(1 * time.Minute)
 	}
 }
