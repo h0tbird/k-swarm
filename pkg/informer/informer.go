@@ -6,9 +6,10 @@ import (
 	"context"
 	"os"
 	"sync"
-	"time"
 
 	// Community
+	"github.com/fvbock/endless"
+	"github.com/gin-gonic/gin"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -76,7 +77,7 @@ func Start(ctx context.Context, wg *sync.WaitGroup, flags *common.FlagPack) {
 	//-----------------------
 
 	// Register the informer runnable
-	if err := mgr.Add(newInformer(commChan)); err != nil {
+	if err := mgr.Add(newInformer(commChan, flags)); err != nil {
 		setupLog.Error(err, "unable to register informer")
 		os.Exit(1)
 	}
@@ -110,14 +111,18 @@ func Start(ctx context.Context, wg *sync.WaitGroup, flags *common.FlagPack) {
 
 type Informer struct {
 	commChan chan []string
+	flags    *common.FlagPack
 }
 
 //-----------------------------------------------------------------------------
 // newInformer returns a new informer runnable
 //-----------------------------------------------------------------------------
 
-func newInformer(commChan chan []string) Informer {
-	return Informer{commChan: commChan}
+func newInformer(commChan chan []string, flags *common.FlagPack) Informer {
+	return Informer{
+		commChan: commChan,
+		flags:    flags,
+	}
 }
 
 //-----------------------------------------------------------------------------
@@ -141,9 +146,27 @@ func (i Informer) Start(ctx context.Context) error {
 		}
 	}()
 
-	// TODO: Serve the services via HTTP
-	// TODO: Honor the context
-	for {
-		time.Sleep(1 * time.Minute)
-	}
+	// Setup the router
+	gin.SetMode(gin.ReleaseMode)
+	router := gin.Default()
+	router.SetTrustedProxies(nil)
+
+	// Routes
+	router.GET("/services", getServices)
+
+	// Start the server
+	endless.ListenAndServe(i.flags.InformerAddr, router)
+
+	// Return no error
+	return nil
+}
+
+//-----------------------------------------------------------------------------
+// getServices
+//-----------------------------------------------------------------------------
+
+func getServices(c *gin.Context) {
+	c.JSON(200, gin.H{
+		"services": services,
+	})
 }

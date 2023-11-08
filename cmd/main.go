@@ -82,7 +82,7 @@ func initFlags(fs *pflag.FlagSet) *common.FlagPack {
 
 	fs.StringVar(
 		&flags.InformerAddr,
-		"informer-bind-address", ":8081",
+		"informer-bind-address", ":8083",
 		"The address the informer binds to.")
 
 	fs.StringVar(
