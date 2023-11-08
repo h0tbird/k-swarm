@@ -26,7 +26,7 @@ func Start(ctx context.Context, wg *sync.WaitGroup, flags *common.FlagPack) {
 	defer wg.Done()
 
 	// Worker server respons /data
-	go server(ctx, flags)
+	go server(flags)
 
 	// Worker client requests /data
 	client(ctx, flags)
@@ -36,7 +36,7 @@ func Start(ctx context.Context, wg *sync.WaitGroup, flags *common.FlagPack) {
 // server starts the worker server
 //-----------------------------------------------------------------------------
 
-func server(ctx context.Context, flags *common.FlagPack) {
+func server(flags *common.FlagPack) {
 
 	// Setup the router
 	gin.SetMode(gin.ReleaseMode)
@@ -45,8 +45,6 @@ func server(ctx context.Context, flags *common.FlagPack) {
 
 	// Routes
 	router.GET("/data", getData)
-
-	// TODO: Honor the context
 
 	// Start the server
 	endless.ListenAndServe(flags.WorkerAddr, router)
@@ -72,11 +70,16 @@ func getData(c *gin.Context) {
 
 func client(ctx context.Context, flags *common.FlagPack) {
 
-	// TODO: Honor the context
 	// TODO: Get service list from informer
 
 	for {
-		log.Println("Worker client doing something...")
-		time.Sleep(10 * time.Second)
+		select {
+		case <-ctx.Done():
+			log.Println("worker client context done")
+			return
+		default:
+			log.Println("worker client doing something")
+			time.Sleep(10 * time.Second)
+		}
 	}
 }
