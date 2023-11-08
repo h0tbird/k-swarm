@@ -60,9 +60,9 @@ func Start(ctx context.Context, wg *sync.WaitGroup, flags *common.FlagPack) {
 
 	// Register the swarm controller
 	if err = (&controller.ServiceReconciler{
-		Client:  mgr.GetClient(),
-		Scheme:  mgr.GetScheme(),
-		SrvChan: commChan,
+		Client:   mgr.GetClient(),
+		Scheme:   mgr.GetScheme(),
+		CommChan: commChan,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "swarm")
 		os.Exit(1)
@@ -123,6 +123,17 @@ func newInformer(commChan chan []string) Informer {
 //-----------------------------------------------------------------------------
 
 func (i Informer) Start(ctx context.Context) error {
+
 	setupLog.Info("starting informer runnable")
-	return nil
+
+	// Read from the channel and print the services
+	for {
+		select {
+		case services := <-i.commChan:
+			setupLog.Info("services", "services", services)
+		case <-ctx.Done():
+			setupLog.Info("stopping informer runnable")
+			return nil
+		}
+	}
 }

@@ -32,8 +32,8 @@ import (
 // ServiceReconciler reconciles a Service object
 type ServiceReconciler struct {
 	client.Client
-	Scheme  *runtime.Scheme
-	SrvChan chan<- []string
+	Scheme   *runtime.Scheme
+	CommChan chan<- []string
 }
 
 const (
@@ -71,6 +71,14 @@ func (r *ServiceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		log.Error(err, "unable to list services")
 		return ctrl.Result{}, err
 	}
+
+	// Send the services to the comm channel
+	var serviceNames []string
+	for _, service := range services.Items {
+		log.V(1).Info("adding service", "name", service.Name)
+		serviceNames = append(serviceNames, service.Name)
+	}
+	r.CommChan <- serviceNames
 
 	// Return on success
 	return ctrl.Result{}, nil
