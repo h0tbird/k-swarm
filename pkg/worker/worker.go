@@ -4,8 +4,10 @@ import (
 
 	// Stdlib
 	"context"
+	"log"
 	"os"
 	"sync"
+	"time"
 
 	// Community
 	"github.com/fvbock/endless"
@@ -23,9 +25,18 @@ func Start(ctx context.Context, wg *sync.WaitGroup, flags *common.FlagPack) {
 
 	defer wg.Done()
 
-	//--------------------------
-	// Server
-	//--------------------------
+	// Worker server respons /data
+	go server(ctx, flags)
+
+	// Worker client requests /data
+	client(ctx, flags)
+}
+
+//-----------------------------------------------------------------------------
+// server starts the worker server
+//-----------------------------------------------------------------------------
+
+func server(ctx context.Context, flags *common.FlagPack) {
 
 	// Setup the router
 	gin.SetMode(gin.ReleaseMode)
@@ -35,14 +46,10 @@ func Start(ctx context.Context, wg *sync.WaitGroup, flags *common.FlagPack) {
 	// Routes
 	router.GET("/data", getData)
 
+	// TODO: Honor the context
+
 	// Start the server
 	endless.ListenAndServe(flags.WorkerAddr, router)
-
-	//--------------------------
-	// Client
-	//--------------------------
-
-	// TODO: Implement the client
 }
 
 //-----------------------------------------------------------------------------
@@ -57,4 +64,19 @@ func getData(c *gin.Context) {
 		"podIP":        os.Getenv("POD_IP"),
 		"nodeName":     os.Getenv("NODE_NAME"),
 	})
+}
+
+//-----------------------------------------------------------------------------
+// client starts the worker client
+//-----------------------------------------------------------------------------
+
+func client(ctx context.Context, flags *common.FlagPack) {
+
+	// TODO: Honor the context
+	// TODO: Get service list from informer
+
+	for {
+		log.Println("Worker client doing something...")
+		time.Sleep(10 * time.Second)
+	}
 }
