@@ -51,12 +51,12 @@ func Start(ctx context.Context, wg *sync.WaitGroup, flags *common.FlagPack) {
 		os.Exit(1)
 	}
 
-	// Create a channel to communicate with the reconciler
+	// controller --> runnable comm channel
 	svcChan := make(chan []string)
 
-	//--------------------------
-	// Register the controllers
-	//--------------------------
+	//-------------------------
+	// Register the controller
+	//-------------------------
 
 	// Register the swarm controller
 	if err = (&controller.ServiceReconciler{
@@ -69,11 +69,15 @@ func Start(ctx context.Context, wg *sync.WaitGroup, flags *common.FlagPack) {
 	}
 	//+kubebuilder:scaffold:builder
 
-	//------------------------
-	// Register the runnables
-	//------------------------
+	//-----------------------
+	// Register the runnable
+	//-----------------------
 
-	// TODO: Register the informer runnable that will publish the /services endpoint
+	// Register the informer runnable
+	if err := mgr.Add(newInformer()); err != nil {
+		setupLog.Error(err, "unable to register informer")
+		os.Exit(1)
+	}
 
 	// Add health checks
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
@@ -96,4 +100,24 @@ func Start(ctx context.Context, wg *sync.WaitGroup, flags *common.FlagPack) {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
 	}
+}
+
+type Informer struct {
+}
+
+//-----------------------------------------------------------------------------
+// newInformer returns a new informer runnable
+//-----------------------------------------------------------------------------
+
+func newInformer() Informer {
+	return Informer{}
+}
+
+//-----------------------------------------------------------------------------
+// Start starts the informer runnable
+//-----------------------------------------------------------------------------
+
+func (i Informer) Start(ctx context.Context) error {
+	setupLog.Info("starting informer runnable")
+	return nil
 }
