@@ -133,7 +133,7 @@ func (i Informer) Start(ctx context.Context) error {
 		for {
 			select {
 			case services = <-i.commChan:
-				setupLog.Info("services", "services", services)
+				ctrl.Log.WithName("informer").Info("new update", "services", services)
 			case <-ctx.Done():
 				setupLog.Info("stopping informer runnable")
 				return

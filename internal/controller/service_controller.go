@@ -27,6 +27,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
 // ServiceReconciler reconciles a Service object
@@ -46,9 +47,17 @@ const (
 //-----------------------------------------------------------------------------
 
 func (r *ServiceReconciler) SetupWithManager(mgr ctrl.Manager) error {
+
+	// Define the label selector as a predicate
+	labelPredicate := predicate.NewPredicateFuncs(func(obj client.Object) bool {
+		return obj.GetLabels()["app"] == appLabel
+	})
+
+	// Create the controller
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(controllerName).
 		For(&corev1.Service{}).
+		WithEventFilter(labelPredicate).
 		Complete(r)
 }
 
@@ -72,10 +81,12 @@ func (r *ServiceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return ctrl.Result{}, err
 	}
 
+	// Log this reconciliation
+	log.V(1).Info("reconcile")
+
 	// Send the services to the comm channel
 	var serviceNames []string
 	for _, service := range services.Items {
-		log.V(1).Info("adding service", "name", service.Name)
 		serviceNames = append(serviceNames, service.Name)
 	}
 	r.CommChan <- serviceNames
