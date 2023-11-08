@@ -51,8 +51,8 @@ func Start(ctx context.Context, wg *sync.WaitGroup, flags *common.FlagPack) {
 		os.Exit(1)
 	}
 
-	// controller --> runnable comm channel
-	svcChan := make(chan []string)
+	// controller --> runnable communication channel
+	commChan := make(chan []string)
 
 	//-------------------------
 	// Register the controller
@@ -62,7 +62,7 @@ func Start(ctx context.Context, wg *sync.WaitGroup, flags *common.FlagPack) {
 	if err = (&controller.ServiceReconciler{
 		Client:  mgr.GetClient(),
 		Scheme:  mgr.GetScheme(),
-		SrvChan: svcChan,
+		SrvChan: commChan,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "swarm")
 		os.Exit(1)
@@ -74,7 +74,7 @@ func Start(ctx context.Context, wg *sync.WaitGroup, flags *common.FlagPack) {
 	//-----------------------
 
 	// Register the informer runnable
-	if err := mgr.Add(newInformer()); err != nil {
+	if err := mgr.Add(newInformer(commChan)); err != nil {
 		setupLog.Error(err, "unable to register informer")
 		os.Exit(1)
 	}
@@ -102,15 +102,20 @@ func Start(ctx context.Context, wg *sync.WaitGroup, flags *common.FlagPack) {
 	}
 }
 
+//-----------------------------------------------------------------------------
+// Informer implements the runnable interface
+//-----------------------------------------------------------------------------
+
 type Informer struct {
+	commChan chan []string
 }
 
 //-----------------------------------------------------------------------------
 // newInformer returns a new informer runnable
 //-----------------------------------------------------------------------------
 
-func newInformer() Informer {
-	return Informer{}
+func newInformer(commChan chan []string) Informer {
+	return Informer{commChan: commChan}
 }
 
 //-----------------------------------------------------------------------------
