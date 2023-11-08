@@ -144,14 +144,14 @@ func main() {
 	// Run as an informer
 	if flags.EnableInformer {
 		wg.Add(1)
-		log.Info("Starting informer")
+		ctrl.Log.WithName("main").Info("Starting informer")
 		go informer.Start(ctx, &wg, flags)
 	}
 
 	// Run as a worker
 	if flags.EnableWorker {
 		wg.Add(1)
-		log.Info("Starting worker")
+		ctrl.Log.WithName("main").Info("Starting worker")
 		go worker.Start(ctx, &wg, flags)
 	}
 

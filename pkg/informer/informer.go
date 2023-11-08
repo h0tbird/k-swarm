@@ -28,7 +28,7 @@ import (
 
 var (
 	scheme      = runtime.NewScheme()
-	setupLog    = ctrl.Log.WithName("setup")
+	log         = ctrl.Log.WithName("informer")
 	serviceList = []string{}
 )
 
@@ -58,7 +58,7 @@ func Start(ctx context.Context, wg *sync.WaitGroup, flags *common.FlagPack) {
 		LeaderElectionID:       "bb4dbf8a.github.com",
 	})
 	if err != nil {
-		setupLog.Error(err, "unable to start manager")
+		log.Error(err, "unable to start manager")
 		os.Exit(1)
 	}
 
@@ -75,7 +75,7 @@ func Start(ctx context.Context, wg *sync.WaitGroup, flags *common.FlagPack) {
 		Scheme:   mgr.GetScheme(),
 		CommChan: commChan,
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "swarm")
+		log.Error(err, "unable to create controller", "controller", "swarm")
 		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder
@@ -86,19 +86,19 @@ func Start(ctx context.Context, wg *sync.WaitGroup, flags *common.FlagPack) {
 
 	// Register the informer runnable
 	if err := mgr.Add(newInformer(commChan, flags)); err != nil {
-		setupLog.Error(err, "unable to register informer")
+		log.Error(err, "unable to register informer")
 		os.Exit(1)
 	}
 
 	// Add health checks
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
-		setupLog.Error(err, "unable to set up health check")
+		log.Error(err, "unable to set up health check")
 		os.Exit(1)
 	}
 
 	// Add ready checks
 	if err := mgr.AddReadyzCheck("readyz", healthz.Ping); err != nil {
-		setupLog.Error(err, "unable to set up ready check")
+		log.Error(err, "unable to set up ready check")
 		os.Exit(1)
 	}
 
@@ -106,9 +106,9 @@ func Start(ctx context.Context, wg *sync.WaitGroup, flags *common.FlagPack) {
 	// Start the manager
 	//-------------------
 
-	setupLog.Info("starting manager")
+	log.Info("starting manager")
 	if err := mgr.Start(ctx); err != nil {
-		setupLog.Error(err, "problem running manager")
+		log.Error(err, "problem running manager")
 		os.Exit(1)
 	}
 }
@@ -139,16 +139,16 @@ func newInformer(commChan chan []string, flags *common.FlagPack) Informer {
 
 func (i Informer) Start(ctx context.Context) error {
 
-	setupLog.Info("starting informer runnable")
+	log.Info("starting runnable")
 
 	// Retrieve the services from the comm channel
 	go func() {
 		for {
 			select {
 			case serviceList = <-i.commChan:
-				ctrl.Log.WithName("informer").Info("new update", "services", serviceList)
+				log.Info("new update", "services", serviceList)
 			case <-ctx.Done():
-				setupLog.Info("stopping informer runnable")
+				log.Info("stopping informer runnable")
 				return
 			}
 		}

@@ -4,7 +4,6 @@ import (
 
 	// Stdlib
 	"context"
-	"log"
 	"os"
 	"sync"
 	"time"
@@ -24,6 +23,7 @@ import (
 
 var (
 	serviceList = []string{}
+	log         = ctrl.Log.WithName("worker")
 )
 
 //-----------------------------------------------------------------------------
@@ -85,10 +85,10 @@ func client(ctx context.Context, flags *common.FlagPack) {
 	for {
 		select {
 		case <-ctx.Done():
-			log.Println("worker client context done")
+			log.Info("client context done")
 			return
 		default:
-			ctrl.Log.WithName("worker").Info("sending a request", "service", "TODO")
+			log.Info("sending a request", "service", "TODO")
 			time.Sleep(flags.WorkerRequestInterval)
 		}
 	}
@@ -108,9 +108,9 @@ func pollServiceList(ctx context.Context, flags *common.FlagPack, serviceList *[
 	for {
 		select {
 		case <-ticker.C:
-			ctrl.Log.WithName("worker").Info("polling service list", "url", flags.InformerURL+"/services")
+			log.Info("polling service list", "url", flags.InformerURL+"/services")
 		case <-ctx.Done():
-			log.Println("worker client context done")
+			log.Info("client context done")
 			return
 		}
 	}
