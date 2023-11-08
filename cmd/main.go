@@ -68,25 +68,33 @@ func initFlags(fs *pflag.FlagSet) *common.FlagPack {
 		10*time.Hour,
 		"The minimum interval at which watched resources are reconciled.")
 
+	//----------------
+	// Informer flags
+	//----------------
+
 	fs.BoolVar(
 		&flags.EnableInformer,
 		"enable-informer",
 		false,
-		"Enable the swarm /services endpoint informer.")
+		"Enable the informer.")
+
+	fs.StringVar(
+		&flags.InformerBindAddr,
+		"informer-bind-address", ":8083",
+		"The address the informer binds to.")
+
+	//--------------
+	// Worker flags
+	//--------------
 
 	fs.BoolVar(
 		&flags.EnableWorker,
 		"enable-worker",
 		false,
-		"Enable the swarm /data endpoint worker.")
+		"Enable the worker.")
 
 	fs.StringVar(
-		&flags.InformerAddr,
-		"informer-bind-address", ":8083",
-		"The address the informer binds to.")
-
-	fs.StringVar(
-		&flags.WorkerAddr,
+		&flags.WorkerBindAddr,
 		"worker-bind-address", ":8082",
 		"The address the worker binds to.")
 
@@ -95,6 +103,18 @@ func initFlags(fs *pflag.FlagSet) *common.FlagPack {
 		"informer-url",
 		"http://localhost:8083",
 		"The URL of the informer.")
+
+	fs.DurationVar(
+		&flags.InformerPollInterval,
+		"informer-poll-interval",
+		10*time.Second,
+		"The interval at which the worker polls the informer.")
+
+	fs.DurationVar(
+		&flags.WorkerRequestInterval,
+		"worker-request-interval",
+		2*time.Second,
+		"The interval at which the worker sends requests.")
 
 	return flags
 }

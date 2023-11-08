@@ -163,7 +163,7 @@ func (i Informer) Start(ctx context.Context) error {
 	router.GET("/services", getServices)
 
 	// Start the server
-	endless.ListenAndServe(i.flags.InformerAddr, router)
+	endless.ListenAndServe(i.flags.InformerBindAddr, router)
 
 	// Return no error
 	return nil

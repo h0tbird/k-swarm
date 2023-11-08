@@ -6,11 +6,17 @@ import "time"
 type FlagPack struct {
 	MetricsAddr          string
 	EnableLeaderElection bool
-	EnableInformer       bool
-	EnableWorker         bool
-	InformerURL          string
-	InformerAddr         string
-	WorkerAddr           string
-	ProbeAddr            string
 	SyncPeriod           time.Duration
+	ProbeAddr            string
+
+	// Informer flags
+	EnableInformer   bool
+	InformerBindAddr string
+
+	// Worker flags
+	EnableWorker          bool
+	WorkerBindAddr        string
+	InformerPollInterval  time.Duration
+	WorkerRequestInterval time.Duration
+	InformerURL           string
 }

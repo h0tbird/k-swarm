@@ -56,7 +56,7 @@ func server(flags *common.FlagPack) {
 	router.GET("/data", getData)
 
 	// Start the server
-	endless.ListenAndServe(flags.WorkerAddr, router)
+	endless.ListenAndServe(flags.WorkerBindAddr, router)
 }
 
 //-----------------------------------------------------------------------------
@@ -80,7 +80,7 @@ func getData(c *gin.Context) {
 func client(ctx context.Context, flags *common.FlagPack) {
 
 	// Get the service list from the informer
-	go pollServiceList(ctx, flags, &serviceList, 10*time.Second)
+	go pollServiceList(ctx, flags, &serviceList)
 
 	for {
 		select {
@@ -89,7 +89,7 @@ func client(ctx context.Context, flags *common.FlagPack) {
 			return
 		default:
 			ctrl.Log.WithName("worker").Info("sending a request", "service", "TODO")
-			time.Sleep(2 * time.Second)
+			time.Sleep(flags.WorkerRequestInterval)
 		}
 	}
 }
@@ -98,10 +98,10 @@ func client(ctx context.Context, flags *common.FlagPack) {
 // pollServiceList polls the service list from the informer
 //-----------------------------------------------------------------------------
 
-func pollServiceList(ctx context.Context, flags *common.FlagPack, serviceList *[]string, interval time.Duration) {
+func pollServiceList(ctx context.Context, flags *common.FlagPack, serviceList *[]string) {
 
 	// Setup a ticker
-	ticker := time.NewTicker(interval)
+	ticker := time.NewTicker(flags.InformerPollInterval)
 	defer ticker.Stop()
 
 	// Loop
