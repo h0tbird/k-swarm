@@ -1,0 +1,10 @@
+# Adds namespace to all resources.
+namespace: foo-1
+namePrefix: swarm-
+
+resources:
+- ../manager
+
+patches:
+- path: manager_config_patch.yaml
+- path: remove-service-patch.yaml

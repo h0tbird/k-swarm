@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: controller-manager
+  namespace: system
+spec:
+  template:
+    metadata:
+      labels:
+        swarm/informer: enabled
+        swarm/worker: disabled
+    spec:
+      containers:
+      - name: manager
+        args:
+        - --leader-elect=false
+        - --enable-informer=true
+        - --enable-worker=false
+        - --informer-bind-address=:8083

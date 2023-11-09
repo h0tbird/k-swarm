@@ -1,0 +1,12 @@
+# Adds namespace to all resources.
+namespace: swarm-system
+namePrefix: swarm-
+
+resources:
+- ../rbac
+- ../manager
+
+patches:
+- path: manager_auth_proxy_patch.yaml
+- path: manager_config_patch.yaml
+- path: remove-service-patch.yaml
