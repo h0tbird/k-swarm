@@ -49,7 +49,7 @@ spec:
         - --enable-informer=false
         - --enable-worker=true
         - --worker-bind-address=:8082
-        - --informer-url=http://swarm-informer.swarm-system
+        - --informer-url=http://informer.informer
         - --informer-poll-interval=10s
         - --worker-request-interval=2s
         image: controller:latest
