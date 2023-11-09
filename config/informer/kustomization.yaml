@@ -13,5 +13,5 @@ patches:
 
 images:
 - name: controller
-  newName: dev-registry:5000/swarm
+  newName: h0tbird/swarm
   newTag: latest
