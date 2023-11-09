@@ -8,14 +8,21 @@ PUSH_IMG=h0tbird/swarm make docker-buildx
 
 Deploy the informer:
 ```
-kustomize build ./config/informer | k --context little-sunshine-1-admin apply -f -
+for CLUSTER in {1..2}; do
+  kustomize build ./config/informer | k --context little-sunshine-${CLUSTER}-admin apply -f -
+done
 ```
 
-Deploy the workers:
+Deploy some workers:
 ```
 cd config/worker
-kustomize edit set namespace foo-1
-kustomize build . | k --context little-sunshine-1-admin apply -f -
+
+for SERVICE in {1..5}; do
+  kustomize edit set namespace foo-${SERVICE}
+  for CLUSTER in {1..2}; do
+    kustomize build . | k --context little-sunshine-${CLUSTER}-admin apply -f -
+  done
+done
 ```
 
 Check the workload endpoints:
