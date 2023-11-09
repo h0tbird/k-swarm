@@ -10,6 +10,7 @@ metadata:
     app.kubernetes.io/created-by: swarm
     app.kubernetes.io/part-of: swarm
     app.kubernetes.io/managed-by: kustomize
+    istio-injection: enabled
   name: system
 ---
 apiVersion: apps/v1
