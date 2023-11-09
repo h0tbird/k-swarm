@@ -1,12 +1,14 @@
-# Adds namespace to all resources.
-namespace: swarm-system
-namePrefix: swarm-
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
 
 resources:
 - ../rbac
-- ../manager
+- manager.yaml
 
 patches:
 - path: manager_auth_proxy_patch.yaml
-- path: manager_config_patch.yaml
-- path: remove-service-patch.yaml
+
+images:
+- name: controller
+  newName: dev-registry:5000/swarm
+  newTag: latest
