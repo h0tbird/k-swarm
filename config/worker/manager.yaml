@@ -82,7 +82,7 @@ spec:
         - containerPort: 8082
           name: worker
           protocol: TCP
-      serviceAccountName: controller-manager
+      serviceAccountName: default
       terminationGracePeriodSeconds: 10
 ---
 apiVersion: v1
