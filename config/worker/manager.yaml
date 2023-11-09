@@ -46,10 +46,9 @@ spec:
         - /manager
         args:
         - --leader-elect=false
-        - --enable-informer=true
+        - --enable-informer=false
         - --enable-worker=true
         - --worker-bind-address=:8082
-        - --informer-bind-address=:8083
         - --informer-url=http://swarm-informer.swarm-system
         - --informer-poll-interval=10s
         - --worker-request-interval=2s
@@ -79,49 +78,12 @@ spec:
           capabilities:
             drop:
             - "ALL"
-        livenessProbe:
-          httpGet:
-            path: /healthz
-            port: 8081
-          initialDelaySeconds: 15
-          periodSeconds: 20
-        readinessProbe:
-          httpGet:
-            path: /readyz
-            port: 8081
-          initialDelaySeconds: 5
-          periodSeconds: 10
-        # TODO(user): Configure the resources accordingly based on the project requirements.
-        # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
-        resources:
-          limits:
-            cpu: 500m
-            memory: 128Mi
-          requests:
-            cpu: 10m
-            memory: 64Mi
         ports:
         - containerPort: 8082
           name: worker
           protocol: TCP
-        - containerPort: 8083
-          name: informer
-          protocol: TCP
       serviceAccountName: controller-manager
       terminationGracePeriodSeconds: 10
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: informer
-spec:
-  selector:
-    swarm/informer: enabled
-  ports:
-    - name: http
-      protocol: TCP
-      port: 80
-      targetPort: informer
 ---
 apiVersion: v1
 kind: Service
