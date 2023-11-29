@@ -35,7 +35,7 @@ spec:
         - --enable-worker=true
         - --worker-bind-address=:8082
         - --informer-url=http://informer.informer
-        - --informer-poll-interval=20s
+        - --informer-poll-interval=60s
         - --worker-request-interval=2s
         image: controller:latest
         name: manager
