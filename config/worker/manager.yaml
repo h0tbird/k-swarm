@@ -14,7 +14,7 @@ spec:
   selector:
     matchLabels:
       swarm/worker: enabled
-  replicas: 3
+  replicas: 4
   template:
     metadata:
       annotations:
