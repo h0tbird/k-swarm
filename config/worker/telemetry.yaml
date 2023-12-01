@@ -1,0 +1,14 @@
+---
+apiVersion: telemetry.istio.io/v1alpha1
+kind: Telemetry
+metadata:
+  name: istio-metrics
+spec:
+  metrics:
+    - providers:
+        - name: prometheus
+      overrides:
+        - disabled: true
+          match:
+            mode: CLIENT_AND_SERVER
+            metric: ALL_METRICS
