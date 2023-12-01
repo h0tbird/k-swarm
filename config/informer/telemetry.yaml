@@ -46,5 +46,5 @@ spec:
             metric: GRPC_RESPONSE_MESSAGES
         - disabled: true
           match:
-            mode: SERVER
+            mode: CLIENT
             metric: REQUEST_COUNT
