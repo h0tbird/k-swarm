@@ -14,7 +14,7 @@ spec:
   selector:
     matchLabels:
       swarm/informer: enabled
-  replicas: 1
+  replicas: 2
   template:
     metadata:
       annotations:
@@ -22,6 +22,16 @@ spec:
       labels:
         swarm/informer: enabled
     spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - topologyKey: "kubernetes.io/hostname"
+            labelSelector:
+              matchExpressions:
+              - key: swarm/informer
+                operator: In
+                values:
+                - enabled
       securityContext:
         runAsNonRoot: true
       nodeSelector:
