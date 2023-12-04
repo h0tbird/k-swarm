@@ -6,6 +6,7 @@ namePrefix:
 
 resources:
 - manager.yaml
+- telemetry.yaml
 
 images:
 - name: controller
