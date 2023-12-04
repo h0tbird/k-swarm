@@ -35,7 +35,7 @@ spec:
       securityContext:
         runAsNonRoot: true
       nodeSelector:
-        agentpool: nodepool2
+        agentpool: nodepool1
       containers:
       - command:
         - /manager
