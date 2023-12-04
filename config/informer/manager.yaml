@@ -24,14 +24,16 @@ spec:
     spec:
       affinity:
         podAntiAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-          - topologyKey: "kubernetes.io/hostname"
-            labelSelector:
-              matchExpressions:
-              - key: swarm/informer
-                operator: In
-                values:
-                - enabled
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: swarm/informer
+                  operator: In
+                  values:
+                  - enabled
+              topologyKey: kubernetes.io/hostname
       securityContext:
         runAsNonRoot: true
       nodeSelector:
