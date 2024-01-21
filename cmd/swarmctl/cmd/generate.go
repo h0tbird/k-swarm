@@ -15,7 +15,7 @@ import (
 
 var generateCmd = &cobra.Command{
 	Use:   "generate",
-	Short: "The generate subcommand generates a swarm install manifest and outputs to the console by default.",
+	Short: "Generates a swarm install manifest and outputs to the console.",
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("generate called")
 	},

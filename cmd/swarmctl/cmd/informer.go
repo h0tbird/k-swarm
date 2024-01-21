@@ -15,7 +15,7 @@ import (
 
 var informerCmd = &cobra.Command{
 	Use:   "informer",
-	Short: "A brief description of your command",
+	Short: "Generates a swarm informer install manifest and outputs to the console.",
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("informer called")
 	},

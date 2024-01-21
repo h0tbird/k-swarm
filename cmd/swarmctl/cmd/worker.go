@@ -15,7 +15,7 @@ import (
 
 var workerCmd = &cobra.Command{
 	Use:   "worker",
-	Short: "A brief description of your command",
+	Short: "Generates a swarm worker install manifest and outputs to the console.",
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("worker called")
 	},
