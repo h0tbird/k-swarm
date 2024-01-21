@@ -27,7 +27,7 @@ metadata:
   name: worker
   namespace: service-x
 spec:
-  replicas: 4
+  replicas: {{ .Replicas }}
   selector:
     matchLabels:
       swarm/worker: enabled

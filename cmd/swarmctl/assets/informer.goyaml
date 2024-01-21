@@ -240,7 +240,7 @@ metadata:
   name: informer
   namespace: informer
 spec:
-  replicas: 2
+  replicas: {{ .Replicas }}
   selector:
     matchLabels:
       swarm/informer: enabled

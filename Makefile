@@ -102,8 +102,15 @@ build: manifests generate fmt vet ## Build manager binary.
 
 .PHONY: swarmctl
 swarmctl: ## Build swarmctl binary.
-	$(KUSTOMIZE) build config/informer > cmd/swarmctl/assets/informer.yaml
-	$(KUSTOMIZE) build config/worker > cmd/swarmctl/assets/worker.yaml
+
+	$(KUSTOMIZE) build config/informer | \
+	sed 's/replicas: [[:digit:]]/replicas: {{ .Replicas }}/g' > \
+	cmd/swarmctl/assets/informer.goyaml
+
+	$(KUSTOMIZE) build config/worker | \
+	sed 's/replicas: [[:digit:]]/replicas: {{ .Replicas }}/g' > \
+	cmd/swarmctl/assets/worker.goyaml
+
 	go build -o bin/swarmctl cmd/swarmctl/main.go
 
 .PHONY: run

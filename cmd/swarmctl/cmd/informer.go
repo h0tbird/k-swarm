@@ -3,7 +3,7 @@ package cmd
 import (
 
 	// Stdlib
-	"fmt"
+	"text/template"
 
 	// Community
 	"github.com/spf13/cobra"
@@ -18,15 +18,18 @@ var informerCmd = &cobra.Command{
 	Short: "Generates a swarm informer install manifest and outputs to the console.",
 	Run: func(cmd *cobra.Command, args []string) {
 
-		// Read the content from the embedded file system
-		content, err := Assets.ReadFile("assets/informer.yaml")
-		if err != nil {
-			fmt.Println("Error reading the embedded YAML file:", err)
-			return
-		}
+		// Parse embeded template using ParseFS
+		tmpl := template.Must(template.ParseFS(Assets, "assets/informer.goyaml"))
+
+		// Get the replicas flag
+		replicas, _ := cmd.Flags().GetInt("replicas")
 
 		// Convert the content to a string and print it
-		fmt.Println(string(content))
+		tmpl.Execute(cmd.OutOrStdout(), struct {
+			Replicas int
+		}{
+			Replicas: replicas,
+		})
 	},
 }
 
