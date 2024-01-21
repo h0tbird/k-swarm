@@ -3,6 +3,9 @@ package cmd
 import (
 
 	// Stdlib
+	"fmt"
+	"strconv"
+	"strings"
 	"text/template"
 
 	// Community
@@ -14,8 +17,9 @@ import (
 //-------------------------------------------------------------------------
 
 var workerCmd = &cobra.Command{
-	Use:   "worker",
-	Short: "Generates a swarm worker install manifest and outputs to the console.",
+	Use:   "worker [start:end]",
+	Short: "Generates swarm worker install manifests and outputs to the console.",
+	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 
 		// Parse embeded template using ParseFS
@@ -24,12 +28,33 @@ var workerCmd = &cobra.Command{
 		// Get the replicas flag
 		replicas, _ := cmd.Flags().GetInt("replicas")
 
-		// Convert the content to a string and print it
-		tmpl.Execute(cmd.OutOrStdout(), struct {
-			Replicas int
-		}{
-			Replicas: replicas,
-		})
+		// Split args[0] into start and end
+		parts := strings.Split(args[0], ":")
+		if len(parts) != 2 {
+			fmt.Println("Invalid range format. Please use the format start:end.")
+			return
+		}
+
+		// Convert start and end to integers
+		start, err1 := strconv.Atoi(parts[0])
+		end, err2 := strconv.Atoi(parts[1])
+		if err1 != nil || err2 != nil {
+			fmt.Println("Invalid range. Both start and end should be integers.")
+			return
+		}
+
+		// Loop from start to end
+		for i := start; i <= end; i++ {
+
+			// Convert the content to a string and print it
+			tmpl.Execute(cmd.OutOrStdout(), struct {
+				Replicas  int
+				Namespace string
+			}{
+				Replicas:  replicas,
+				Namespace: fmt.Sprintf("service-%d", i),
+			})
+		}
 	},
 }
 

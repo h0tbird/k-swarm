@@ -3,7 +3,7 @@ kind: Namespace
 metadata:
   labels:
     istio-injection: enabled
-  name: service-x
+  name: {{ .Namespace }}
 ---
 apiVersion: v1
 kind: Service
@@ -11,7 +11,7 @@ metadata:
   labels:
     app: swarm
   name: worker
-  namespace: service-x
+  namespace: {{ .Namespace }}
 spec:
   ports:
   - name: http
@@ -25,7 +25,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: worker
-  namespace: service-x
+  namespace: {{ .Namespace }}
 spec:
   replicas: {{ .Replicas }}
   selector:
@@ -90,7 +90,7 @@ apiVersion: telemetry.istio.io/v1alpha1
 kind: Telemetry
 metadata:
   name: istio-metrics
-  namespace: service-x
+  namespace: {{ .Namespace }}
 spec:
   metrics:
   - overrides:
