@@ -1,9 +1,6 @@
 package cmd
 
-import (
-	// Community
-	"github.com/spf13/cobra"
-)
+import "github.com/spf13/cobra"
 
 //-----------------------------------------------------------------------------
 // installCmd represents the install command

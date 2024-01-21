@@ -13,12 +13,12 @@ import (
 )
 
 //-------------------------------------------------------------------------
-// workerCmd represents the worker command
+// generateWorkerCmd
 //-------------------------------------------------------------------------
 
 var generateWorkerCmd = &cobra.Command{
 	Use:   "worker [start:end]",
-	Short: "Generates swarm worker install manifests and outputs to the console.",
+	Short: "Outputs worker manifests.",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 

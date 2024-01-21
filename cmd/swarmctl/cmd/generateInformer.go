@@ -10,12 +10,12 @@ import (
 )
 
 //-----------------------------------------------------------------------------
-// informerCmd represents the informer command
+// generateInformerCmd
 //-----------------------------------------------------------------------------
 
 var generateInformerCmd = &cobra.Command{
 	Use:   "informer",
-	Short: "Generates a swarm informer install manifest and outputs to the console.",
+	Short: "Outputs informer manifests.",
 	Run: func(cmd *cobra.Command, args []string) {
 
 		// Parse embeded template using ParseFS
