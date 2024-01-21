@@ -35,15 +35,10 @@ var informerCmd = &cobra.Command{
 //-----------------------------------------------------------------------------
 
 func init() {
+
+	// Add the command to the informerCmd
 	generateCmd.AddCommand(informerCmd)
 
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// informerCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// informerCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	// Define the flags
+	informerCmd.PersistentFlags().Int("replicas", 1, "Number of replicas to deploy.")
 }
