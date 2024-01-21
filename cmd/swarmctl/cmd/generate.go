@@ -3,11 +3,14 @@ package cmd
 import (
 
 	// Stdlib
+	"embed"
 	"fmt"
 
 	// Community
 	"github.com/spf13/cobra"
 )
+
+var Assets embed.FS
 
 //-----------------------------------------------------------------------------
 // generateCmd represents the generate command

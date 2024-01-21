@@ -16,8 +16,19 @@ limitations under the License.
 
 package main
 
-import "github.com/octoroot/swarm/cmd/swarmctl/cmd"
+import (
+
+	//Stdlib
+	"embed"
+
+	// Internal
+	"github.com/octoroot/swarm/cmd/swarmctl/cmd"
+)
+
+//go:embed assets/*
+var assets embed.FS
 
 func main() {
+	cmd.Assets = assets
 	cmd.Execute()
 }

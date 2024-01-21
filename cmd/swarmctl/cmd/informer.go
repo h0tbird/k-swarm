@@ -17,7 +17,16 @@ var informerCmd = &cobra.Command{
 	Use:   "informer",
 	Short: "Generates a swarm informer install manifest and outputs to the console.",
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("informer called")
+
+		// Read the content from the embedded file system
+		content, err := Assets.ReadFile("assets/informer.yaml")
+		if err != nil {
+			fmt.Println("Error reading the embedded YAML file:", err)
+			return
+		}
+
+		// Convert the content to a string and print it
+		fmt.Println(string(content))
 	},
 }
 
