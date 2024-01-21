@@ -24,7 +24,8 @@ var installWorkerCmd = &cobra.Command{
 
 func init() {
 
-	// Add the command to the installCmd
+	// Add command to rootCmd installCmd
+	rootCmd.AddCommand(installWorkerCmd)
 	installCmd.AddCommand(installWorkerCmd)
 
 	// Define the flags

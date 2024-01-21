@@ -23,7 +23,8 @@ var installInformerCmd = &cobra.Command{
 
 func init() {
 
-	// Add the command to the informerCmd
+	// Add command to rootCmd and informerCmd
+	rootCmd.AddCommand(installInformerCmd)
 	installCmd.AddCommand(installInformerCmd)
 
 	// Define the flags
