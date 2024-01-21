@@ -100,6 +100,10 @@ build-devel: generate ## Build a manager binary without optimizations and inlini
 build: manifests generate fmt vet ## Build manager binary.
 	go build -o bin/manager cmd/main.go
 
+.PHONY: swarmctl
+swarmctl: ## Build swarmctl binary.
+	go build -o bin/swarmctl cmd/swarmctl/main.go
+
 .PHONY: run
 run: manifests generate fmt vet ## Run a controller from your host.
 	go run ./cmd/main.go
