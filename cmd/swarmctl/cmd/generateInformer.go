@@ -13,7 +13,7 @@ import (
 // informerCmd represents the informer command
 //-----------------------------------------------------------------------------
 
-var informerCmd = &cobra.Command{
+var generateInformerCmd = &cobra.Command{
 	Use:   "informer",
 	Short: "Generates a swarm informer install manifest and outputs to the console.",
 	Run: func(cmd *cobra.Command, args []string) {
@@ -40,8 +40,8 @@ var informerCmd = &cobra.Command{
 func init() {
 
 	// Add the command to the informerCmd
-	generateCmd.AddCommand(informerCmd)
+	generateCmd.AddCommand(generateInformerCmd)
 
 	// Define the flags
-	informerCmd.PersistentFlags().Int("replicas", 1, "Number of replicas to deploy.")
+	generateInformerCmd.PersistentFlags().Int("replicas", 1, "Number of replicas to deploy.")
 }

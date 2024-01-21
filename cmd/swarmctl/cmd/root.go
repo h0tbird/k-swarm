@@ -3,11 +3,14 @@ package cmd
 import (
 
 	// Stdlib
+	"embed"
 	"os"
 
 	// Community
 	"github.com/spf13/cobra"
 )
+
+var Assets embed.FS
 
 //-----------------------------------------------------------------------------
 // rootCmd represents the base command when called without any subcommands

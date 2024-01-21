@@ -1,16 +1,6 @@
 package cmd
 
-import (
-
-	// Stdlib
-	"embed"
-	"fmt"
-
-	// Community
-	"github.com/spf13/cobra"
-)
-
-var Assets embed.FS
+import "github.com/spf13/cobra"
 
 //-----------------------------------------------------------------------------
 // generateCmd represents the generate command
@@ -18,10 +8,7 @@ var Assets embed.FS
 
 var generateCmd = &cobra.Command{
 	Use:   "generate",
-	Short: "Generates a swarm install manifest and outputs to the console.",
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("generate called")
-	},
+	Short: "Generates a manifest and outputs it.",
 }
 
 //-----------------------------------------------------------------------------

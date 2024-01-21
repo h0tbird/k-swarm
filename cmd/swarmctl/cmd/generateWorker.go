@@ -16,7 +16,7 @@ import (
 // workerCmd represents the worker command
 //-------------------------------------------------------------------------
 
-var workerCmd = &cobra.Command{
+var generateWorkerCmd = &cobra.Command{
 	Use:   "worker [start:end]",
 	Short: "Generates swarm worker install manifests and outputs to the console.",
 	Args:  cobra.ExactArgs(1),
@@ -65,8 +65,8 @@ var workerCmd = &cobra.Command{
 func init() {
 
 	// Add the command to the workerCmd
-	generateCmd.AddCommand(workerCmd)
+	generateCmd.AddCommand(generateWorkerCmd)
 
 	// Define the flags
-	workerCmd.PersistentFlags().Int("replicas", 1, "Number of replicas to deploy.")
+	generateWorkerCmd.PersistentFlags().Int("replicas", 1, "Number of replicas to deploy.")
 }
