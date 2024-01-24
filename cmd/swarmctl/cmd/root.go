@@ -5,12 +5,11 @@ import (
 	// Stdlib
 	"embed"
 	"os"
-	"path/filepath"
 	"strings"
 
 	// Community
+	"github.com/octoroot/swarm/cmd/swarmctl/pkg/util"
 	"github.com/spf13/cobra"
-	"k8s.io/client-go/tools/clientcmd"
 )
 
 var Assets embed.FS
@@ -57,29 +56,20 @@ func init() {
 
 func contextCompletionFunc(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 
-	// Get the user's home directory.
-	homeDir, err := os.UserHomeDir()
+	// Get the contexts
+	contexts, err := util.GetKubeContexts("")
 	if err != nil {
 		panic(err)
 	}
 
-	// Load the kubeconfig file.
-	config, err := clientcmd.LoadFromFile(filepath.Join(homeDir, ".kube", "config"))
-	if err != nil {
-		panic(err)
-	}
-
-	// Get the contexts from the config.
-	contexts := config.Contexts
-
-	// Filter the contexts.
+	// Filter the contexts
 	var completions []string
-	for context := range contexts {
+	for _, context := range contexts {
 		if strings.HasPrefix(context, toComplete) {
 			completions = append(completions, context)
 		}
 	}
 
-	// Return the completions.
+	// Return the completions
 	return completions, cobra.ShellCompDirectiveNoFileComp
 }
