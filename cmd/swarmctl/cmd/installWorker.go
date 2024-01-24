@@ -1,9 +1,12 @@
 package cmd
 
 import (
+
 	// Community
-	"github.com/octoroot/swarm/cmd/swarmctl/pkg/util"
 	"github.com/spf13/cobra"
+
+	// Local
+	"github.com/octoroot/swarm/cmd/swarmctl/pkg/util"
 )
 
 //-------------------------------------------------------------------------
