@@ -12,7 +12,14 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var Assets embed.FS
+//-----------------------------------------------------------------------------
+// Globals
+//-----------------------------------------------------------------------------
+
+var (
+	Assets   embed.FS
+	contexts []string
+)
 
 //-----------------------------------------------------------------------------
 // rootCmd represents the base command when called without any subcommands
@@ -43,10 +50,30 @@ func init() {
 
 	// Define the flags
 	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+
+	// Register the context flag completion function
 	if rootCmd.PersistentFlags().String("context", "", "Regex to match the context name.") != nil {
 		if err := rootCmd.RegisterFlagCompletionFunc("context", contextCompletionFunc); err != nil {
 			panic(err)
 		}
+	}
+
+	// Execute the pre-run before every command Run call
+	rootCmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
+
+		// Get the regex
+		regex, err := cmd.Flags().GetString("context")
+		if err != nil {
+			return err
+		}
+
+		// Get the contexts that match the regex
+		contexts, err = util.GetKubeContexts(regex)
+		if err != nil {
+			return err
+		}
+
+		return nil
 	}
 }
 
