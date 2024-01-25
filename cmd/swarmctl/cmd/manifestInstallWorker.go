@@ -10,7 +10,7 @@ import (
 //-------------------------------------------------------------------------
 
 var installWorkerCmd = &cobra.Command{
-	Use:   "worker [start:end]",
+	Use:   "worker <start:end>",
 	Short: "Installs worker manifests.",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
