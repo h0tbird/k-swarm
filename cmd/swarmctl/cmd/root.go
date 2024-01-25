@@ -49,9 +49,6 @@ func Execute() {
 
 func init() {
 
-	// Define the flags
-	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
-
 	// Register the context flag completion function
 	if rootCmd.PersistentFlags().String("context", "", "Regex to match the context name.") != nil {
 		if err := rootCmd.RegisterFlagCompletionFunc("context", contextCompletionFunc); err != nil {
