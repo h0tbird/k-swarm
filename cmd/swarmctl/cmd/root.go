@@ -19,6 +19,7 @@ import (
 var (
 	Assets   embed.FS
 	contexts []string
+	homeDir  string
 )
 
 //-----------------------------------------------------------------------------
@@ -74,6 +75,13 @@ func init() {
 		}
 
 		return nil
+	}
+
+	// Get the home directory
+	var err error
+	homeDir, err = os.UserHomeDir()
+	if err != nil {
+		panic(err)
 	}
 }
 

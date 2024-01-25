@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	"text/template"
 
 	// Community
 	"github.com/spf13/cobra"
@@ -23,7 +22,7 @@ var generateWorkerCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 
 		// Parse embeded template using ParseFS
-		tmpl := template.Must(template.ParseFS(Assets, "assets/worker.goyaml"))
+		tmpl := parseTemplate("worker")
 
 		// Get the replicas flag
 		replicas, _ := cmd.Flags().GetInt("replicas")
@@ -46,7 +45,7 @@ var generateWorkerCmd = &cobra.Command{
 		// Loop from start to end
 		for i := start; i <= end; i++ {
 
-			// Convert the content to a string and print it
+			// Render the template
 			tmpl.Execute(cmd.OutOrStdout(), struct {
 				Replicas  int
 				Namespace string

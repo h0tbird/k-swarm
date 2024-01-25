@@ -28,11 +28,10 @@ var dumpCmd = &cobra.Command{
 			args = []string{"informer", "worker"}
 		}
 
-		// Get stdout flag and home directory
-		stdout, _ := cmd.Flags().GetBool("stdout")
-		homeDir, err := os.UserHomeDir()
+		// Get the stdout flag
+		stdout, err := cmd.Flags().GetBool("stdout")
 		if err != nil {
-			return fmt.Errorf("error getting user's home directory: %w", err)
+			return fmt.Errorf("error getting stdout flag: %w", err)
 		}
 
 		// Create ~/.swarmctl

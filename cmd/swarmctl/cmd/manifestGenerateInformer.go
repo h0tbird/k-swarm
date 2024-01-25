@@ -1,10 +1,6 @@
 package cmd
 
 import (
-
-	// Stdlib
-	"text/template"
-
 	// Community
 	"github.com/spf13/cobra"
 )
@@ -18,13 +14,13 @@ var generateInformerCmd = &cobra.Command{
 	Short: "Outputs informer manifests.",
 	Run: func(cmd *cobra.Command, args []string) {
 
-		// Parse embeded template using ParseFS
-		tmpl := template.Must(template.ParseFS(Assets, "assets/informer.goyaml"))
+		// Parse the template
+		tmpl := parseTemplate("informer")
 
 		// Get the replicas flag
 		replicas, _ := cmd.Flags().GetInt("replicas")
 
-		// Convert the content to a string and print it
+		// Render the template
 		tmpl.Execute(cmd.OutOrStdout(), struct {
 			Replicas int
 		}{
