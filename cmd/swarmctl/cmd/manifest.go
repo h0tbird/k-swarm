@@ -6,7 +6,7 @@ import (
 )
 
 //-----------------------------------------------------------------------------
-// manifestCmd represents the manifest command
+// manifestCmd
 //-----------------------------------------------------------------------------
 
 var manifestCmd = &cobra.Command{

@@ -13,7 +13,7 @@ import (
 )
 
 //-----------------------------------------------------------------------------
-// dumpCmd represents the generate command
+// dumpCmd
 //-----------------------------------------------------------------------------
 
 var dumpCmd = &cobra.Command{
@@ -26,14 +26,36 @@ var dumpCmd = &cobra.Command{
 		component := args[0]
 		stdout, _ := cmd.Flags().GetBool("stdout")
 
+		// Open the file from the embedded file system
+		fileData, err := Assets.ReadFile(fmt.Sprintf("assets/%s.goyaml", component))
+		if err != nil {
+			return fmt.Errorf("error reading file from embedded FS: %w", err)
+		}
+
+		// Write the contents to stdout
 		if stdout {
-			if err := dumpFileToStdout(fmt.Sprintf("assets/%s.goyaml", component)); err != nil {
-				return fmt.Errorf("error dumping %s template to stdout: %w", component, err)
+			_, err = io.Copy(os.Stdout, bytes.NewReader(fileData))
+			if err != nil {
+				return fmt.Errorf("error writing file data to stdout: %w", err)
 			}
 			return nil
 		}
 
-		// TODO: Add logic to dump to ~/.swarmctl
+		// Get the user's home directory
+		homeDir, err := os.UserHomeDir()
+		if err != nil {
+			return fmt.Errorf("error getting user's home directory: %w", err)
+		}
+
+		// Create ~/.swarmctl if it doesn't exist
+		if err := os.MkdirAll(homeDir+"/.swarmctl", 0755); err != nil {
+			return fmt.Errorf("error creating ~/.swarmctl: %w", err)
+		}
+
+		// Write the contents to ~/.swarmctl/<component>.goyaml
+		if err := os.WriteFile(homeDir+"/.swarmctl/"+component+".goyaml", fileData, 0644); err != nil {
+			return fmt.Errorf("error writing file data to ~/.swarmctl/%s.goyaml: %w", component, err)
+		}
 
 		return nil
 	},
@@ -46,25 +68,4 @@ var dumpCmd = &cobra.Command{
 func init() {
 	manifestCmd.AddCommand(dumpCmd)
 	dumpCmd.Flags().BoolP("stdout", "", false, "Output to stdout")
-}
-
-//-----------------------------------------------------------------------------
-// dumpFileToStdout
-//-----------------------------------------------------------------------------
-
-func dumpFileToStdout(filename string) error {
-
-	// Open the file from the embedded file system
-	fileData, err := Assets.ReadFile(filename)
-	if err != nil {
-		return fmt.Errorf("error reading file from embedded FS: %w", err)
-	}
-
-	// Write the contents to stdout
-	_, err = io.Copy(os.Stdout, bytes.NewReader(fileData))
-	if err != nil {
-		return fmt.Errorf("error writing file data to stdout: %w", err)
-	}
-
-	return nil
 }

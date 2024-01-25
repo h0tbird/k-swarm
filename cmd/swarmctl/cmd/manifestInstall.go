@@ -3,7 +3,7 @@ package cmd
 import "github.com/spf13/cobra"
 
 //-----------------------------------------------------------------------------
-// installCmd represents the install command
+// installCmd
 //-----------------------------------------------------------------------------
 
 var installCmd = &cobra.Command{
