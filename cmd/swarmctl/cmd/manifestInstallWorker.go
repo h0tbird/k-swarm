@@ -49,7 +49,7 @@ var installWorkerCmd = &cobra.Command{
 		}
 
 		// Loop through all clientsets
-		for clientset := range clientsets {
+		for _, clientset := range clientsets {
 
 			// Loop trough all services
 			for i := start; i <= end; i++ {
@@ -67,8 +67,10 @@ var installWorkerCmd = &cobra.Command{
 				}
 
 				// Loop through all yaml documents
-				for index := range docs {
-					fmt.Printf("Context: %s, Service: %d, Yaml: %d\n", clientset, i, index)
+				for _, doc := range docs {
+					if err := util.ApplyYaml(clientset, doc); err != nil {
+						panic(err)
+					}
 				}
 			}
 		}

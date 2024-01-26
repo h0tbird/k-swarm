@@ -5,6 +5,7 @@ import (
 	// Stdlib
 	"bytes"
 	"embed"
+	"fmt"
 	"html/template"
 	"os"
 	"path/filepath"
@@ -12,6 +13,7 @@ import (
 	"strings"
 
 	// Community
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 )
 
@@ -151,4 +153,17 @@ func RenderTemplate(tmpl *template.Template, data any) ([]string, error) {
 
 	// Return
 	return docs, nil
+}
+
+//-----------------------------------------------------------------------------
+// ApplyYaml
+//-----------------------------------------------------------------------------
+
+func ApplyYaml(clientset *kubernetes.Clientset, yaml string) error {
+
+	// Print what we're doing
+	fmt.Println("Applying YAML to cluster...")
+
+	// Return
+	return nil
 }

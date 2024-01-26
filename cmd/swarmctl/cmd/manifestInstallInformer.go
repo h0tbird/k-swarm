@@ -3,7 +3,6 @@ package cmd
 import (
 
 	// Stdlib
-	"fmt"
 
 	// Community
 	"github.com/spf13/cobra"
@@ -31,7 +30,7 @@ var installInformerCmd = &cobra.Command{
 		}
 
 		// Loop through all clientsets
-		for clientset := range clientsets {
+		for _, clientset := range clientsets {
 
 			// Render the template
 			docs, err := util.RenderTemplate(tmpl, struct {
@@ -44,8 +43,10 @@ var installInformerCmd = &cobra.Command{
 			}
 
 			// Loop through all yaml documents
-			for index := range docs {
-				fmt.Printf("Context: %s, Yaml: %d\n", clientset, index)
+			for _, doc := range docs {
+				if err := util.ApplyYaml(clientset, doc); err != nil {
+					panic(err)
+				}
 			}
 		}
 	},
