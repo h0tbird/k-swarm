@@ -10,6 +10,8 @@ import (
 	// Community
 	"github.com/octoroot/swarm/cmd/swarmctl/pkg/util"
 	"github.com/spf13/cobra"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/tools/clientcmd"
 )
 
 //-----------------------------------------------------------------------------
@@ -17,9 +19,9 @@ import (
 //-----------------------------------------------------------------------------
 
 var (
-	Assets   embed.FS
-	contexts []string
-	homeDir  string
+	Assets     embed.FS
+	contexts   []string
+	clientsets map[string]*kubernetes.Clientset
 )
 
 //-----------------------------------------------------------------------------
@@ -59,6 +61,9 @@ func init() {
 	// Execute the pre-run before every command Run call
 	rootCmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
 
+		// Initialize the map
+		clientsets = make(map[string]*kubernetes.Clientset)
+
 		// Get the regex
 		regex, err := cmd.Flags().GetString("context")
 		if err != nil {
@@ -66,19 +71,37 @@ func init() {
 		}
 
 		// Get the contexts that match the regex
-		contexts, err = util.GetKubeContexts(regex)
+		contexts, err = util.FilterKubeContexts(regex)
 		if err != nil {
 			return err
 		}
 
-		return nil
-	}
+		// For every context
+		for _, context := range contexts {
 
-	// Get the home directory
-	var err error
-	homeDir, err = os.UserHomeDir()
-	if err != nil {
-		panic(err)
+			// Print the context
+			cmd.Println(context)
+
+			// Create a config from the context
+			config, err := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(
+				&clientcmd.ClientConfigLoadingRules{ExplicitPath: util.HomeDir + "/.kube/config"},
+				&clientcmd.ConfigOverrides{CurrentContext: context},
+			).ClientConfig()
+			if err != nil {
+				return err
+			}
+
+			// Create a clientset from the config
+			clientset, err := kubernetes.NewForConfig(config)
+			if err != nil {
+				return err
+			}
+
+			// Store the clientset in the map
+			clientsets[context] = clientset
+		}
+
+		return nil
 	}
 }
 
@@ -89,7 +112,7 @@ func init() {
 func contextCompletionFunc(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 
 	// Get the contexts
-	contexts, err := util.GetKubeContexts("")
+	contexts, err := util.ListKubeContexts()
 	if err != nil {
 		panic(err)
 	}

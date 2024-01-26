@@ -8,6 +8,9 @@ import (
 
 	// Community
 	"github.com/spf13/cobra"
+
+	// Local
+	"github.com/octoroot/swarm/cmd/swarmctl/pkg/util"
 )
 
 //-----------------------------------------------------------------------------
@@ -34,7 +37,7 @@ func init() {
 func parseTemplate(component string) *template.Template {
 
 	// Check if the file exists
-	_, err := os.Stat(homeDir + "/.swarmctl/" + component + ".goyaml")
+	_, err := os.Stat(util.SwarmDir + "/" + component + ".goyaml")
 
 	// If it doesn't exist, use the embedded template
 	if os.IsNotExist(err) {
@@ -42,5 +45,5 @@ func parseTemplate(component string) *template.Template {
 	}
 
 	// Otherwise, use the file
-	return template.Must(template.ParseFiles(homeDir + "/.swarmctl/" + component + ".goyaml"))
+	return template.Must(template.ParseFiles(util.SwarmDir + "/" + component + ".goyaml"))
 }

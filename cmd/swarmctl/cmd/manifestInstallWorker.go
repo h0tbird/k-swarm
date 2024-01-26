@@ -16,9 +16,7 @@ var installWorkerCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 
 		// TODO: Do something
-		for _, context := range contexts {
-			cmd.Println(context)
-		}
+		cmd.Println("worker")
 	},
 }
 

@@ -11,43 +11,83 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
-//-------------------------------------------------------------------------
-// GetKubeContexts returns a list of contexts that match the given regex.
-//-------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+// Globals
+//-----------------------------------------------------------------------------
 
-func GetKubeContexts(regex string) ([]string, error) {
+var (
+	HomeDir  string
+	SwarmDir string
+)
+
+//-----------------------------------------------------------------------------
+// init
+//-----------------------------------------------------------------------------
+
+func init() {
+
+	var err error
 
 	// Get the user's home directory
-	homeDir, err := os.UserHomeDir()
+	HomeDir, err = os.UserHomeDir()
 	if err != nil {
-		return nil, err
+		panic(err)
 	}
 
+	// Set the swarm directory
+	SwarmDir = filepath.Join(HomeDir, ".swarmctl")
+}
+
+//-----------------------------------------------------------------------------
+// ListKubeContexts
+//-----------------------------------------------------------------------------
+
+func ListKubeContexts() ([]string, error) {
+
 	// Load the kubeconfig file
-	config, err := clientcmd.LoadFromFile(filepath.Join(homeDir, ".kube", "config"))
+	config, err := clientcmd.LoadFromFile(filepath.Join(HomeDir, ".kube", "config"))
 	if err != nil {
 		return nil, err
 	}
 
 	// Iterate over the contexts
-	var matchingContexts []string
+	var contexts []string
 	for context := range config.Contexts {
+		contexts = append(contexts, context)
+	}
 
-		// Check if the regex is empty or matches the context
-		if regex == "" || context == regex {
+	// Return the contexts.
+	return contexts, nil
+}
+
+//-------------------------------------------------------------------------
+// FilterKubeContexts
+//-------------------------------------------------------------------------
+
+func FilterKubeContexts(regex string) ([]string, error) {
+
+	// Variables
+	var matchingContexts []string
+
+	// Return empty list if regex is empty
+	if regex == "" {
+		return matchingContexts, nil
+	}
+
+	// List the contexts
+	contexts, err := ListKubeContexts()
+	if err != nil {
+		return nil, err
+	}
+
+	// Iterate over the contexts
+	for _, context := range contexts {
+
+		// If the context matches the regex
+		if match, err := regexp.MatchString(regex, context); match && err == nil {
 			matchingContexts = append(matchingContexts, context)
-			continue
-		}
-
-		// Check if the regex matches the context
-		match, err := regexp.MatchString(regex, context)
-		if err != nil {
+		} else if err != nil {
 			return nil, err
-		}
-
-		// If the regex matches the context, add it to the slice
-		if match {
-			matchingContexts = append(matchingContexts, context)
 		}
 	}
 

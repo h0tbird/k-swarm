@@ -10,6 +10,9 @@ import (
 
 	// Community
 	"github.com/spf13/cobra"
+
+	// Local
+	"github.com/octoroot/swarm/cmd/swarmctl/pkg/util"
 )
 
 //-----------------------------------------------------------------------------
@@ -36,7 +39,7 @@ var dumpCmd = &cobra.Command{
 
 		// Create ~/.swarmctl
 		if !stdout {
-			if err := os.MkdirAll(homeDir+"/.swarmctl", 0755); err != nil {
+			if err := os.MkdirAll(util.SwarmDir, 0755); err != nil {
 				return fmt.Errorf("error creating ~/.swarmctl: %w", err)
 			}
 		}
@@ -60,7 +63,7 @@ var dumpCmd = &cobra.Command{
 			}
 
 			// Write the contents to ~/.swarmctl/<component>.goyaml
-			if err := os.WriteFile(homeDir+"/.swarmctl/"+component+".goyaml", fileData, 0644); err != nil {
+			if err := os.WriteFile(util.SwarmDir+"/"+component+".goyaml", fileData, 0644); err != nil {
 				return fmt.Errorf("error writing file data to ~/.swarmctl/%s.goyaml: %w", component, err)
 			}
 
