@@ -9,6 +9,9 @@ import (
 
 	// Community
 	"github.com/spf13/cobra"
+
+	// Local
+	"github.com/octoroot/swarm/cmd/swarmctl/pkg/util"
 )
 
 //-------------------------------------------------------------------------
@@ -16,15 +19,12 @@ import (
 //-------------------------------------------------------------------------
 
 var generateWorkerCmd = &cobra.Command{
-	Use:   "worker [start:end]",
+	Use:   "worker <start:end>",
 	Short: "Outputs worker manifests.",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 
-		// Parse embeded template using ParseFS
-		tmpl := parseTemplate("worker")
-
-		// Get the replicas flag
+		// Get all the flags
 		replicas, _ := cmd.Flags().GetInt("replicas")
 
 		// Split args[0] into start and end
@@ -40,6 +40,12 @@ var generateWorkerCmd = &cobra.Command{
 		if err1 != nil || err2 != nil {
 			fmt.Println("Invalid range. Both start and end should be integers.")
 			return
+		}
+
+		// Parse the template
+		tmpl, err := util.ParseTemplate(Assets, "worker")
+		if err != nil {
+			panic(err)
 		}
 
 		// Loop from start to end

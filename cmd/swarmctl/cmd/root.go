@@ -82,7 +82,7 @@ func init() {
 		}
 
 		// Print
-		cmd.Println("Used contexts:")
+		cmd.Println("\nMatched contexts:")
 
 		// For every context
 		for _, context := range contexts {
@@ -110,8 +110,8 @@ func init() {
 		}
 
 		// A chance to cancel
-		cmd.Println("\nSleeping 2 seconds...")
-		time.Sleep(2 * time.Second)
+		cmd.Println("\nStarting in 3 seconds...")
+		time.Sleep(3 * time.Second)
 
 		// Return
 		return nil

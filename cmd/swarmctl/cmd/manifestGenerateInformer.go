@@ -1,8 +1,12 @@
 package cmd
 
 import (
+
 	// Community
 	"github.com/spf13/cobra"
+
+	// Local
+	"github.com/octoroot/swarm/cmd/swarmctl/pkg/util"
 )
 
 //-----------------------------------------------------------------------------
@@ -14,11 +18,14 @@ var generateInformerCmd = &cobra.Command{
 	Short: "Outputs informer manifests.",
 	Run: func(cmd *cobra.Command, args []string) {
 
-		// Parse the template
-		tmpl := parseTemplate("informer")
-
-		// Get the replicas flag
+		// Get all the flags
 		replicas, _ := cmd.Flags().GetInt("replicas")
+
+		// Parse the template
+		tmpl, err := util.ParseTemplate(Assets, "informer")
+		if err != nil {
+			panic(err)
+		}
 
 		// Render the template
 		tmpl.Execute(cmd.OutOrStdout(), struct {

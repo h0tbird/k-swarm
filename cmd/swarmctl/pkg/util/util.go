@@ -3,9 +3,13 @@ package util
 import (
 
 	// Stdlib
+	"bytes"
+	"embed"
+	"html/template"
 	"os"
 	"path/filepath"
 	"regexp"
+	"strings"
 
 	// Community
 	"k8s.io/client-go/tools/clientcmd"
@@ -93,4 +97,58 @@ func FilterKubeContexts(regex string) ([]string, error) {
 
 	// Return the matching contexts.
 	return matchingContexts, nil
+}
+
+//-----------------------------------------------------------------------------
+// ParseTemplate
+//-----------------------------------------------------------------------------
+
+func ParseTemplate(assets embed.FS, component string) (*template.Template, error) {
+
+	// Variables
+	var tmpl *template.Template
+	var err error
+
+	// Check for the ~/.swarmctl/<component>.goyaml file
+	_, err = os.Stat(SwarmDir + "/" + component + ".goyaml")
+
+	// Use the embedded template
+	if os.IsNotExist(err) {
+		tmpl, err = template.ParseFS(assets, "assets/"+component+".goyaml")
+		if err != nil {
+			return nil, err
+		}
+	} else if err == nil {
+		tmpl, err = template.ParseFiles(SwarmDir + "/" + component + ".goyaml")
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	// Return
+	return tmpl, nil
+}
+
+//-----------------------------------------------------------------------------
+// RenderTemplate
+//-----------------------------------------------------------------------------
+
+func RenderTemplate(tmpl *template.Template, data any) ([]string, error) {
+
+	// Render the template
+	var buf bytes.Buffer
+	if err := tmpl.Execute(&buf, data); err != nil {
+		return nil, err
+	}
+
+	// Split the YAML into docs
+	var docs []string
+	for _, doc := range strings.Split(buf.String(), "---") {
+		if strings.TrimSpace(doc) != "" {
+			docs = append(docs, doc)
+		}
+	}
+
+	// Return
+	return docs, nil
 }
