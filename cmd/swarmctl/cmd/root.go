@@ -20,7 +20,6 @@ import (
 
 var (
 	Assets     embed.FS
-	contexts   []string
 	clientsets map[string]*kubernetes.Clientset
 )
 
@@ -71,7 +70,7 @@ func init() {
 		}
 
 		// Get the contexts that match the regex
-		contexts, err = util.FilterKubeContexts(regex)
+		contexts, err := util.FilterKubeContexts(regex)
 		if err != nil {
 			return err
 		}
