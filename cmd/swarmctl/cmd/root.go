@@ -6,6 +6,7 @@ import (
 	"embed"
 	"os"
 	"strings"
+	"time"
 
 	// Community
 	"github.com/octoroot/swarm/cmd/swarmctl/pkg/util"
@@ -60,6 +61,11 @@ func init() {
 	// Execute the pre-run before every command Run call
 	rootCmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
 
+		// Return early if the command is a completion command
+		if cmd.CalledAs() == "__complete" || strings.Contains(cmd.CommandPath(), "completion") {
+			return nil
+		}
+
 		// Initialize the map
 		clientsets = make(map[string]*kubernetes.Clientset)
 
@@ -75,11 +81,14 @@ func init() {
 			return err
 		}
 
+		// Print
+		cmd.Println("Used contexts:")
+
 		// For every context
 		for _, context := range contexts {
 
-			// Print the context
-			cmd.Println(context)
+			// Print the context indented
+			cmd.Printf("  - %s\n", context)
 
 			// Create a config from the context
 			config, err := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(
@@ -100,6 +109,11 @@ func init() {
 			clientsets[context] = clientset
 		}
 
+		// A chance to cancel
+		cmd.Println("\nSleeping 2 seconds...")
+		time.Sleep(2 * time.Second)
+
+		// Return
 		return nil
 	}
 }
