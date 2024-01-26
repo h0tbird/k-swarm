@@ -48,19 +48,28 @@ var installWorkerCmd = &cobra.Command{
 			panic(err)
 		}
 
-		// Loop from start to end
-		for i := start; i <= end; i++ {
+		// Loop through all clientsets
+		for clientset := range clientsets {
 
-			// Render the template
-			_, err = util.RenderTemplate(tmpl, struct {
-				Replicas  int
-				Namespace string
-			}{
-				Replicas:  replicas,
-				Namespace: fmt.Sprintf("service-%d", i),
-			})
-			if err != nil {
-				panic(err)
+			// Loop trough all services
+			for i := start; i <= end; i++ {
+
+				// Render the template
+				docs, err := util.RenderTemplate(tmpl, struct {
+					Replicas  int
+					Namespace string
+				}{
+					Replicas:  replicas,
+					Namespace: fmt.Sprintf("service-%d", i),
+				})
+				if err != nil {
+					panic(err)
+				}
+
+				// Loop through all yaml documents
+				for index := range docs {
+					fmt.Printf("Context: %s, Service: %d, Yaml: %d\n", clientset, i, index)
+				}
 			}
 		}
 	},
