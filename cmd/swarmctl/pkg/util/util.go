@@ -4,6 +4,7 @@ import (
 
 	// Stdlib
 	"bytes"
+	"context"
 	"embed"
 	"fmt"
 	"html/template"
@@ -13,7 +14,14 @@ import (
 	"strings"
 
 	// Community
-	"k8s.io/client-go/kubernetes"
+	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/runtime/serializer/yaml"
+	"k8s.io/client-go/discovery"
+	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 )
 
@@ -25,6 +33,11 @@ var (
 	HomeDir  string
 	SwarmDir string
 )
+
+type Client struct {
+	dyn *dynamic.DynamicClient
+	dis *discovery.DiscoveryClient
+}
 
 //-----------------------------------------------------------------------------
 // init
@@ -156,13 +169,110 @@ func RenderTemplate(tmpl *template.Template, data any) ([]string, error) {
 }
 
 //-----------------------------------------------------------------------------
+// GetClient
+//-----------------------------------------------------------------------------
+
+func GetClient(config *rest.Config) (*Client, error) {
+
+	// Create a dynamic client
+	dynCli, err := dynamic.NewForConfig(config)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create a discovery client
+	disCli, err := discovery.NewDiscoveryClientForConfig(config)
+	if err != nil {
+		return nil, err
+	}
+
+	// Return
+	return &Client{
+		dyn: dynCli,
+		dis: disCli,
+	}, nil
+}
+
+//-----------------------------------------------------------------------------
 // ApplyYaml
 //-----------------------------------------------------------------------------
 
-func ApplyYaml(clientset *kubernetes.Clientset, yaml string) error {
+func ApplyYaml(client *Client, doc string) error {
 
-	// Print what we're doing
-	fmt.Println("Applying YAML to cluster...")
+	// Decode the YAML to an unstructured object
+	decUnstructured := yaml.NewDecodingSerializer(unstructured.UnstructuredJSONScheme)
+	obj := &unstructured.Unstructured{}
+	_, gvk, err := decUnstructured.Decode([]byte(doc), nil, obj)
+	if err != nil {
+		return err
+	}
+
+	// Set the group version
+	var groupVersion string
+	if gvk.Group == "" {
+		groupVersion = gvk.Version
+	} else {
+		groupVersion = gvk.Group + "/" + gvk.Version
+	}
+
+	// Get the resource list
+	resourceList, err := client.dis.ServerResourcesForGroupVersion(groupVersion)
+	if err != nil {
+		return fmt.Errorf("unable to get server resources for group version %s: %v", groupVersion, err)
+	}
+
+	// Find the correct resource
+	var resource *metav1.APIResource
+	for _, r := range resourceList.APIResources {
+		if r.Kind == gvk.Kind {
+			resource = &r
+			break
+		}
+	}
+
+	// Return an error if the resource was not found
+	if resource == nil {
+		return fmt.Errorf("resource type not found")
+	}
+
+	// Create the GVR
+	gvr := schema.GroupVersionResource{
+		Group:    gvk.Group,
+		Version:  gvk.Version,
+		Resource: resource.Name,
+	}
+
+	// Set the namespace
+	namespace := obj.GetNamespace()
+	if namespace == "" {
+		namespace = "default"
+	}
+
+	// Cluster-scoped resources
+	if !resource.Namespaced {
+		foo := client.dyn.Resource(gvr)
+		if _, err = foo.Get(context.TODO(), obj.GetName(), metav1.GetOptions{}); errors.IsNotFound(err) {
+			fmt.Printf("resource %s not found, creating\n", obj.GetName())
+			if _, err = foo.Create(context.TODO(), obj, metav1.CreateOptions{}); err != nil {
+				return fmt.Errorf("failed to create resource %s with GVR %v: %w", obj.GetName(), gvr, err)
+			}
+		} else if err != nil {
+			return fmt.Errorf("failed to get resource: %w", err)
+		}
+	}
+
+	// Namespaced resources
+	if resource.Namespaced {
+		foo := client.dyn.Resource(gvr).Namespace(namespace)
+		if _, err = foo.Get(context.TODO(), obj.GetName(), metav1.GetOptions{}); errors.IsNotFound(err) {
+			fmt.Printf("resource %s not found, creating\n", obj.GetName())
+			if _, err = foo.Create(context.TODO(), obj, metav1.CreateOptions{}); err != nil {
+				return fmt.Errorf("failed to create resource %s with GVR %v: %w", obj.GetName(), gvr, err)
+			}
+		} else if err != nil {
+			return fmt.Errorf("failed to get resource: %w", err)
+		}
+	}
 
 	// Return
 	return nil

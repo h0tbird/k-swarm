@@ -11,7 +11,7 @@ import (
 	// Community
 	"github.com/octoroot/swarm/cmd/swarmctl/pkg/util"
 	"github.com/spf13/cobra"
-	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 )
 
@@ -20,8 +20,8 @@ import (
 //-----------------------------------------------------------------------------
 
 var (
-	Assets     embed.FS
-	clientsets map[string]*kubernetes.Clientset
+	Assets  embed.FS
+	configs map[string]*rest.Config
 )
 
 //-----------------------------------------------------------------------------
@@ -67,7 +67,7 @@ func init() {
 		}
 
 		// Initialize the map
-		clientsets = make(map[string]*kubernetes.Clientset)
+		configs = make(map[string]*rest.Config)
 
 		// Get the regex
 		regex, err := cmd.Flags().GetString("context")
@@ -99,14 +99,8 @@ func init() {
 				return err
 			}
 
-			// Create a clientset from the config
-			clientset, err := kubernetes.NewForConfig(config)
-			if err != nil {
-				return err
-			}
-
-			// Store the clientset in the map
-			clientsets[context] = clientset
+			// Store the config
+			configs[context] = config
 		}
 
 		// A chance to cancel
