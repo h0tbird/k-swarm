@@ -6,23 +6,10 @@ Build and publish a multi-arch docker image:
 PUSH_IMG=h0tbird/swarm make docker-buildx
 ```
 
-Deploy the informer:
+CPU Profiling
 ```
-for CLUSTER in {1..2}; do
-  kustomize build ./config/informer | k --context little-sunshine-${CLUSTER}-admin apply -f -
-done
-```
-
-Deploy some workers:
-```
-cd config/worker
-
-for SERVICE in {1..5}; do
-  kustomize edit set namespace foo-${SERVICE}
-  for CLUSTER in {1..2}; do
-    kustomize build . | k --context little-sunshine-${CLUSTER}-admin apply -f -
-  done
-done
+swarmctl --context 'kind-foo-*' --cpu-profile informer
+go tool pprof --http localhost:3000 cpu.prof
 ```
 
 Check the workload endpoints:
