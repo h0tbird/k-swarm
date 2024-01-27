@@ -14,11 +14,11 @@ import (
 	"strings"
 
 	// Community
-	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/runtime/serializer/yaml"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/rest"
@@ -251,27 +251,19 @@ func ApplyYaml(client *Client, doc string) error {
 	// Cluster-scoped resources
 	if !resource.Namespaced {
 		foo := client.dyn.Resource(gvr)
-		if _, err = foo.Get(context.TODO(), obj.GetName(), metav1.GetOptions{}); errors.IsNotFound(err) {
-			fmt.Printf("resource %s not found, creating\n", obj.GetName())
-			if _, err = foo.Create(context.TODO(), obj, metav1.CreateOptions{}); err != nil {
-				return fmt.Errorf("failed to create resource %s with GVR %v: %w", obj.GetName(), gvr, err)
-			}
-		} else if err != nil {
-			return fmt.Errorf("failed to get resource: %w", err)
+		if _, err = foo.Patch(context.TODO(), obj.GetName(), types.ApplyPatchType, []byte(doc), metav1.PatchOptions{FieldManager: "swarmctl-manager"}); err != nil {
+			return fmt.Errorf("failed to create resource %s with GVR %v: %w", obj.GetName(), gvr, err)
 		}
+		fmt.Printf("%s/%s serverside-applied\n", resource.Kind, obj.GetName())
 	}
 
 	// Namespaced resources
 	if resource.Namespaced {
 		foo := client.dyn.Resource(gvr).Namespace(namespace)
-		if _, err = foo.Get(context.TODO(), obj.GetName(), metav1.GetOptions{}); errors.IsNotFound(err) {
-			fmt.Printf("resource %s not found, creating\n", obj.GetName())
-			if _, err = foo.Create(context.TODO(), obj, metav1.CreateOptions{}); err != nil {
-				return fmt.Errorf("failed to create resource %s with GVR %v: %w", obj.GetName(), gvr, err)
-			}
-		} else if err != nil {
-			return fmt.Errorf("failed to get resource: %w", err)
+		if _, err = foo.Patch(context.TODO(), obj.GetName(), types.ApplyPatchType, []byte(doc), metav1.PatchOptions{FieldManager: "swarmctl-manager"}); err != nil {
+			return fmt.Errorf("failed to apply resource %s with GVR %v: %w", obj.GetName(), gvr, err)
 		}
+		fmt.Printf("%s/%s serverside-applied\n", resource.Kind, obj.GetName())
 	}
 
 	// Return
