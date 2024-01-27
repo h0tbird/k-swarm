@@ -19,8 +19,13 @@ import (
 //-----------------------------------------------------------------------------
 
 var (
-	Assets  embed.FS
-	configs map[string]*rest.Config
+	Assets         embed.FS
+	configs        map[string]*rest.Config
+	ctxRegex       string
+	cpuProfile     bool
+	memProfile     bool
+	cpuProfileFile string
+	memProfileFile string
 )
 
 //-----------------------------------------------------------------------------
@@ -47,11 +52,16 @@ func Execute() error {
 
 func init() {
 
-	// Register the context flag completion function
-	if rootCmd.PersistentFlags().String("context", "", "Regex to match the context name.") != nil {
-		if err := rootCmd.RegisterFlagCompletionFunc("context", contextCompletionFunc); err != nil {
-			panic(err)
-		}
+	// Profiling flags
+	rootCmd.PersistentFlags().BoolVar(&cpuProfile, "cpu-profile", false, "write cpu profile to file")
+	rootCmd.PersistentFlags().BoolVar(&memProfile, "mem-profile", false, "write memory profile to file")
+	rootCmd.PersistentFlags().StringVar(&cpuProfileFile, "cpu-profile-file", "cpu.prof", "write cpu profile to file")
+	rootCmd.PersistentFlags().StringVar(&memProfileFile, "mem-profile-file", "mem.prof", "write memory profile to file")
+
+	// Context flag
+	rootCmd.PersistentFlags().StringVar(&ctxRegex, "context", "", "regex to match the context name.")
+	if err := rootCmd.RegisterFlagCompletionFunc("context", contextCompletionFunc); err != nil {
+		panic(err)
 	}
 
 	// Execute the pre-run before every command Run call
@@ -65,14 +75,8 @@ func init() {
 		// Initialize the map
 		configs = make(map[string]*rest.Config)
 
-		// Get the regex
-		regex, err := cmd.Flags().GetString("context")
-		if err != nil {
-			return err
-		}
-
 		// Get the contexts that match the regex
-		contexts, err := util.FilterKubeContexts(regex)
+		contexts, err := util.FilterKubeContexts(ctxRegex)
 		if err != nil {
 			return err
 		}
