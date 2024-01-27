@@ -8,7 +8,7 @@ PUSH_IMG=h0tbird/swarm make docker-buildx
 
 CPU Profiling
 ```
-swarmctl --context 'kind-foo-*' --cpu-profile informer
+swarmctl --context 'kind-foo-*' --cpu-profile worker 1:30
 go tool pprof --http localhost:3000 cpu.prof
 ```
 

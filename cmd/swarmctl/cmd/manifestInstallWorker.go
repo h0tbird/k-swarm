@@ -53,7 +53,10 @@ var installWorkerCmd = &cobra.Command{
 		}
 
 		// Loop through all configs
-		for _, config := range configs {
+		for context, config := range configs {
+
+			// Print the context
+			fmt.Printf("\n%s\n", context)
 
 			// Get the clients
 			client, err := util.GetClient(config)
@@ -63,6 +66,8 @@ var installWorkerCmd = &cobra.Command{
 
 			// Loop trough all services
 			for i := start; i <= end; i++ {
+
+				fmt.Printf("\n")
 
 				// Render the template
 				docs, err := util.RenderTemplate(tmpl, struct {

@@ -7,6 +7,8 @@ package cmd
 import (
 
 	// Community
+	"fmt"
+
 	"github.com/spf13/cobra"
 
 	// Local
@@ -32,7 +34,10 @@ var installInformerCmd = &cobra.Command{
 		}
 
 		// Loop through all configs
-		for _, config := range configs {
+		for context, config := range configs {
+
+			// Print the context
+			fmt.Printf("\n%s\n\n", context)
 
 			// Get the clients
 			client, err := util.GetClient(config)

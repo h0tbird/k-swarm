@@ -255,7 +255,7 @@ func ApplyYaml(client *Client, doc string) error {
 		if _, err = foo.Patch(context.TODO(), obj.GetName(), types.ApplyPatchType, []byte(doc), metav1.PatchOptions{FieldManager: "swarmctl-manager", Force: pointer.Bool(true)}); err != nil {
 			return fmt.Errorf("failed to create resource %s with GVR %v: %w", obj.GetName(), gvr, err)
 		}
-		fmt.Printf("%s/%s serverside-applied\n", resource.Kind, obj.GetName())
+		fmt.Printf("  - %s/%s serverside-applied\n", resource.Kind, obj.GetName())
 	}
 
 	// Namespaced resources
@@ -264,7 +264,7 @@ func ApplyYaml(client *Client, doc string) error {
 		if _, err = foo.Patch(context.TODO(), obj.GetName(), types.ApplyPatchType, []byte(doc), metav1.PatchOptions{FieldManager: "swarmctl-manager", Force: pointer.Bool(true)}); err != nil {
 			return fmt.Errorf("failed to apply resource %s with GVR %v: %w", obj.GetName(), gvr, err)
 		}
-		fmt.Printf("%s/%s serverside-applied\n", resource.Kind, obj.GetName())
+		fmt.Printf("  - %s/%s serverside-applied\n", resource.Kind, obj.GetName())
 	}
 
 	// Return
