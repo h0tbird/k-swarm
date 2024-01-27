@@ -1,5 +1,9 @@
 package cmd
 
+//-----------------------------------------------------------------------------
+// Imports
+//-----------------------------------------------------------------------------
+
 import (
 
 	// Stdlib
@@ -20,7 +24,7 @@ import (
 
 var (
 	Assets         embed.FS
-	configs        map[string]*rest.Config
+	configs        = map[string]*rest.Config{}
 	ctxRegex       string
 	cpuProfile     bool
 	memProfile     bool
@@ -35,45 +39,12 @@ var (
 var rootCmd = &cobra.Command{
 	Use:   "swarmctl",
 	Short: "swarmctl controls the swarm",
-}
-
-//-----------------------------------------------------------------------------
-// Execute adds all child commands to the root command and sets flags appropriately.
-// This is called by main.main(). It only needs to happen once to the rootCmd.
-//-----------------------------------------------------------------------------
-
-func Execute() error {
-	return rootCmd.Execute()
-}
-
-//-----------------------------------------------------------------------------
-// init
-//-----------------------------------------------------------------------------
-
-func init() {
-
-	// Profiling flags
-	rootCmd.PersistentFlags().BoolVar(&cpuProfile, "cpu-profile", false, "write cpu profile to file")
-	rootCmd.PersistentFlags().BoolVar(&memProfile, "mem-profile", false, "write memory profile to file")
-	rootCmd.PersistentFlags().StringVar(&cpuProfileFile, "cpu-profile-file", "cpu.prof", "write cpu profile to file")
-	rootCmd.PersistentFlags().StringVar(&memProfileFile, "mem-profile-file", "mem.prof", "write memory profile to file")
-
-	// Context flag
-	rootCmd.PersistentFlags().StringVar(&ctxRegex, "context", "", "regex to match the context name.")
-	if err := rootCmd.RegisterFlagCompletionFunc("context", contextCompletionFunc); err != nil {
-		panic(err)
-	}
-
-	// Execute the pre-run before every command Run call
-	rootCmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
+	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 
 		// Return early if the command is a completion command
 		if cmd.CalledAs() == "__complete" || strings.Contains(cmd.CommandPath(), "completion") {
 			return nil
 		}
-
-		// Initialize the map
-		configs = make(map[string]*rest.Config)
 
 		// Get the contexts that match the regex
 		contexts, err := util.FilterKubeContexts(ctxRegex)
@@ -109,6 +80,34 @@ func init() {
 
 		// Return
 		return nil
+	},
+}
+
+//-----------------------------------------------------------------------------
+// Execute adds all child commands to the root command and sets flags appropriately.
+// This is called by main.main(). It only needs to happen once to the rootCmd.
+//-----------------------------------------------------------------------------
+
+func Execute() error {
+	return rootCmd.Execute()
+}
+
+//-----------------------------------------------------------------------------
+// init
+//-----------------------------------------------------------------------------
+
+func init() {
+
+	// Profiling flags
+	rootCmd.PersistentFlags().BoolVar(&cpuProfile, "cpu-profile", false, "write cpu profile to file")
+	rootCmd.PersistentFlags().BoolVar(&memProfile, "mem-profile", false, "write memory profile to file")
+	rootCmd.PersistentFlags().StringVar(&cpuProfileFile, "cpu-profile-file", "cpu.prof", "write cpu profile to file")
+	rootCmd.PersistentFlags().StringVar(&memProfileFile, "mem-profile-file", "mem.prof", "write memory profile to file")
+
+	// Context flag
+	rootCmd.PersistentFlags().StringVar(&ctxRegex, "context", "", "regex to match the context name.")
+	if err := rootCmd.RegisterFlagCompletionFunc("context", contextCompletionFunc); err != nil {
+		panic(err)
 	}
 }
 
