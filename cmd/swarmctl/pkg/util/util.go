@@ -11,6 +11,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"runtime/trace"
 	"strings"
 
 	// Community
@@ -199,6 +200,9 @@ func GetClient(config *rest.Config) (*Client, error) {
 //-----------------------------------------------------------------------------
 
 func ApplyYaml(client *Client, doc string) error {
+
+	// Start a trace region
+	defer trace.StartRegion(context.TODO(), "ApplyYaml").End()
 
 	// Decode the YAML to an unstructured object
 	decUnstructured := yaml.NewDecodingSerializer(unstructured.UnstructuredJSONScheme)

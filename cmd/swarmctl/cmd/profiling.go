@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"os"
 	"runtime/pprof"
+	"runtime/trace"
 	"sync"
 )
 
@@ -40,7 +41,10 @@ func startProfiling() func() {
 		}
 	}
 
+	//---------------
 	// CPU profiling
+	//---------------
+
 	if cpuProfile {
 
 		fmt.Println("cpu profile enabled")
@@ -67,7 +71,10 @@ func startProfiling() func() {
 		})
 	}
 
+	//------------------
 	// Memory profiling
+	//------------------
+
 	if memProfile {
 
 		fmt.Println("memory profile enabled")
@@ -79,11 +86,48 @@ func startProfiling() func() {
 			return stop
 		}
 
+		// Start profiling
+		err = pprof.WriteHeapProfile(f)
+		if err != nil {
+			fmt.Println("could not start memory profiling")
+			return stop
+		}
+
 		// Add function to stop memory profiling to doOnStop list
 		doOnStop = append(doOnStop, func() {
 			_ = pprof.WriteHeapProfile(f)
 			_ = f.Close()
 			fmt.Println("memory profile stopped")
+		})
+	}
+
+	//---------
+	// Tracing
+	//---------
+
+	if tracing {
+
+		fmt.Println("tracing enabled")
+
+		// Create tracing file
+		f, err := os.Create(tracingFile)
+		if err != nil {
+			fmt.Println("could not create tracing file")
+			return stop
+		}
+
+		// Start tracing
+		err = trace.Start(f)
+		if err != nil {
+			fmt.Println("could not start tracing")
+			return stop
+		}
+
+		// Add function to stop tracing to doOnStop list
+		doOnStop = append(doOnStop, func() {
+			trace.Stop()
+			_ = f.Close()
+			fmt.Println("tracing stopped")
 		})
 	}
 

@@ -28,8 +28,10 @@ var (
 	ctxRegex       string
 	cpuProfile     bool
 	memProfile     bool
+	tracing        bool
 	cpuProfileFile string
 	memProfileFile string
+	tracingFile    string
 )
 
 //-----------------------------------------------------------------------------
@@ -105,8 +107,10 @@ func init() {
 	// Profiling flags
 	rootCmd.PersistentFlags().BoolVar(&cpuProfile, "cpu-profile", false, "write cpu profile to file")
 	rootCmd.PersistentFlags().BoolVar(&memProfile, "mem-profile", false, "write memory profile to file")
-	rootCmd.PersistentFlags().StringVar(&cpuProfileFile, "cpu-profile-file", "cpu.prof", "write cpu profile to file")
-	rootCmd.PersistentFlags().StringVar(&memProfileFile, "mem-profile-file", "mem.prof", "write memory profile to file")
+	rootCmd.PersistentFlags().BoolVar(&tracing, "tracing", false, "write trace to file")
+	rootCmd.PersistentFlags().StringVar(&cpuProfileFile, "cpu-profile-file", "cpu.prof", "file for CPU profiling output")
+	rootCmd.PersistentFlags().StringVar(&memProfileFile, "mem-profile-file", "mem.prof", "file for memory profiling output")
+	rootCmd.PersistentFlags().StringVar(&tracingFile, "tracing-file", "trace.out", "file for tracing output")
 
 	// Context flag
 	rootCmd.PersistentFlags().StringVar(&ctxRegex, "context", "", "regex to match the context name.")
