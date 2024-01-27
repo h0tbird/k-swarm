@@ -248,10 +248,13 @@ func ApplyYaml(client *Client, doc string) error {
 		namespace = "default"
 	}
 
+	// Force apply requests
+	force := true
+
 	// Cluster-scoped resources
 	if !resource.Namespaced {
 		foo := client.dyn.Resource(gvr)
-		if _, err = foo.Patch(context.TODO(), obj.GetName(), types.ApplyPatchType, []byte(doc), metav1.PatchOptions{FieldManager: "swarmctl-manager"}); err != nil {
+		if _, err = foo.Patch(context.TODO(), obj.GetName(), types.ApplyPatchType, []byte(doc), metav1.PatchOptions{FieldManager: "swarmctl-manager", Force: &force}); err != nil {
 			return fmt.Errorf("failed to create resource %s with GVR %v: %w", obj.GetName(), gvr, err)
 		}
 		fmt.Printf("%s/%s serverside-applied\n", resource.Kind, obj.GetName())
@@ -260,7 +263,7 @@ func ApplyYaml(client *Client, doc string) error {
 	// Namespaced resources
 	if resource.Namespaced {
 		foo := client.dyn.Resource(gvr).Namespace(namespace)
-		if _, err = foo.Patch(context.TODO(), obj.GetName(), types.ApplyPatchType, []byte(doc), metav1.PatchOptions{FieldManager: "swarmctl-manager"}); err != nil {
+		if _, err = foo.Patch(context.TODO(), obj.GetName(), types.ApplyPatchType, []byte(doc), metav1.PatchOptions{FieldManager: "swarmctl-manager", Force: &force}); err != nil {
 			return fmt.Errorf("failed to apply resource %s with GVR %v: %w", obj.GetName(), gvr, err)
 		}
 		fmt.Printf("%s/%s serverside-applied\n", resource.Kind, obj.GetName())
