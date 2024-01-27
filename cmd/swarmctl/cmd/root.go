@@ -46,6 +46,9 @@ var rootCmd = &cobra.Command{
 			return nil
 		}
 
+		// Handle profiling
+		onStopProfiling = startProfiling()
+
 		// Get the contexts that match the regex
 		contexts, err := util.FilterKubeContexts(ctxRegex)
 		if err != nil {
@@ -89,6 +92,7 @@ var rootCmd = &cobra.Command{
 //-----------------------------------------------------------------------------
 
 func Execute() error {
+	defer stopProfiling()
 	return rootCmd.Execute()
 }
 
