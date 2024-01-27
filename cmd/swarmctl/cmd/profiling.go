@@ -26,11 +26,30 @@ var (
 
 func startProfiling() func() {
 
-	fmt.Println("Starting profiling...")
+	// doOnStop is a list of functions to be called on stop
+	var doOnStop []func()
 
-	return func() {
-		fmt.Println("Stopping profiling...")
+	// stop calls all necessary functions to stop profiling
+	stop := func() {
+		for _, d := range doOnStop {
+			if d != nil {
+				d()
+			}
+		}
 	}
+
+	// CPU profiling
+	if cpuProfile {
+		fmt.Println("cpu profile enabled")
+	}
+
+	// Memory profiling
+	if memProfile {
+		fmt.Println("memory profile enabled")
+	}
+
+	// Return
+	return stop
 }
 
 //-----------------------------------------------------------------------------
