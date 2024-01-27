@@ -2,8 +2,6 @@ package cmd
 
 import (
 
-	// Stdlib
-
 	// Community
 	"github.com/spf13/cobra"
 
