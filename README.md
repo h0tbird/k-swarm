@@ -21,9 +21,10 @@ go tool trace trace.out
 
 Benchmarking
 ```
-go test -bench=. -benchmem -memprofile old-mem.prof -cpuprofile old-cpu.prof -benchtime=100x -count=10 ./cmd/swarmctl/pkg/k8sctx | tee old-bench.txt
-go test -bench=. -benchmem -memprofile new-mem.prof -cpuprofile new-cpu.prof -benchtime=100x -count=10 ./cmd/swarmctl/pkg/k8sctx | tee new-bench.txt
-benchstat old-bench.txt new-bench.txt
+go test -bench=. -benchmem -memprofile 0-mem.prof -cpuprofile 0-cpu.prof -benchtime=100x -count=10 ./cmd/swarmctl/pkg/k8sctx | tee 0-bench.txt
+go test -bench=. -benchmem -memprofile 1-mem.prof -cpuprofile 1-cpu.prof -benchtime=100x -count=10 ./cmd/swarmctl/pkg/k8sctx | tee 1-bench.txt
+go test -bench=. -benchmem -memprofile 2-mem.prof -cpuprofile 2-cpu.prof -benchtime=100x -count=10 ./cmd/swarmctl/pkg/k8sctx | tee 2-bench.txt
+benchstat 0-bench.txt 1-bench.txt 2-bench.txt
 ```
 
 ```

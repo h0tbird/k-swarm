@@ -74,6 +74,10 @@ func New(name string) (*Context, error) {
 		return nil, err
 	}
 
+	// Set the QPS and Burst
+	config.QPS = 100
+	config.Burst = 200
+
 	// Create the dynamic client
 	dynCli, err := dynamic.NewForConfig(config)
 	if err != nil {
@@ -166,7 +170,7 @@ func (c *Context) ApplyYaml(doc string) error {
 		if _, err = foo.Patch(context.TODO(), obj.GetName(), types.ApplyPatchType, []byte(doc), metav1.PatchOptions{FieldManager: "swarmctl-manager", Force: pointer.Bool(true)}); err != nil {
 			return fmt.Errorf("failed to create resource %s with GVR %v: %w", obj.GetName(), gvr, err)
 		}
-		// fmt.Printf("  - %s/%s serverside-applied\n", resource.Kind, obj.GetName())
+		fmt.Printf("  - %s/%s serverside-applied\n", resource.Kind, obj.GetName())
 	}
 
 	// Namespaced resources
@@ -175,7 +179,7 @@ func (c *Context) ApplyYaml(doc string) error {
 		if _, err = foo.Patch(context.TODO(), obj.GetName(), types.ApplyPatchType, []byte(doc), metav1.PatchOptions{FieldManager: "swarmctl-manager", Force: pointer.Bool(true)}); err != nil {
 			return fmt.Errorf("failed to apply resource %s with GVR %v: %w", obj.GetName(), gvr, err)
 		}
-		// fmt.Printf("  - %s/%s serverside-applied\n", resource.Kind, obj.GetName())
+		fmt.Printf("  - %s/%s serverside-applied\n", resource.Kind, obj.GetName())
 	}
 
 	// Return
