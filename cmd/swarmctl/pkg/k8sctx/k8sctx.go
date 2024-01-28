@@ -122,9 +122,15 @@ func (c *Context) ApplyYaml(doc string) error {
 	}
 
 	// Get the resource list
-	resourceList, err := c.DisCli.ServerResourcesForGroupVersion(groupVersion)
-	if err != nil {
-		return fmt.Errorf("unable to get server resources for group version %s: %v", groupVersion, err)
+	resourceList, ok := c.MapGV[groupVersion]
+
+	// If the key exists
+	if !ok {
+		resourceList, err = c.DisCli.ServerResourcesForGroupVersion(groupVersion)
+		if err != nil {
+			return fmt.Errorf("unable to get server resources for group version %s: %v", groupVersion, err)
+		}
+		c.MapGV[groupVersion] = resourceList
 	}
 
 	// Find the correct resource
@@ -160,7 +166,7 @@ func (c *Context) ApplyYaml(doc string) error {
 		if _, err = foo.Patch(context.TODO(), obj.GetName(), types.ApplyPatchType, []byte(doc), metav1.PatchOptions{FieldManager: "swarmctl-manager", Force: pointer.Bool(true)}); err != nil {
 			return fmt.Errorf("failed to create resource %s with GVR %v: %w", obj.GetName(), gvr, err)
 		}
-		fmt.Printf("  - %s/%s serverside-applied\n", resource.Kind, obj.GetName())
+		// fmt.Printf("  - %s/%s serverside-applied\n", resource.Kind, obj.GetName())
 	}
 
 	// Namespaced resources
@@ -169,7 +175,7 @@ func (c *Context) ApplyYaml(doc string) error {
 		if _, err = foo.Patch(context.TODO(), obj.GetName(), types.ApplyPatchType, []byte(doc), metav1.PatchOptions{FieldManager: "swarmctl-manager", Force: pointer.Bool(true)}); err != nil {
 			return fmt.Errorf("failed to apply resource %s with GVR %v: %w", obj.GetName(), gvr, err)
 		}
-		fmt.Printf("  - %s/%s serverside-applied\n", resource.Kind, obj.GetName())
+		// fmt.Printf("  - %s/%s serverside-applied\n", resource.Kind, obj.GetName())
 	}
 
 	// Return
