@@ -52,14 +52,14 @@ var installWorkerCmd = &cobra.Command{
 			panic(err)
 		}
 
-		// Loop through all configs
-		for context, config := range configs {
+		// Loop through all contexts
+		for name, context := range contexts {
 
 			// Print the context
-			fmt.Printf("\n%s\n", context)
+			fmt.Printf("\n%s\n", name)
 
 			// Get the clients
-			client, err := util.GetClient(config)
+			client, err := util.GetClient(context.config)
 			if err != nil {
 				panic(err)
 			}

@@ -8,12 +8,14 @@ import (
 
 	// Stdlib
 	"embed"
+	"errors"
+	"fmt"
 	"strings"
-	"time"
 
 	// Community
 	"github.com/octoroot/swarm/cmd/swarmctl/pkg/util"
 	"github.com/spf13/cobra"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 )
@@ -22,9 +24,14 @@ import (
 // Globals
 //-----------------------------------------------------------------------------
 
+type context struct {
+	config *rest.Config
+	mapGV  map[string]*metav1.APIResourceList
+}
+
 var (
 	Assets         embed.FS
-	configs        = map[string]*rest.Config{}
+	contexts       = map[string]*context{}
 	ctxRegex       string
 	cpuProfile     bool
 	memProfile     bool
@@ -51,8 +58,8 @@ var rootCmd = &cobra.Command{
 		// Handle profiling
 		onStopProfiling = startProfiling()
 
-		// Get the contexts that match the regex
-		contexts, err := util.FilterKubeContexts(ctxRegex)
+		// Get the regex matches
+		matches, err := util.FilterKubeContexts(ctxRegex)
 		if err != nil {
 			return err
 		}
@@ -60,28 +67,34 @@ var rootCmd = &cobra.Command{
 		// Print
 		cmd.Println("\nMatched contexts:")
 
-		// For every context
-		for _, context := range contexts {
+		// For every match
+		for _, match := range matches {
 
-			// Print the context indented
-			cmd.Printf("  - %s\n", context)
+			// Print the context match
+			cmd.Printf("  - %s\n", match)
 
-			// Create a config from the context
+			// Create a config for this context
 			config, err := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(
 				&clientcmd.ClientConfigLoadingRules{ExplicitPath: util.HomeDir + "/.kube/config"},
-				&clientcmd.ConfigOverrides{CurrentContext: context},
+				&clientcmd.ConfigOverrides{CurrentContext: match},
 			).ClientConfig()
 			if err != nil {
 				return err
 			}
 
 			// Store the config
-			configs[context] = config
+			contexts[match].config = config
 		}
 
 		// A chance to cancel
-		cmd.Println("\nStarting in 3 seconds...")
-		time.Sleep(3 * time.Second)
+		cmd.Println("\nDo you want to continue? [y/N]")
+		var answer string
+		if _, err := fmt.Scanln(&answer); err != nil {
+			return err
+		}
+		if answer != "y" {
+			return errors.New("aborted")
+		}
 
 		// Return
 		return nil
