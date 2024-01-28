@@ -77,7 +77,7 @@ var installWorkerCmd = &cobra.Command{
 
 				// Loop through all yaml documents
 				for _, doc := range docs {
-					if err := util.ApplyYaml(context, doc); err != nil {
+					if err := context.ApplyYaml(doc); err != nil {
 						panic(err)
 					}
 				}

@@ -13,12 +13,11 @@ import (
 	"strings"
 
 	// Community
-	"github.com/octoroot/swarm/cmd/swarmctl/pkg/util"
+	"github.com/octoroot/swarm/cmd/swarmctl/pkg/k8sctx"
 	"github.com/spf13/cobra"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/discovery"
-	"k8s.io/client-go/dynamic"
-	"k8s.io/client-go/tools/clientcmd"
+
+	// Local
+	"github.com/octoroot/swarm/cmd/swarmctl/pkg/util"
 )
 
 //-----------------------------------------------------------------------------
@@ -27,7 +26,7 @@ import (
 
 var (
 	Assets         embed.FS
-	contexts       = map[string]*util.Context{}
+	contexts       = map[string]*k8sctx.Context{}
 	ctxRegex       string
 	cpuProfile     bool
 	memProfile     bool
@@ -66,26 +65,17 @@ var rootCmd = &cobra.Command{
 		// For every match
 		for _, match := range matches {
 
-			// Print the context match
+			// Print the match
 			cmd.Printf("  - %s\n", match)
 
-			// Create a config for this context
-			config, err := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(
-				&clientcmd.ClientConfigLoadingRules{ExplicitPath: util.HomeDir + "/.kube/config"},
-				&clientcmd.ConfigOverrides{CurrentContext: match},
-			).ClientConfig()
+			// Create the context
+			c, err := k8sctx.New(match)
 			if err != nil {
 				return err
 			}
 
 			// Store the config
-			contexts[match] = &util.Context{
-				Name:   match,
-				Config: config,
-				DynCli: dynamic.NewForConfigOrDie(config),
-				DisCli: discovery.NewDiscoveryClientForConfigOrDie(config),
-				MapGV:  map[string]*metav1.APIResourceList{},
-			}
+			contexts[match] = c
 		}
 
 		// A chance to cancel
