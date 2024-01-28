@@ -37,10 +37,7 @@ type Context struct {
 // Globals
 //-----------------------------------------------------------------------------
 
-var (
-	HomeDir  string
-	SwarmDir string
-)
+var SwarmDir string
 
 //-----------------------------------------------------------------------------
 // init
@@ -48,10 +45,9 @@ var (
 
 func init() {
 
-	var err error
-
 	// Get the user's home directory
-	if HomeDir, err = os.UserHomeDir(); err != nil {
+	HomeDir, err := os.UserHomeDir()
+	if err != nil {
 		panic(err)
 	}
 
