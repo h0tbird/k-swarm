@@ -58,12 +58,6 @@ var installWorkerCmd = &cobra.Command{
 			// Print the context
 			fmt.Printf("\n%s\n", name)
 
-			// Get the clients
-			client, err := util.GetClient(context.config)
-			if err != nil {
-				panic(err)
-			}
-
 			// Loop trough all services
 			for i := start; i <= end; i++ {
 
@@ -83,7 +77,7 @@ var installWorkerCmd = &cobra.Command{
 
 				// Loop through all yaml documents
 				for _, doc := range docs {
-					if err := util.ApplyYaml(client, doc); err != nil {
+					if err := util.ApplyYaml(context, doc); err != nil {
 						panic(err)
 					}
 				}

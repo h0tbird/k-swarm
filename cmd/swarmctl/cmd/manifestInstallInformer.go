@@ -39,12 +39,6 @@ var installInformerCmd = &cobra.Command{
 			// Print the context
 			fmt.Printf("\n%s\n\n", name)
 
-			// Get the clients
-			client, err := util.GetClient(context.config)
-			if err != nil {
-				panic(err)
-			}
-
 			// Render the template
 			docs, err := util.RenderTemplate(tmpl, struct {
 				Replicas int
@@ -57,7 +51,7 @@ var installInformerCmd = &cobra.Command{
 
 			// Loop through all yaml documents
 			for _, doc := range docs {
-				if err := util.ApplyYaml(client, doc); err != nil {
+				if err := util.ApplyYaml(context, doc); err != nil {
 					panic(err)
 				}
 			}

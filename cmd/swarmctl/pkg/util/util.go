@@ -28,6 +28,18 @@ import (
 )
 
 //-----------------------------------------------------------------------------
+// Typedefs
+//-----------------------------------------------------------------------------
+
+type Context struct {
+	Name   string
+	Config *rest.Config
+	DynCli *dynamic.DynamicClient
+	DisCli *discovery.DiscoveryClient
+	MapGV  map[string]*metav1.APIResourceList
+}
+
+//-----------------------------------------------------------------------------
 // Globals
 //-----------------------------------------------------------------------------
 
@@ -171,35 +183,10 @@ func RenderTemplate(tmpl *template.Template, data any) ([]string, error) {
 }
 
 //-----------------------------------------------------------------------------
-// GetClient
-//-----------------------------------------------------------------------------
-
-func GetClient(config *rest.Config) (*Client, error) {
-
-	// Create a dynamic client
-	dynCli, err := dynamic.NewForConfig(config)
-	if err != nil {
-		return nil, err
-	}
-
-	// Create a discovery client
-	disCli, err := discovery.NewDiscoveryClientForConfig(config)
-	if err != nil {
-		return nil, err
-	}
-
-	// Return
-	return &Client{
-		dyn: dynCli,
-		dis: disCli,
-	}, nil
-}
-
-//-----------------------------------------------------------------------------
 // ApplyYaml
 //-----------------------------------------------------------------------------
 
-func ApplyYaml(client *Client, doc string) error {
+func ApplyYaml(myCtx *Context, doc string) error {
 
 	// Start a trace region
 	defer trace.StartRegion(context.TODO(), "ApplyYaml").End()
@@ -221,7 +208,7 @@ func ApplyYaml(client *Client, doc string) error {
 	}
 
 	// Get the resource list
-	resourceList, err := client.dis.ServerResourcesForGroupVersion(groupVersion)
+	resourceList, err := myCtx.DisCli.ServerResourcesForGroupVersion(groupVersion)
 	if err != nil {
 		return fmt.Errorf("unable to get server resources for group version %s: %v", groupVersion, err)
 	}
@@ -255,7 +242,7 @@ func ApplyYaml(client *Client, doc string) error {
 
 	// Cluster-scoped resources
 	if !resource.Namespaced {
-		foo := client.dyn.Resource(gvr)
+		foo := myCtx.DynCli.Resource(gvr)
 		if _, err = foo.Patch(context.TODO(), obj.GetName(), types.ApplyPatchType, []byte(doc), metav1.PatchOptions{FieldManager: "swarmctl-manager", Force: pointer.Bool(true)}); err != nil {
 			return fmt.Errorf("failed to create resource %s with GVR %v: %w", obj.GetName(), gvr, err)
 		}
@@ -264,7 +251,7 @@ func ApplyYaml(client *Client, doc string) error {
 
 	// Namespaced resources
 	if resource.Namespaced {
-		foo := client.dyn.Resource(gvr).Namespace(namespace)
+		foo := myCtx.DynCli.Resource(gvr).Namespace(namespace)
 		if _, err = foo.Patch(context.TODO(), obj.GetName(), types.ApplyPatchType, []byte(doc), metav1.PatchOptions{FieldManager: "swarmctl-manager", Force: pointer.Bool(true)}); err != nil {
 			return fmt.Errorf("failed to apply resource %s with GVR %v: %w", obj.GetName(), gvr, err)
 		}

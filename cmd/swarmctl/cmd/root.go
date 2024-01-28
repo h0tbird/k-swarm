@@ -16,7 +16,8 @@ import (
 	"github.com/octoroot/swarm/cmd/swarmctl/pkg/util"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/rest"
+	"k8s.io/client-go/discovery"
+	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/tools/clientcmd"
 )
 
@@ -24,14 +25,9 @@ import (
 // Globals
 //-----------------------------------------------------------------------------
 
-type context struct {
-	config *rest.Config
-	mapGV  map[string]*metav1.APIResourceList
-}
-
 var (
 	Assets         embed.FS
-	contexts       = map[string]*context{}
+	contexts       = map[string]*util.Context{}
 	ctxRegex       string
 	cpuProfile     bool
 	memProfile     bool
@@ -83,9 +79,12 @@ var rootCmd = &cobra.Command{
 			}
 
 			// Store the config
-			contexts[match] = &context{
-				config: config,
-				mapGV:  map[string]*metav1.APIResourceList{},
+			contexts[match] = &util.Context{
+				Name:   match,
+				Config: config,
+				DynCli: dynamic.NewForConfigOrDie(config),
+				DisCli: discovery.NewDiscoveryClientForConfigOrDie(config),
+				MapGV:  map[string]*metav1.APIResourceList{},
 			}
 		}
 
