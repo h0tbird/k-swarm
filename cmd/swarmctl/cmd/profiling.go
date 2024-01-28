@@ -67,7 +67,7 @@ func startProfiling() func() {
 		doOnStop = append(doOnStop, func() {
 			pprof.StopCPUProfile()
 			_ = f.Close()
-			fmt.Println("cpu profile stopped")
+			fmt.Println("\ncpu profile stopped")
 		})
 	}
 
@@ -97,7 +97,7 @@ func startProfiling() func() {
 		doOnStop = append(doOnStop, func() {
 			_ = pprof.WriteHeapProfile(f)
 			_ = f.Close()
-			fmt.Println("memory profile stopped")
+			fmt.Println("\nmemory profile stopped")
 		})
 	}
 
@@ -127,7 +127,7 @@ func startProfiling() func() {
 		doOnStop = append(doOnStop, func() {
 			trace.Stop()
 			_ = f.Close()
-			fmt.Println("tracing stopped")
+			fmt.Println("\ntracing stopped")
 		})
 	}
 

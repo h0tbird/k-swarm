@@ -83,11 +83,14 @@ var rootCmd = &cobra.Command{
 			}
 
 			// Store the config
-			contexts[match].config = config
+			contexts[match] = &context{
+				config: config,
+				mapGV:  map[string]*metav1.APIResourceList{},
+			}
 		}
 
 		// A chance to cancel
-		cmd.Println("\nDo you want to continue? [y/N]")
+		cmd.Print("\nDo you want to continue? [y/N] ")
 		var answer string
 		if _, err := fmt.Scanln(&answer); err != nil {
 			return err
