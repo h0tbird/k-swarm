@@ -9,6 +9,9 @@ import (
 	// Stdlib
 	"context"
 	"fmt"
+	"os"
+	"path/filepath"
+	"regexp"
 	"runtime/trace"
 
 	// Community
@@ -22,9 +25,6 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/utils/pointer"
-
-	// Local
-	"github.com/octoroot/swarm/cmd/swarmctl/pkg/util"
 )
 
 //-----------------------------------------------------------------------------
@@ -40,6 +40,26 @@ type Context struct {
 }
 
 //-----------------------------------------------------------------------------
+// Globals
+//-----------------------------------------------------------------------------
+
+var HomeDir string
+
+//-----------------------------------------------------------------------------
+// init
+//-----------------------------------------------------------------------------
+
+func init() {
+
+	var err error
+
+	// Get the user's home directory
+	if HomeDir, err = os.UserHomeDir(); err != nil {
+		panic(err)
+	}
+}
+
+//-----------------------------------------------------------------------------
 // New
 //-----------------------------------------------------------------------------
 
@@ -47,7 +67,7 @@ func New(name string) (*Context, error) {
 
 	// Create the rest config
 	config, err := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(
-		&clientcmd.ClientConfigLoadingRules{ExplicitPath: util.HomeDir + "/.kube/config"},
+		&clientcmd.ClientConfigLoadingRules{ExplicitPath: HomeDir + "/.kube/config"},
 		&clientcmd.ConfigOverrides{CurrentContext: name},
 	).ClientConfig()
 	if err != nil {
@@ -154,4 +174,61 @@ func (c *Context) ApplyYaml(doc string) error {
 
 	// Return
 	return nil
+}
+
+//-----------------------------------------------------------------------------
+// List
+//-----------------------------------------------------------------------------
+
+func List() ([]string, error) {
+
+	// Load the kubeconfig file
+	config, err := clientcmd.LoadFromFile(filepath.Join(HomeDir, ".kube", "config"))
+	if err != nil {
+		return nil, err
+	}
+
+	// Iterate over the contexts
+	var contexts []string
+	for context := range config.Contexts {
+		contexts = append(contexts, context)
+	}
+
+	// Return the contexts.
+	return contexts, nil
+}
+
+//-------------------------------------------------------------------------
+// Filter
+//-------------------------------------------------------------------------
+
+func Filter(regex string) ([]string, error) {
+
+	// Variables
+	var matchingContexts []string
+
+	// Return empty list if regex is empty
+	if regex == "" {
+		return matchingContexts, nil
+	}
+
+	// List the contexts
+	contexts, err := List()
+	if err != nil {
+		return nil, err
+	}
+
+	// Iterate over the contexts
+	for _, context := range contexts {
+
+		// If the context matches the regex
+		if match, err := regexp.MatchString(regex, context); match && err == nil {
+			matchingContexts = append(matchingContexts, context)
+		} else if err != nil {
+			return nil, err
+		}
+	}
+
+	// Return the matching contexts.
+	return matchingContexts, nil
 }

@@ -13,11 +13,10 @@ import (
 	"strings"
 
 	// Community
-	"github.com/octoroot/swarm/cmd/swarmctl/pkg/k8sctx"
 	"github.com/spf13/cobra"
 
 	// Local
-	"github.com/octoroot/swarm/cmd/swarmctl/pkg/util"
+	"github.com/octoroot/swarm/cmd/swarmctl/pkg/k8sctx"
 )
 
 //-----------------------------------------------------------------------------
@@ -53,8 +52,8 @@ var rootCmd = &cobra.Command{
 		// Handle profiling
 		onStopProfiling = startProfiling()
 
-		// Get the regex matches
-		matches, err := util.FilterKubeContexts(ctxRegex)
+		// Get the contexts that match the regex
+		matches, err := k8sctx.Filter(ctxRegex)
 		if err != nil {
 			return err
 		}
@@ -131,7 +130,7 @@ func init() {
 func contextCompletionFunc(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 
 	// Get the contexts
-	contexts, err := util.ListKubeContexts()
+	contexts, err := k8sctx.List()
 	if err != nil {
 		panic(err)
 	}
