@@ -100,6 +100,22 @@ build-devel: generate ## Build a manager binary without optimizations and inlini
 build: manifests generate fmt vet ## Build manager binary.
 	go build -o bin/manager cmd/main.go
 
+.PHONY: swarmctl
+swarmctl: ## Build swarmctl binary.
+
+	echo "---" > cmd/swarmctl/assets/informer.goyaml
+	$(KUSTOMIZE) build config/informer | sed \
+	-e 's/replicas: [[:digit:]]/replicas: {{ .Replicas }}/g' >> \
+	cmd/swarmctl/assets/informer.goyaml
+
+	echo "---" > cmd/swarmctl/assets/worker.goyaml
+	$(KUSTOMIZE) build config/worker | sed \
+	-e 's/replicas: [[:digit:]]/replicas: {{ .Replicas }}/g' \
+	-e 's/service-x/{{ .Namespace }}/g' >> \
+	cmd/swarmctl/assets/worker.goyaml
+
+	go build -o bin/swarmctl cmd/swarmctl/main.go
+
 .PHONY: run
 run: manifests generate fmt vet ## Run a controller from your host.
 	go run ./cmd/main.go
