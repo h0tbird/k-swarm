@@ -101,7 +101,7 @@ build: manifests generate fmt vet ## Build manager binary.
 	go build -o bin/manager cmd/main.go
 
 .PHONY: swarmctl
-swarmctl: ## Build swarmctl binary.
+swarmctl: kustomize ## Build swarmctl binary.
 
 	echo "---" > cmd/swarmctl/assets/informer.goyaml
 	$(KUSTOMIZE) build config/informer | sed \
