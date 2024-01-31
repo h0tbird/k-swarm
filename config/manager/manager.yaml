@@ -7,8 +7,8 @@ metadata:
     app.kubernetes.io/name: namespace
     app.kubernetes.io/instance: system
     app.kubernetes.io/component: manager
-    app.kubernetes.io/created-by: swarm
-    app.kubernetes.io/part-of: swarm
+    app.kubernetes.io/created-by: k-swarm
+    app.kubernetes.io/part-of: k-swarm
     app.kubernetes.io/managed-by: kustomize
   name: system
 ---
@@ -22,8 +22,8 @@ metadata:
     app.kubernetes.io/name: deployment
     app.kubernetes.io/instance: controller-manager
     app.kubernetes.io/component: manager
-    app.kubernetes.io/created-by: swarm
-    app.kubernetes.io/part-of: swarm
+    app.kubernetes.io/created-by: k-swarm
+    app.kubernetes.io/part-of: k-swarm
     app.kubernetes.io/managed-by: kustomize
 spec:
   selector:
@@ -36,8 +36,8 @@ spec:
         kubectl.kubernetes.io/default-container: manager
       labels:
         control-plane: controller-manager
-        swarm/informer: enabled
-        swarm/worker: enabled
+        k-swarm/informer: enabled
+        k-swarm/worker: enabled
     spec:
       securityContext:
         runAsNonRoot: true
@@ -116,7 +116,7 @@ metadata:
   name: informer
 spec:
   selector:
-    swarm/informer: enabled
+    k-swarm/informer: enabled
   ports:
     - name: http
       protocol: TCP
@@ -128,10 +128,10 @@ kind: Service
 metadata:
   name: worker
   labels:
-    app: swarm
+    app: k-swarm
 spec:
   selector:
-    swarm/worker: enabled
+    k-swarm/worker: enabled
   ports:
     - name: http
       protocol: TCP

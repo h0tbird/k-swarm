@@ -13,14 +13,14 @@ metadata:
 spec:
   selector:
     matchLabels:
-      swarm/informer: enabled
+      k-swarm/informer: enabled
   replicas: 2
   template:
     metadata:
       annotations:
         kubectl.kubernetes.io/default-container: manager
       labels:
-        swarm/informer: enabled
+        k-swarm/informer: enabled
     spec:
       affinity:
         podAntiAffinity:
@@ -29,7 +29,7 @@ spec:
             podAffinityTerm:
               labelSelector:
                 matchExpressions:
-                - key: swarm/informer
+                - key: k-swarm/informer
                   operator: In
                   values:
                   - enabled
@@ -78,7 +78,7 @@ metadata:
   name: informer
 spec:
   selector:
-    swarm/informer: enabled
+    k-swarm/informer: enabled
   ports:
     - name: http
       protocol: TCP

@@ -80,7 +80,7 @@ k8s_yaml(local('OVERLAY=dev make overlay'))
 #------------------------------------------------------------------------------
 
 k8s_resource(
-  'swarm-controller-manager',
+  'k-swarm-controller-manager',
   new_name='deployment',
   labels="manager",
   port_forwards=['40000:40000', '8080:8080'],

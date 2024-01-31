@@ -75,7 +75,7 @@ func Start(ctx context.Context, wg *sync.WaitGroup, flags *common.FlagPack) {
 		Scheme:   mgr.GetScheme(),
 		CommChan: commChan,
 	}).SetupWithManager(mgr); err != nil {
-		log.Error(err, "unable to create controller", "controller", "swarm")
+		log.Error(err, "unable to create controller", "controller", "k-swarm")
 		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder

@@ -13,14 +13,14 @@ metadata:
 spec:
   selector:
     matchLabels:
-      swarm/worker: enabled
+      k-swarm/worker: enabled
   replicas: 4
   template:
     metadata:
       annotations:
         kubectl.kubernetes.io/default-container: manager
       labels:
-        swarm/worker: enabled
+        k-swarm/worker: enabled
     spec:
       securityContext:
         runAsNonRoot: true
@@ -75,10 +75,10 @@ kind: Service
 metadata:
   name: worker
   labels:
-    app: swarm
+    app: k-swarm
 spec:
   selector:
-    swarm/worker: enabled
+    k-swarm/worker: enabled
   ports:
     - name: http
       protocol: TCP
