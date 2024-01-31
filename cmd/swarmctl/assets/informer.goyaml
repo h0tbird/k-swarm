@@ -295,7 +295,7 @@ spec:
         - --informer-bind-address=:8083
         command:
         - /manager
-        image: h0tbird/swarm:latest
+        image: h0tbird/k-swarm:latest
         livenessProbe:
           httpGet:
             path: /healthz

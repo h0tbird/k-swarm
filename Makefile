@@ -219,7 +219,7 @@ CTLPTL_VERSION ?= v0.8.22
 KUSTOMIZE_INSTALL_SCRIPT ?= "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"
 
 .PHONY: tooling
-tooling: kustomize controller-gen envtest ctlptl ## Install all the tooling.
+tooling: kustomize controller-gen envtest ctlptl swarmctl ## Install all the tooling.
 
 .PHONY: kustomize
 kustomize: $(LOCALBIN) ## Download kustomize locally if necessary. If wrong version is installed, it will be removed before downloading.
