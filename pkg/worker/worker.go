@@ -18,7 +18,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 
 	// Internal
-	"github.com/octoroot/swarm/pkg/common"
+	"github.com/octoroot/k-swarm/pkg/common"
 )
 
 //-----------------------------------------------------------------------------

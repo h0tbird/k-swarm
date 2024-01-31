@@ -1,9 +1,21 @@
-# swarm
-A k8s service swarm
+# k-swarm
+`k-swarm` is used for deploying a series of k8s services that are capable of identifying and communicating with one another, thus establishing a network of synthetic traffic. This interconnected traffic among various workloads provides a foundational platform for a range of laboratory experiments, including the testing and validation of diverse service mesh configurations at scale.
+
+## Developing
 
 Build and publish a multi-arch docker image:
 ```
-PUSH_IMG=h0tbird/swarm make docker-buildx
+PUSH_IMG=h0tbird/k-swarm make docker-buildx
+```
+
+Download all the `Makefile` tooling to `./bin/`:
+```
+make tooling
+```
+
+Bring up a local dev environment:
+```
+make tilt-up
 ```
 
 ## Performance Profiling and Benchmarking
@@ -30,7 +42,7 @@ benchstat 0-bench.txt 1-bench.txt 2-bench.txt
 ```
 goos: darwin
 goarch: arm64
-pkg: github.com/octoroot/swarm/cmd/swarmctl/pkg/k8sctx
+pkg: github.com/octoroot/k-swarm/cmd/swarmctl/pkg/k8sctx
              │ old-bench.txt │         new-bench.txt         │
              │    sec/op     │   sec/op     vs base          │
 ApplyYaml-10     180.1m ± 0%   180.1m ± 0%  ~ (p=0.315 n=10)

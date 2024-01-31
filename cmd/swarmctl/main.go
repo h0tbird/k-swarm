@@ -24,7 +24,7 @@ import (
 	"os"
 
 	// Internal
-	"github.com/octoroot/swarm/cmd/swarmctl/cmd"
+	"github.com/octoroot/k-swarm/cmd/swarmctl/cmd"
 )
 
 //go:embed assets/*

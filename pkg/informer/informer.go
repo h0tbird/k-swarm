@@ -18,8 +18,8 @@ import (
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
 	// Internal
-	"github.com/octoroot/swarm/internal/controller"
-	"github.com/octoroot/swarm/pkg/common"
+	"github.com/octoroot/k-swarm/internal/controller"
+	"github.com/octoroot/k-swarm/pkg/common"
 )
 
 //-----------------------------------------------------------------------------

@@ -69,7 +69,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: spec.nodeName
-        image: h0tbird/swarm:latest
+        image: h0tbird/k-swarm:latest
         name: manager
         ports:
         - containerPort: 8082
