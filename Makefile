@@ -188,7 +188,7 @@ kind-create: ctlptl  ## Create a kind cluster with a local registry.
 
 .PHONY: tilt-up
 tilt-up: kind-create ## Start kind and tilt.
-	tilt up -- --flags '--leader-elect=false --enable-informer=true --enable-worker=true --worker-bind-address=:8082 --informer-bind-address=:8083 --informer-url=http://swarm-informer.swarm-system --informer-poll-interval=10s --worker-request-interval=2s --zap-devel'
+	tilt up -- --flags '--leader-elect=false --enable-informer=true --enable-worker=true --worker-bind-address=:8082 --informer-bind-address=:8083 --informer-url=http://k-swarm-informer.k-swarm-system --informer-poll-interval=10s --worker-request-interval=2s --zap-devel'
 
 .PHONY: kind-delete
 kind-delete: ctlptl ## Delete the local development cluster.

@@ -50,7 +50,7 @@ spec:
         - --enable-worker=true
         - --worker-bind-address=:8082
         - --informer-bind-address=:8083
-        - --informer-url=http://swarm-informer.swarm-system
+        - --informer-url=http://k-swarm-informer.k-swarm-system
         - --informer-poll-interval=10s
         - --worker-request-interval=2s
         image: controller:latest
