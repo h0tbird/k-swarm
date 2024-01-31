@@ -234,7 +234,7 @@ controller-gen: $(LOCALBIN) ## Download controller-gen locally if necessary. If 
 
 .PHONY: envtest
 envtest: $(LOCALBIN) ## Download envtest-setup locally if necessary.
-	@ test -s $(LOCALBIN)/setup-envtest || GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
+	@ test -s $(ENVTEST) || GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
 
 .PHONY: ctlptl
 ctlptl: $(LOCALBIN) ## Download ctlptl locally if necessary. If wrong version is installed, it will be overwritten.
