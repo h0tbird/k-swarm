@@ -39,8 +39,8 @@ type ServiceReconciler struct {
 }
 
 const (
-	controllerName = "swarm"
-	appLabel       = "swarm"
+	controllerName = "k-swarm"
+	appLabel       = "k-swarm"
 )
 
 //-----------------------------------------------------------------------------

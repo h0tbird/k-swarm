@@ -6,5 +6,5 @@ resources:
 
 images:
 - name: controller
-  newName: dev-registry:5000/swarm
+  newName: dev-registry:5000/k-swarm
   newTag: latest

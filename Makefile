@@ -2,9 +2,9 @@
 # Local registry host:port
 REGISTRY_HOST = $(shell $(CTLPTL) get cluster kind-dev -o template --template '{{.status.localRegistryHosting.host}}' || echo 'localhost:5000')
 # Image URL to use for pushing image targets
-PUSH_IMG ?= ${REGISTRY_HOST}/swarm:latest
+PUSH_IMG ?= ${REGISTRY_HOST}/k-swarm:latest
 # Image URL to use for pulling image targets
-PULL_IMG ?= dev-registry:5000/swarm:latest
+PULL_IMG ?= dev-registry:5000/k-swarm:latest
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.28.0
 
@@ -188,7 +188,7 @@ kind-create: ctlptl  ## Create a kind cluster with a local registry.
 
 .PHONY: tilt-up
 tilt-up: kind-create ## Start kind and tilt.
-	tilt up -- --flags '--leader-elect=false --enable-informer=true --enable-worker=true --worker-bind-address=:8082 --informer-bind-address=:8083 --informer-url=http://swarm-informer.swarm-system --informer-poll-interval=10s --worker-request-interval=2s --zap-devel'
+	tilt up -- --flags '--leader-elect=false --enable-informer=true --enable-worker=true --worker-bind-address=:8082 --informer-bind-address=:8083 --informer-url=http://k-swarm-informer.k-swarm-system --informer-poll-interval=10s --worker-request-interval=2s --zap-devel'
 
 .PHONY: kind-delete
 kind-delete: ctlptl ## Delete the local development cluster.
@@ -218,10 +218,14 @@ CTLPTL_VERSION ?= v0.8.22
 ## Tool install scripts
 KUSTOMIZE_INSTALL_SCRIPT ?= "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"
 
+.PHONY: tooling
+tooling: kustomize controller-gen envtest ctlptl swarmctl ## Install all the tooling.
+
 .PHONY: kustomize
 kustomize: $(LOCALBIN) ## Download kustomize locally if necessary. If wrong version is installed, it will be removed before downloading.
 	@ test -s $(KUSTOMIZE) && $(KUSTOMIZE) version | grep -q $(KUSTOMIZE_VERSION) || \
-	{ rm -rf $(KUSTOMIZE); curl -Ss $(KUSTOMIZE_INSTALL_SCRIPT) | bash -s -- $(subst v,,$(KUSTOMIZE_VERSION)) $(LOCALBIN); }
+	{ rm -rf $(KUSTOMIZE); curl -Ss $(KUSTOMIZE_INSTALL_SCRIPT) | bash -s -- $(subst v,,$(KUSTOMIZE_VERSION)) $(LOCALBIN); } \
+	> /dev/null
 
 .PHONY: controller-gen
 controller-gen: $(LOCALBIN) ## Download controller-gen locally if necessary. If wrong version is installed, it will be overwritten.
@@ -230,11 +234,9 @@ controller-gen: $(LOCALBIN) ## Download controller-gen locally if necessary. If 
 
 .PHONY: envtest
 envtest: $(LOCALBIN) ## Download envtest-setup locally if necessary.
-$(ENVTEST): $(LOCALBIN)
-	@ test -s $(LOCALBIN)/setup-envtest || GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
+	@ test -s $(ENVTEST) || GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
 
 .PHONY: ctlptl
 ctlptl: $(LOCALBIN) ## Download ctlptl locally if necessary. If wrong version is installed, it will be overwritten.
-$(CTLPTL): $(LOCALBIN)
 	@ test -s $(CTLPTL) && $(CTLPTL) version | grep -q $(CTLPTL_VERSION) || \
 	GOBIN=$(LOCALBIN) go install github.com/tilt-dev/ctlptl/cmd/ctlptl@$(CTLPTL_VERSION)

@@ -1,4 +1,4 @@
-module github.com/octoroot/swarm
+module github.com/octoroot/k-swarm
 
 go 1.20
 

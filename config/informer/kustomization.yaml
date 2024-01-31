@@ -14,5 +14,5 @@ patches:
 
 images:
 - name: controller
-  newName: h0tbird/swarm
+  newName: h0tbird/k-swarm
   newTag: latest

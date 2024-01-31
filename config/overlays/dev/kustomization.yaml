@@ -5,7 +5,7 @@ resources:
 - ../../default
 
 patches:
-  - path: ./patches/deployments/swarm-controller-manager.yaml
+  - path: ./patches/deployments/k-swarm-controller-manager.yaml
     target:
       kind: Deployment
-      name: swarm-controller-manager
+      name: k-swarm-controller-manager

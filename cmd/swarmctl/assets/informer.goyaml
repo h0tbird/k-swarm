@@ -11,11 +11,11 @@ kind: ServiceAccount
 metadata:
   labels:
     app.kubernetes.io/component: rbac
-    app.kubernetes.io/created-by: swarm
+    app.kubernetes.io/created-by: k-swarm
     app.kubernetes.io/instance: controller-manager-sa
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/name: serviceaccount
-    app.kubernetes.io/part-of: swarm
+    app.kubernetes.io/part-of: k-swarm
   name: controller-manager
   namespace: informer
 ---
@@ -24,11 +24,11 @@ kind: Role
 metadata:
   labels:
     app.kubernetes.io/component: rbac
-    app.kubernetes.io/created-by: swarm
+    app.kubernetes.io/created-by: k-swarm
     app.kubernetes.io/instance: leader-election-role
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/name: role
-    app.kubernetes.io/part-of: swarm
+    app.kubernetes.io/part-of: k-swarm
   name: leader-election-role
   namespace: informer
 rules:
@@ -101,11 +101,11 @@ kind: ClusterRole
 metadata:
   labels:
     app.kubernetes.io/component: kube-rbac-proxy
-    app.kubernetes.io/created-by: swarm
+    app.kubernetes.io/created-by: k-swarm
     app.kubernetes.io/instance: metrics-reader
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/name: clusterrole
-    app.kubernetes.io/part-of: swarm
+    app.kubernetes.io/part-of: k-swarm
   name: metrics-reader
 rules:
 - nonResourceURLs:
@@ -118,11 +118,11 @@ kind: ClusterRole
 metadata:
   labels:
     app.kubernetes.io/component: kube-rbac-proxy
-    app.kubernetes.io/created-by: swarm
+    app.kubernetes.io/created-by: k-swarm
     app.kubernetes.io/instance: proxy-role
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/name: clusterrole
-    app.kubernetes.io/part-of: swarm
+    app.kubernetes.io/part-of: k-swarm
   name: proxy-role
 rules:
 - apiGroups:
@@ -143,11 +143,11 @@ kind: RoleBinding
 metadata:
   labels:
     app.kubernetes.io/component: rbac
-    app.kubernetes.io/created-by: swarm
+    app.kubernetes.io/created-by: k-swarm
     app.kubernetes.io/instance: leader-election-rolebinding
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/name: rolebinding
-    app.kubernetes.io/part-of: swarm
+    app.kubernetes.io/part-of: k-swarm
   name: leader-election-rolebinding
   namespace: informer
 roleRef:
@@ -164,11 +164,11 @@ kind: ClusterRoleBinding
 metadata:
   labels:
     app.kubernetes.io/component: rbac
-    app.kubernetes.io/created-by: swarm
+    app.kubernetes.io/created-by: k-swarm
     app.kubernetes.io/instance: manager-rolebinding
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/name: clusterrolebinding
-    app.kubernetes.io/part-of: swarm
+    app.kubernetes.io/part-of: k-swarm
   name: manager-rolebinding
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -184,11 +184,11 @@ kind: ClusterRoleBinding
 metadata:
   labels:
     app.kubernetes.io/component: kube-rbac-proxy
-    app.kubernetes.io/created-by: swarm
+    app.kubernetes.io/created-by: k-swarm
     app.kubernetes.io/instance: proxy-rolebinding
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/name: clusterrolebinding
-    app.kubernetes.io/part-of: swarm
+    app.kubernetes.io/part-of: k-swarm
   name: proxy-rolebinding
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -204,11 +204,11 @@ kind: Service
 metadata:
   labels:
     app.kubernetes.io/component: kube-rbac-proxy
-    app.kubernetes.io/created-by: swarm
+    app.kubernetes.io/created-by: k-swarm
     app.kubernetes.io/instance: controller-manager-metrics-service
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/name: service
-    app.kubernetes.io/part-of: swarm
+    app.kubernetes.io/part-of: k-swarm
     control-plane: controller-manager
   name: controller-manager-metrics-service
   namespace: informer
@@ -233,7 +233,7 @@ spec:
     protocol: TCP
     targetPort: informer
   selector:
-    swarm/informer: enabled
+    k-swarm/informer: enabled
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -244,13 +244,13 @@ spec:
   replicas: {{ .Replicas }}
   selector:
     matchLabels:
-      swarm/informer: enabled
+      k-swarm/informer: enabled
   template:
     metadata:
       annotations:
         kubectl.kubernetes.io/default-container: manager
       labels:
-        swarm/informer: enabled
+        k-swarm/informer: enabled
     spec:
       affinity:
         podAntiAffinity:
@@ -258,7 +258,7 @@ spec:
           - podAffinityTerm:
               labelSelector:
                 matchExpressions:
-                - key: swarm/informer
+                - key: k-swarm/informer
                   operator: In
                   values:
                   - enabled
@@ -295,7 +295,7 @@ spec:
         - --informer-bind-address=:8083
         command:
         - /manager
-        image: h0tbird/swarm:latest
+        image: h0tbird/k-swarm:latest
         livenessProbe:
           httpGet:
             path: /healthz

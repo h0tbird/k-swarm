@@ -5,8 +5,8 @@ metadata:
     app.kubernetes.io/name: clusterrolebinding
     app.kubernetes.io/instance: manager-rolebinding
     app.kubernetes.io/component: rbac
-    app.kubernetes.io/created-by: swarm
-    app.kubernetes.io/part-of: swarm
+    app.kubernetes.io/created-by: k-swarm
+    app.kubernetes.io/part-of: k-swarm
     app.kubernetes.io/managed-by: kustomize
   name: manager-rolebinding
 roleRef:

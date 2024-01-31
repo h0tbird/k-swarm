@@ -30,7 +30,7 @@ flags = cfg.get('flags', '').split(' ')
 #------------------------------------------------------------------------------
 
 ARCH = str(local("go env GOARCH")).rstrip("\n")
-IMG = 'dev-registry:5000/swarm'
+IMG = 'dev-registry:5000/k-swarm'
 
 if debug:
   ENTRYPOINT = ['/go/bin/dlv', '--listen=:40000', '--api-version=2', '--headless=true', 'exec', '/manager', '--'] + flags
@@ -45,7 +45,7 @@ WORKDIR /
 '''
 
 #------------------------------------------------------------------------------
-# Build the manager binary
+# Builds and writes the manager binary to ./bin/manager
 #------------------------------------------------------------------------------
 
 local_resource(
@@ -53,11 +53,11 @@ local_resource(
   cmd='CGO_ENABLED=0 GOOS=linux GOARCH={ARCH} make build-devel'.format(ARCH=ARCH),
   deps=['internal', 'pkg', 'cmd', 'go.mod', 'go.sum'],
   labels=['manager'],
-  allow_parallel=True
+  allow_parallel=False, # Wait for the binary before starting the docker build
 )
 
 #------------------------------------------------------------------------------
-# Build the docker image
+# Builds the docker image using the ./bin/manager binary
 #------------------------------------------------------------------------------
 
 docker_build_with_restart(
@@ -80,7 +80,7 @@ k8s_yaml(local('OVERLAY=dev make overlay'))
 #------------------------------------------------------------------------------
 
 k8s_resource(
-  'swarm-controller-manager',
+  'k-swarm-controller-manager',
   new_name='deployment',
   labels="manager",
   port_forwards=['40000:40000', '8080:8080'],
