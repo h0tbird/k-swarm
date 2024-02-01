@@ -1,0 +1,23 @@
+---
+version: 2
+updates:
+
+  # Go - root directory 
+  - package-ecosystem: "gomod"
+    open-pull-requests-limit: 5
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: "monday"
+      timezone: "Europe/Madrid"
+      time: "08:00"
+
+  # github-actions
+  - package-ecosystem: github-actions
+    open-pull-requests-limit: 5
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: "monday"
+      timezone: "Europe/Madrid"
+      time: "08:00"
