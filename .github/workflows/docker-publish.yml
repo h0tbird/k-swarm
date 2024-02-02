@@ -43,12 +43,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install cosign
-        if: github.event_name != 'pull_request'
-        uses: sigstore/cosign-installer@e1523de7571e31dbe865fd2e80c5c7c23ae71eb4 #v3.4.0
-        with:
-          cosign-release: 'v2.1.1'
-
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
 
@@ -138,11 +132,16 @@ jobs:
         run: |
           docker buildx imagetools inspect ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.version }}
 
+      - name: Install cosign
+        uses: sigstore/cosign-installer@e1523de7571e31dbe865fd2e80c5c7c23ae71eb4 #v3.4.0
+        with:
+          cosign-release: 'v2.1.1'
+
+      - name: Check install!
+        run: cosign version
+
 #      - name: Sign the published Docker image
-#        if: ${{ github.event_name != 'pull_request' }}
 #        env:
 #          TAGS: ${{ steps.meta.outputs.tags }}
 #          DIGEST: ${{ steps.build-and-push.outputs.digest }}
-#        # This step uses the identity token to provision an ephemeral certificate
-#        # against the sigstore community Fulcio instance.
 #        run: echo "${TAGS}" | xargs -I {} cosign sign --yes {}@${DIGEST}
