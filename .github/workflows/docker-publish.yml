@@ -139,6 +139,5 @@ jobs:
         env:
           TAGS: ${{ steps.meta.outputs.tags }}
         run: |
-          set -x
           DIGEST=$(docker buildx imagetools inspect ${{ env.REGISTRY_IMAGE }}:${{ steps.meta.outputs.version }} | awk '/^Digest:/ {print $2}')
           echo "${TAGS}" | xargs -I {} cosign sign --yes {}@${DIGEST}
