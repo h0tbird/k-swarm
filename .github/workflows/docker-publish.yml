@@ -16,7 +16,7 @@ env:
 jobs:
 
   #----------------------------------------------------------------------------
-  # Build job (one runner per platform)
+  # Build digest job (one runner per platform)
   #----------------------------------------------------------------------------
 
   build-digest:
@@ -87,13 +87,14 @@ jobs:
           retention-days: 1
 
   #----------------------------------------------------------------------------
-  # Merge job (one runner for all platforms)
+  # Merge digests job (one runner for all platforms)
   #----------------------------------------------------------------------------
 
   merge-digests:
 
     runs-on: ubuntu-latest
     permissions:
+      contents: read
       id-token: write
     needs:
       - build-digest
