@@ -1,4 +1,4 @@
-name: Docker
+name: Docker multi-platform build
 
 on:
   schedule:
@@ -16,7 +16,7 @@ env:
 jobs:
 
   #----------------------------------------------------------------------------
-  # Build job
+  # Build job (one runner per platform)
   #----------------------------------------------------------------------------
 
   build-digest:
@@ -88,7 +88,7 @@ jobs:
           retention-days: 1
 
   #----------------------------------------------------------------------------
-  # Merge job
+  # Merge job (one runner for all platforms)
   #----------------------------------------------------------------------------
 
   merge-digests:
@@ -125,7 +125,9 @@ jobs:
       - name: Create manifest list and push
         working-directory: /tmp/digests
         run: |
-          docker buildx imagetools create $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
+          set -x
+          docker buildx imagetools create \
+            $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
             $(printf '${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@sha256:%s ' *)
 
       - name: Inspect image
@@ -137,11 +139,10 @@ jobs:
         with:
           cosign-release: 'v2.1.1'
 
-      - name: Check install!
-        run: cosign version
-
-#      - name: Sign the published Docker image
-#        env:
-#          TAGS: ${{ steps.meta.outputs.tags }}
-#          DIGEST: ${{ steps.build-and-push.outputs.digest }}
-#        run: echo "${TAGS}" | xargs -I {} cosign sign --yes {}@${DIGEST}
+      - name: Sign the published Docker image
+        env:
+          TAGS: ${{ steps.meta.outputs.tags }}
+        run: |
+          set -x
+          DIGEST=$(docker buildx imagetools inspect --raw ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.version }} | jq -r '.Digest')
+          echo "${TAGS}" | xargs -I {} cosign sign --yes {}@${DIGEST}
