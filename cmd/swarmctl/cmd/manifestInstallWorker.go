@@ -65,11 +65,13 @@ var installWorkerCmd = &cobra.Command{
 
 				// Render the template
 				docs, err := util.RenderTemplate(tmpl, struct {
-					Replicas  int
-					Namespace string
+					Replicas     int
+					Namespace    string
+					NodeSelector string
 				}{
-					Replicas:  replicas,
-					Namespace: fmt.Sprintf("service-%d", i),
+					Replicas:     replicas,
+					Namespace:    fmt.Sprintf("service-%d", i),
+					NodeSelector: nodeSelector,
 				})
 				if err != nil {
 					panic(err)
@@ -98,4 +100,5 @@ func init() {
 
 	// Define the flags
 	installWorkerCmd.PersistentFlags().Int("replicas", 1, "Number of replicas to deploy.")
+	installWorkerCmd.PersistentFlags().StringVar(&nodeSelector, "node-selector", "", "Node selector to use.")
 }

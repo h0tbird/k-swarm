@@ -57,11 +57,13 @@ var generateWorkerCmd = &cobra.Command{
 
 			// Render the template
 			tmpl.Execute(cmd.OutOrStdout(), struct {
-				Replicas  int
-				Namespace string
+				Replicas     int
+				Namespace    string
+				NodeSelector string
 			}{
-				Replicas:  replicas,
-				Namespace: fmt.Sprintf("service-%d", i),
+				Replicas:     replicas,
+				Namespace:    fmt.Sprintf("service-%d", i),
+				NodeSelector: nodeSelector,
 			})
 		}
 	},
@@ -78,4 +80,5 @@ func init() {
 
 	// Define the flags
 	generateWorkerCmd.PersistentFlags().Int("replicas", 1, "Number of replicas to deploy.")
+	generateWorkerCmd.PersistentFlags().StringVar(&nodeSelector, "node-selector", "", "Node selector to use for deployment.")
 }

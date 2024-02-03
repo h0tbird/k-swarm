@@ -295,7 +295,7 @@ spec:
         - --informer-bind-address=:8083
         command:
         - /manager
-        image: octoroot/k-swarm:latest
+        image: ghcr.io/octoroot/k-swarm:main
         livenessProbe:
           httpGet:
             path: /healthz
@@ -318,8 +318,9 @@ spec:
           capabilities:
             drop:
             - ALL
-      nodeSelector:
-        agentpool: nodepool1
+      {{- if .NodeSelector}}
+      nodeSelector: {{.NodeSelector}}
+      {{- end}}
       securityContext:
         runAsNonRoot: true
       serviceAccountName: controller-manager

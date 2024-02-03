@@ -42,9 +42,11 @@ var installInformerCmd = &cobra.Command{
 
 			// Render the template
 			docs, err := util.RenderTemplate(tmpl, struct {
-				Replicas int
+				Replicas     int
+				NodeSelector string
 			}{
-				Replicas: replicas,
+				Replicas:     replicas,
+				NodeSelector: nodeSelector,
 			})
 			if err != nil {
 				panic(err)
@@ -72,4 +74,5 @@ func init() {
 
 	// Define the flags
 	installInformerCmd.PersistentFlags().Int("replicas", 1, "Number of replicas to deploy.")
+	installInformerCmd.PersistentFlags().StringVar(&nodeSelector, "node-selector", "", "Node selector to use for deployment.")
 }

@@ -33,6 +33,7 @@ var (
 	cpuProfileFile string
 	memProfileFile string
 	tracingFile    string
+	nodeSelector   string
 )
 
 //-----------------------------------------------------------------------------
