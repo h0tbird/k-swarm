@@ -1,13 +1,25 @@
 name: Docker
 
 on:
-  schedule:
-    - cron: '44 5 * * *'
   push:
     branches: [ "main" ]
     tags: [ 'v*.*.*' ]
+    paths:
+      - 'Dockerfile'
+      - 'go.mod'
+      - 'go.sum'
+      - 'cmd/main.go'
+      - 'pkg/**'
+      - 'internal/**'
   pull_request:
     branches: [ "main" ]
+    paths:
+      - 'Dockerfile'
+      - 'go.mod'
+      - 'go.sum'
+      - 'cmd/main.go'
+      - 'pkg/**'
+      - 'internal/**'
 
 env:
   REGISTRY: ghcr.io
