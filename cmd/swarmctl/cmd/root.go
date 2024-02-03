@@ -45,6 +45,8 @@ var rootCmd = &cobra.Command{
 	Short: "swarmctl controls the swarm",
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 
+		cmd.Println("Hello from root PersistentPreRunE")
+
 		// Return early if the command is a completion command
 		if cmd.CalledAs() == "__complete" || strings.Contains(cmd.CommandPath(), "completion") {
 			return nil
