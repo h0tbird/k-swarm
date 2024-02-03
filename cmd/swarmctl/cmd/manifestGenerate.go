@@ -4,10 +4,7 @@ package cmd
 // Imports
 //-----------------------------------------------------------------------------
 
-import (
-	// Community
-	"github.com/spf13/cobra"
-)
+import "github.com/spf13/cobra"
 
 //-----------------------------------------------------------------------------
 // generateCmd
@@ -33,12 +30,4 @@ func init() {
 	if err := generateCmd.RegisterFlagCompletionFunc("node-selector", nodeSelectorCompletionFunc); err != nil {
 		panic(err)
 	}
-}
-
-//-----------------------------------------------------------------------------
-// nodeSelectorCompletionFunc
-//-----------------------------------------------------------------------------
-
-func nodeSelectorCompletionFunc(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-	return []string{"{key1:value1,key2:value2}"}, cobra.ShellCompDirectiveNoFileComp
 }

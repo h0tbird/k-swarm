@@ -25,3 +25,11 @@ var manifestCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(manifestCmd)
 }
+
+//-----------------------------------------------------------------------------
+// nodeSelectorCompletionFunc
+//-----------------------------------------------------------------------------
+
+func nodeSelectorCompletionFunc(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	return []string{"{key1:value1,key2:value2}"}, cobra.ShellCompDirectiveNoFileComp
+}
