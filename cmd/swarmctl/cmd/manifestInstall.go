@@ -84,6 +84,9 @@ func init() {
 
 	// --replicas flag
 	manifestInstallCmd.PersistentFlags().IntVar(&replicas, "replicas", 1, "Number of replicas to deploy.")
+	if err := manifestInstallCmd.RegisterFlagCompletionFunc("replicas", replicasCompletionFunc); err != nil {
+		panic(err)
+	}
 
 	// --node-selector flag
 	manifestInstallCmd.PersistentFlags().StringVar(&nodeSelector, "node-selector", "", "Node selector to use for deployment.")
@@ -114,4 +117,12 @@ func contextCompletionFunc(cmd *cobra.Command, args []string, toComplete string)
 
 	// Return the completions
 	return completions, cobra.ShellCompDirectiveNoFileComp
+}
+
+//-----------------------------------------------------------------------------
+// replicasCompletionFunc
+//-----------------------------------------------------------------------------
+
+func replicasCompletionFunc(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	return []string{"1"}, cobra.ShellCompDirectiveNoFileComp
 }

@@ -26,6 +26,9 @@ func init() {
 
 	// --replicas flag
 	manifestGenerateCmd.PersistentFlags().IntVar(&replicas, "replicas", 1, "Number of replicas to deploy.")
+	if err := manifestGenerateCmd.RegisterFlagCompletionFunc("replicas", replicasCompletionFunc); err != nil {
+		panic(err)
+	}
 
 	// --node-selector flag
 	manifestGenerateCmd.PersistentFlags().StringVar(&nodeSelector, "node-selector", "", "Node selector to use for deployment.")
