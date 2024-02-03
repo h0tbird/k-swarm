@@ -19,10 +19,10 @@ import (
 )
 
 //-------------------------------------------------------------------------
-// installWorkerCmd
+// manifestInstallWorkerCmd
 //-------------------------------------------------------------------------
 
-var installWorkerCmd = &cobra.Command{
+var manifestInstallWorkerCmd = &cobra.Command{
 	Use:   "worker <start:end>",
 	Short: "Installs worker manifests.",
 	Args:  cobra.ExactArgs(1),
@@ -95,6 +95,6 @@ var installWorkerCmd = &cobra.Command{
 func init() {
 
 	// Add command to rootCmd installCmd
-	rootCmd.AddCommand(installWorkerCmd)
-	installCmd.AddCommand(installWorkerCmd)
+	rootCmd.AddCommand(manifestInstallWorkerCmd)
+	manifestInstallCmd.AddCommand(manifestInstallWorkerCmd)
 }

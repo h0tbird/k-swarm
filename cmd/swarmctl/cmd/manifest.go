@@ -43,6 +43,8 @@ var manifestCmd = &cobra.Command{
 //-----------------------------------------------------------------------------
 
 func init() {
+
+	// Add the command to the parent
 	rootCmd.AddCommand(manifestCmd)
 }
 

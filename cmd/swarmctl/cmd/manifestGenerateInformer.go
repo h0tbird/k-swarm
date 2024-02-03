@@ -14,10 +14,10 @@ import (
 )
 
 //-----------------------------------------------------------------------------
-// generateInformerCmd
+// manifestGenerateInformerCmd
 //-----------------------------------------------------------------------------
 
-var generateInformerCmd = &cobra.Command{
+var manifestGenerateInformerCmd = &cobra.Command{
 	Use:   "informer",
 	Short: "Outputs informer manifests.",
 	Run: func(cmd *cobra.Command, args []string) {
@@ -48,6 +48,6 @@ var generateInformerCmd = &cobra.Command{
 
 func init() {
 
-	// Add the command to the informerCmd
-	generateCmd.AddCommand(generateInformerCmd)
+	// Add the command to the parent
+	manifestGenerateCmd.AddCommand(manifestGenerateInformerCmd)
 }

@@ -19,10 +19,10 @@ import (
 )
 
 //-------------------------------------------------------------------------
-// generateWorkerCmd
+// manifestGenerateWorkerCmd
 //-------------------------------------------------------------------------
 
-var generateWorkerCmd = &cobra.Command{
+var manifestGenerateWorkerCmd = &cobra.Command{
 	Use:   "worker <start:end>",
 	Short: "Outputs worker manifests.",
 	Args:  cobra.ExactArgs(1),
@@ -75,6 +75,6 @@ var generateWorkerCmd = &cobra.Command{
 
 func init() {
 
-	// Add the command to the workerCmd
-	generateCmd.AddCommand(generateWorkerCmd)
+	// Add the command to the parent
+	manifestGenerateCmd.AddCommand(manifestGenerateWorkerCmd)
 }

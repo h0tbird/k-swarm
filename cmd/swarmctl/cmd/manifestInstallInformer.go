@@ -17,10 +17,10 @@ import (
 )
 
 //-----------------------------------------------------------------------------
-// installInformerCmd
+// manifestInstallInformerCmd
 //-----------------------------------------------------------------------------
 
-var installInformerCmd = &cobra.Command{
+var manifestInstallInformerCmd = &cobra.Command{
 	Use:   "informer",
 	Short: "Installs informer manifests.",
 	Run: func(cmd *cobra.Command, args []string) {
@@ -69,6 +69,6 @@ var installInformerCmd = &cobra.Command{
 func init() {
 
 	// Add command to rootCmd and informerCmd
-	rootCmd.AddCommand(installInformerCmd)
-	installCmd.AddCommand(installInformerCmd)
+	rootCmd.AddCommand(manifestInstallInformerCmd)
+	manifestInstallCmd.AddCommand(manifestInstallInformerCmd)
 }

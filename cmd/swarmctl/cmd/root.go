@@ -8,8 +8,6 @@ import (
 
 	// Stdlib
 	"embed"
-	"errors"
-	"fmt"
 	"strings"
 
 	// Community
@@ -55,41 +53,6 @@ var rootCmd = &cobra.Command{
 		// Handle profiling
 		onStopProfiling = startProfiling()
 
-		// Get the contexts that match the regex
-		matches, err := k8sctx.Filter(ctxRegex)
-		if err != nil {
-			return err
-		}
-
-		// Print
-		cmd.Println("\nMatched contexts:")
-
-		// For every match
-		for _, match := range matches {
-
-			// Print the match
-			cmd.Printf("  - %s\n", match)
-
-			// Create the context
-			c, err := k8sctx.New(match)
-			if err != nil {
-				return err
-			}
-
-			// Store the config
-			contexts[match] = c
-		}
-
-		// A chance to cancel
-		cmd.Print("\nDo you want to continue? [y/N] ")
-		var answer string
-		if _, err := fmt.Scanln(&answer); err != nil {
-			return err
-		}
-		if answer != "y" {
-			return errors.New("aborted")
-		}
-
 		// Return
 		return nil
 	},
@@ -118,34 +81,4 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&cpuProfileFile, "cpu-profile-file", "cpu.prof", "file for CPU profiling output")
 	rootCmd.PersistentFlags().StringVar(&memProfileFile, "mem-profile-file", "mem.prof", "file for memory profiling output")
 	rootCmd.PersistentFlags().StringVar(&tracingFile, "tracing-file", "trace.out", "file for tracing output")
-
-	// Context flag
-	rootCmd.PersistentFlags().StringVar(&ctxRegex, "context", "", "regex to match the context name.")
-	if err := rootCmd.RegisterFlagCompletionFunc("context", contextCompletionFunc); err != nil {
-		panic(err)
-	}
-}
-
-//-----------------------------------------------------------------------------
-// contextCompletionFunc
-//-----------------------------------------------------------------------------
-
-func contextCompletionFunc(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-
-	// Get the contexts
-	contexts, err := k8sctx.List()
-	if err != nil {
-		panic(err)
-	}
-
-	// Filter the contexts
-	var completions []string
-	for _, context := range contexts {
-		if strings.HasPrefix(context, toComplete) {
-			completions = append(completions, context)
-		}
-	}
-
-	// Return the completions
-	return completions, cobra.ShellCompDirectiveNoFileComp
 }

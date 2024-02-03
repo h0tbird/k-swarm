@@ -84,6 +84,10 @@ var dumpCmd = &cobra.Command{
 //-----------------------------------------------------------------------------
 
 func init() {
+
+	// Add the command to the parent
 	manifestCmd.AddCommand(dumpCmd)
+
+	// --stdout flag
 	dumpCmd.Flags().BoolP("stdout", "", false, "Output to stdout")
 }

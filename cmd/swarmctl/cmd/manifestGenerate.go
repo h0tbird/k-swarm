@@ -7,10 +7,10 @@ package cmd
 import "github.com/spf13/cobra"
 
 //-----------------------------------------------------------------------------
-// generateCmd
+// manifestGenerateCmd
 //-----------------------------------------------------------------------------
 
-var generateCmd = &cobra.Command{
+var manifestGenerateCmd = &cobra.Command{
 	Use:   "generate",
 	Short: "Generates a manifest and outputs it.",
 }
@@ -21,13 +21,15 @@ var generateCmd = &cobra.Command{
 
 func init() {
 
-	// Add the command to the manifestCmd
-	manifestCmd.AddCommand(generateCmd)
+	// Add the command to the parent
+	manifestCmd.AddCommand(manifestGenerateCmd)
 
-	// Define the flags
-	generateCmd.PersistentFlags().Int("replicas", 1, "Number of replicas to deploy.")
-	generateCmd.PersistentFlags().StringVar(&nodeSelector, "node-selector", "", "Node selector to use for deployment.")
-	if err := generateCmd.RegisterFlagCompletionFunc("node-selector", nodeSelectorCompletionFunc); err != nil {
+	// --replicas flag
+	manifestGenerateCmd.PersistentFlags().Int("replicas", 1, "Number of replicas to deploy.")
+
+	// --node-selector flag
+	manifestGenerateCmd.PersistentFlags().StringVar(&nodeSelector, "node-selector", "", "Node selector to use for deployment.")
+	if err := manifestGenerateCmd.RegisterFlagCompletionFunc("node-selector", nodeSelectorCompletionFunc); err != nil {
 		panic(err)
 	}
 }
