@@ -28,10 +28,12 @@ var (
 	cpuProfile     bool
 	memProfile     bool
 	tracing        bool
+	stdout         bool
 	cpuProfileFile string
 	memProfileFile string
 	tracingFile    string
 	nodeSelector   string
+	replicas       int
 )
 
 //-----------------------------------------------------------------------------
@@ -42,8 +44,6 @@ var rootCmd = &cobra.Command{
 	Use:   "swarmctl",
 	Short: "swarmctl controls the swarm",
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-
-		cmd.Println("Hello from root PersistentPreRunE")
 
 		// Return early if the command is a completion command
 		if cmd.CalledAs() == "__complete" || strings.Contains(cmd.CommandPath(), "completion") {

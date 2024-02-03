@@ -25,7 +25,7 @@ func init() {
 	manifestCmd.AddCommand(manifestGenerateCmd)
 
 	// --replicas flag
-	manifestGenerateCmd.PersistentFlags().Int("replicas", 1, "Number of replicas to deploy.")
+	manifestGenerateCmd.PersistentFlags().IntVar(&replicas, "replicas", 1, "Number of replicas to deploy.")
 
 	// --node-selector flag
 	manifestGenerateCmd.PersistentFlags().StringVar(&nodeSelector, "node-selector", "", "Node selector to use for deployment.")

@@ -22,9 +22,6 @@ var manifestGenerateInformerCmd = &cobra.Command{
 	Short: "Outputs informer manifests.",
 	Run: func(cmd *cobra.Command, args []string) {
 
-		// Get all the flags
-		replicas, _ := cmd.Flags().GetInt("replicas")
-
 		// Parse the template
 		tmpl, err := util.ParseTemplate(Assets, "informer")
 		if err != nil {

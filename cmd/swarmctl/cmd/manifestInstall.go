@@ -83,7 +83,7 @@ func init() {
 	}
 
 	// --replicas flag
-	manifestInstallCmd.PersistentFlags().Int("replicas", 1, "Number of replicas to deploy.")
+	manifestInstallCmd.PersistentFlags().IntVar(&replicas, "replicas", 1, "Number of replicas to deploy.")
 
 	// --node-selector flag
 	manifestInstallCmd.PersistentFlags().StringVar(&nodeSelector, "node-selector", "", "Node selector to use for deployment.")

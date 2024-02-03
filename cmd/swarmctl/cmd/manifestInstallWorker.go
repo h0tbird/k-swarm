@@ -28,9 +28,6 @@ var manifestInstallWorkerCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 
-		// Get all the flags
-		replicas, _ := cmd.Flags().GetInt("replicas")
-
 		// Split args[0] into start and end
 		parts := strings.Split(args[0], ":")
 		if len(parts) != 2 {

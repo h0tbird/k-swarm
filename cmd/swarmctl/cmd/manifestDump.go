@@ -35,12 +35,6 @@ var dumpCmd = &cobra.Command{
 			args = []string{"informer", "worker"}
 		}
 
-		// Get the stdout flag
-		stdout, err := cmd.Flags().GetBool("stdout")
-		if err != nil {
-			return fmt.Errorf("error getting stdout flag: %w", err)
-		}
-
 		// Create ~/.swarmctl
 		if !stdout {
 			if err := os.MkdirAll(util.SwarmDir, 0755); err != nil {
@@ -89,5 +83,5 @@ func init() {
 	manifestCmd.AddCommand(dumpCmd)
 
 	// --stdout flag
-	dumpCmd.Flags().BoolP("stdout", "", false, "Output to stdout")
+	dumpCmd.Flags().BoolVar(&stdout, "stdout", false, "Output to stdout")
 }
