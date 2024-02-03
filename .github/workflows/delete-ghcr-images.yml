@@ -1,0 +1,29 @@
+name: GHCR
+
+on:
+  schedule:
+    - cron: '0 0 * * *'
+
+jobs:
+
+  #----------------------------------------------------------------------------
+  # Delete images
+  #----------------------------------------------------------------------------
+
+  clean-ghcr:
+
+    name: Delete images from GHCR
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Delete untagged images
+        uses: snok/container-retention-policy@v2
+        with:
+          image-names: k-swarm
+          cut-off: A day ago UTC
+          account-type: org
+          org-name: octoroot
+          keep-at-least: 1
+          untagged-only: true
+          token: ${{ secrets.PAT }}
