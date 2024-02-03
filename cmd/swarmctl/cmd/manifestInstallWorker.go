@@ -26,21 +26,19 @@ var manifestInstallWorkerCmd = &cobra.Command{
 	Use:   "worker <start:end>",
 	Short: "Installs worker manifests.",
 	Args:  cobra.ExactArgs(1),
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 
 		// Split args[0] into start and end
 		parts := strings.Split(args[0], ":")
 		if len(parts) != 2 {
-			fmt.Println("Invalid range format. Please use the format start:end.")
-			return
+			return fmt.Errorf("invalid range format. Please use the format start:end")
 		}
 
 		// Convert start and end to integers
 		start, err1 := strconv.Atoi(parts[0])
 		end, err2 := strconv.Atoi(parts[1])
 		if err1 != nil || err2 != nil {
-			fmt.Println("Invalid range. Both start and end should be integers.")
-			return
+			return fmt.Errorf("invalid range. Both start and end should be integers")
 		}
 
 		// Parse the template
@@ -82,6 +80,9 @@ var manifestInstallWorkerCmd = &cobra.Command{
 				}
 			}
 		}
+
+		// Return
+		return nil
 	},
 }
 

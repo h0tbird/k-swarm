@@ -23,12 +23,12 @@ import (
 var manifestInstallInformerCmd = &cobra.Command{
 	Use:   "informer",
 	Short: "Installs informer manifests.",
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 
 		// Parse the template
 		tmpl, err := util.ParseTemplate(Assets, "informer")
 		if err != nil {
-			panic(err)
+			return err
 		}
 
 		// Loop through all contexts
@@ -46,16 +46,19 @@ var manifestInstallInformerCmd = &cobra.Command{
 				NodeSelector: nodeSelector,
 			})
 			if err != nil {
-				panic(err)
+				return err
 			}
 
 			// Loop through all yaml documents
 			for _, doc := range docs {
 				if err := context.ApplyYaml(doc); err != nil {
-					panic(err)
+					return err
 				}
 			}
 		}
+
+		// Return
+		return nil
 	},
 }
 

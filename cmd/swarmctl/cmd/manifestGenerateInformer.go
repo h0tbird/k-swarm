@@ -20,12 +20,12 @@ import (
 var manifestGenerateInformerCmd = &cobra.Command{
 	Use:   "informer",
 	Short: "Outputs informer manifests.",
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 
 		// Parse the template
 		tmpl, err := util.ParseTemplate(Assets, "informer")
 		if err != nil {
-			panic(err)
+			return err
 		}
 
 		// Render the template
@@ -36,6 +36,9 @@ var manifestGenerateInformerCmd = &cobra.Command{
 			Replicas:     replicas,
 			NodeSelector: nodeSelector,
 		})
+
+		// Return
+		return nil
 	},
 }
 
