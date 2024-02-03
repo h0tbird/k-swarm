@@ -97,8 +97,4 @@ func init() {
 	// Add command to rootCmd installCmd
 	rootCmd.AddCommand(installWorkerCmd)
 	installCmd.AddCommand(installWorkerCmd)
-
-	// Define the flags
-	installWorkerCmd.PersistentFlags().Int("replicas", 1, "Number of replicas to deploy.")
-	installWorkerCmd.PersistentFlags().StringVar(&nodeSelector, "node-selector", "", "Node selector to use.")
 }

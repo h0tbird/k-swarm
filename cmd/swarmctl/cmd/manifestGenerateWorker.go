@@ -77,8 +77,4 @@ func init() {
 
 	// Add the command to the workerCmd
 	generateCmd.AddCommand(generateWorkerCmd)
-
-	// Define the flags
-	generateWorkerCmd.PersistentFlags().Int("replicas", 1, "Number of replicas to deploy.")
-	generateWorkerCmd.PersistentFlags().StringVar(&nodeSelector, "node-selector", "", "Node selector to use for deployment.")
 }

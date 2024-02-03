@@ -50,19 +50,4 @@ func init() {
 
 	// Add the command to the informerCmd
 	generateCmd.AddCommand(generateInformerCmd)
-
-	// Define the flags
-	generateInformerCmd.PersistentFlags().Int("replicas", 1, "Number of replicas to deploy.")
-	generateInformerCmd.PersistentFlags().StringVar(&nodeSelector, "node-selector", "", "Node selector to use for deployment.")
-	if err := generateInformerCmd.RegisterFlagCompletionFunc("node-selector", nodeSelectorCompletionFunc); err != nil {
-		panic(err)
-	}
-}
-
-//-----------------------------------------------------------------------------
-// nodeSelectorCompletionFunc
-//-----------------------------------------------------------------------------
-
-func nodeSelectorCompletionFunc(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-	return []string{"{key1:value1,key2:value2}"}, cobra.ShellCompDirectiveNoFileComp
 }

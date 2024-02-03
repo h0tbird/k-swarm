@@ -71,8 +71,4 @@ func init() {
 	// Add command to rootCmd and informerCmd
 	rootCmd.AddCommand(installInformerCmd)
 	installCmd.AddCommand(installInformerCmd)
-
-	// Define the flags
-	installInformerCmd.PersistentFlags().Int("replicas", 1, "Number of replicas to deploy.")
-	installInformerCmd.PersistentFlags().StringVar(&nodeSelector, "node-selector", "", "Node selector to use for deployment.")
 }
