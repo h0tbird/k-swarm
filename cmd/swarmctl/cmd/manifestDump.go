@@ -20,10 +20,10 @@ import (
 )
 
 //-----------------------------------------------------------------------------
-// dumpCmd
+// manifestDumpCmd
 //-----------------------------------------------------------------------------
 
-var dumpCmd = &cobra.Command{
+var manifestDumpCmd = &cobra.Command{
 	Use:       "dump [informer] [worker]",
 	Short:     "Dumps templates to ~/.swarmctl or stdout.",
 	ValidArgs: []string{"informer", "worker"},
@@ -80,8 +80,8 @@ var dumpCmd = &cobra.Command{
 func init() {
 
 	// Add the command to the parent
-	manifestCmd.AddCommand(dumpCmd)
+	manifestCmd.AddCommand(manifestDumpCmd)
 
 	// --stdout flag
-	dumpCmd.Flags().BoolVar(&stdout, "stdout", false, "Output to stdout")
+	manifestDumpCmd.Flags().BoolVar(&stdout, "stdout", false, "Output to stdout")
 }
