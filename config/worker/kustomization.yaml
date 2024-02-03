@@ -10,5 +10,5 @@ resources:
 
 images:
 - name: controller
-  newName: h0tbird/k-swarm
+  newName: octoroot/k-swarm
   newTag: latest
