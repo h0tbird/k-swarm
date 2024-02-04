@@ -217,9 +217,13 @@ func Filter(regex string) ([]string, error) {
 	// Variables
 	var matchingContexts []string
 
-	// Return empty list if regex is empty
+	// Get the current context
 	if regex == "" {
-		return matchingContexts, nil
+		config, err := clientcmd.LoadFromFile(filepath.Join(HomeDir, ".kube", "config"))
+		if err != nil {
+			return nil, err
+		}
+		return []string{config.CurrentContext}, nil
 	}
 
 	// List the contexts
