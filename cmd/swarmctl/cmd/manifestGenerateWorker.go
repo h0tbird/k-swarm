@@ -23,9 +23,11 @@ import (
 //-------------------------------------------------------------------------
 
 var manifestGenerateWorkerCmd = &cobra.Command{
-	Use:   "worker <start:end>",
-	Short: "Outputs worker manifests.",
-	Args:  cobra.ExactArgs(1),
+	Use:     "worker <start:end>",
+	Short:   "Outputs worker manifests.",
+	Aliases: []string{"w"},
+	Args:    cobra.ExactArgs(1),
+	PreRunE: validateFlags,
 	RunE: func(cmd *cobra.Command, args []string) error {
 
 		// Split args[0] into start and end

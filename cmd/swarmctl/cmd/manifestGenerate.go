@@ -11,8 +11,9 @@ import "github.com/spf13/cobra"
 //-----------------------------------------------------------------------------
 
 var manifestGenerateCmd = &cobra.Command{
-	Use:   "generate",
-	Short: "Generates a manifest and outputs it.",
+	Use:     "generate",
+	Short:   "Generates a manifest and outputs it.",
+	Aliases: []string{"g"},
 }
 
 //-----------------------------------------------------------------------------
@@ -26,13 +27,13 @@ func init() {
 
 	// --replicas flag
 	manifestGenerateCmd.PersistentFlags().IntVar(&replicas, "replicas", 1, "Number of replicas to deploy.")
-	if err := manifestGenerateCmd.RegisterFlagCompletionFunc("replicas", replicasCompletionFunc); err != nil {
+	if err := manifestGenerateCmd.RegisterFlagCompletionFunc("replicas", replicasCompletion); err != nil {
 		panic(err)
 	}
 
 	// --node-selector flag
 	manifestGenerateCmd.PersistentFlags().StringVar(&nodeSelector, "node-selector", "", "Node selector to use for deployment.")
-	if err := manifestGenerateCmd.RegisterFlagCompletionFunc("node-selector", nodeSelectorCompletionFunc); err != nil {
+	if err := manifestGenerateCmd.RegisterFlagCompletionFunc("node-selector", nodeSelectorCompletion); err != nil {
 		panic(err)
 	}
 }

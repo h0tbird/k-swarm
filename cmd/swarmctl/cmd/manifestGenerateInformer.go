@@ -18,8 +18,11 @@ import (
 //-----------------------------------------------------------------------------
 
 var manifestGenerateInformerCmd = &cobra.Command{
-	Use:   "informer",
-	Short: "Outputs informer manifests.",
+	Use:     "informer",
+	Short:   "Outputs informer manifests.",
+	Aliases: []string{"i"},
+	Args:    cobra.ExactArgs(0),
+	PreRunE: validateFlags,
 	RunE: func(cmd *cobra.Command, args []string) error {
 
 		// Parse the template

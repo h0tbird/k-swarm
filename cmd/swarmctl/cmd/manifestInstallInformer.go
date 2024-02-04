@@ -21,8 +21,11 @@ import (
 //-----------------------------------------------------------------------------
 
 var manifestInstallInformerCmd = &cobra.Command{
-	Use:   "informer",
-	Short: "Installs informer manifests.",
+	Use:     "informer",
+	Short:   "Installs informer manifests.",
+	Aliases: []string{"i"},
+	Args:    cobra.ExactArgs(0),
+	PreRunE: validateFlags,
 	RunE: func(cmd *cobra.Command, args []string) error {
 
 		// Parse the template

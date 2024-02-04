@@ -8,6 +8,7 @@ import (
 
 	// Stdlib
 	"embed"
+	"errors"
 	"strings"
 
 	// Community
@@ -41,8 +42,9 @@ var (
 //-----------------------------------------------------------------------------
 
 var rootCmd = &cobra.Command{
-	Use:   "swarmctl",
-	Short: "swarmctl controls the swarm",
+	Version: "0.0.1",
+	Use:     "swarmctl",
+	Short:   "swarmctl controls the swarm",
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 
 		// Return early if the command is a completion command
@@ -59,16 +61,6 @@ var rootCmd = &cobra.Command{
 }
 
 //-----------------------------------------------------------------------------
-// Execute adds all child commands to the root command and sets flags appropriately.
-// This is called by main.main(). It only needs to happen once to the rootCmd.
-//-----------------------------------------------------------------------------
-
-func Execute() error {
-	defer stopProfiling()
-	return rootCmd.Execute()
-}
-
-//-----------------------------------------------------------------------------
 // init
 //-----------------------------------------------------------------------------
 
@@ -81,4 +73,99 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&cpuProfileFile, "cpu-profile-file", "cpu.prof", "file for CPU profiling output")
 	rootCmd.PersistentFlags().StringVar(&memProfileFile, "mem-profile-file", "mem.prof", "file for memory profiling output")
 	rootCmd.PersistentFlags().StringVar(&tracingFile, "tracing-file", "trace.out", "file for tracing output")
+}
+
+//-----------------------------------------------------------------------------
+// This is called by main.main()
+//-----------------------------------------------------------------------------
+
+func Execute() error {
+	defer stopProfiling()
+	return rootCmd.Execute()
+}
+
+//-----------------------------------------------------------------------------
+// context
+//-----------------------------------------------------------------------------
+
+// contextCompletion
+func contextCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+
+	// Get the contexts
+	contexts, err := k8sctx.List()
+	if err != nil {
+		panic(err)
+	}
+
+	// Filter the contexts
+	var completions []string
+	for _, context := range contexts {
+		if strings.HasPrefix(context, toComplete) {
+			completions = append(completions, context)
+		}
+	}
+
+	// Return the completions
+	return completions, cobra.ShellCompDirectiveNoFileComp
+}
+
+// contextIsValid
+func contextIsValid() bool {
+	return true
+}
+
+//-----------------------------------------------------------------------------
+// replicas
+//-----------------------------------------------------------------------------
+
+// replicasCompletion
+func replicasCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	return []string{"1"}, cobra.ShellCompDirectiveNoFileComp
+}
+
+// replicasIsValid
+func replicasIsValid() bool {
+	return true
+}
+
+//-----------------------------------------------------------------------------
+// nodeSelector
+//-----------------------------------------------------------------------------
+
+// nodeSelectorCompletion
+func nodeSelectorCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	return []string{"{key1: value1, key2: value2}"}, cobra.ShellCompDirectiveNoFileComp
+}
+
+// nodeSelectorIsValid
+func nodeSelectorIsValid() bool {
+	return true
+}
+
+//-----------------------------------------------------------------------------
+// validateFlags
+//-----------------------------------------------------------------------------
+
+func validateFlags(cmd *cobra.Command, args []string) error {
+
+	if cmd.Flags().Changed("context") {
+		if valid := contextIsValid(); !valid {
+			return errors.New("invalid context")
+		}
+	}
+
+	if cmd.Flags().Changed("replicas") {
+		if valid := replicasIsValid(); !valid {
+			return errors.New("invalid replicas")
+		}
+	}
+
+	if cmd.Flags().Changed("node-selector") {
+		if valid := nodeSelectorIsValid(); !valid {
+			return errors.New("invalid node-selector")
+		}
+	}
+
+	// Return
+	return nil
 }

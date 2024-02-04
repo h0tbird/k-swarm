@@ -9,7 +9,6 @@ import (
 	// Stdlib
 	"errors"
 	"fmt"
-	"strings"
 
 	// Community
 	"github.com/spf13/cobra"
@@ -23,8 +22,9 @@ import (
 //-----------------------------------------------------------------------------
 
 var manifestInstallCmd = &cobra.Command{
-	Use:   "install",
-	Short: "Generates a manifest and applies it.",
+	Use:     "install",
+	Short:   "Generates a manifest and applies it.",
+	Aliases: []string{"i"},
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 
 		// Get the contexts that match the regex
@@ -78,51 +78,19 @@ func init() {
 
 	// --context flag
 	manifestInstallCmd.PersistentFlags().StringVar(&ctxRegex, "context", "", "regex to match the context name.")
-	if err := manifestInstallCmd.RegisterFlagCompletionFunc("context", contextCompletionFunc); err != nil {
+	if err := manifestInstallCmd.RegisterFlagCompletionFunc("context", contextCompletion); err != nil {
 		panic(err)
 	}
 
 	// --replicas flag
 	manifestInstallCmd.PersistentFlags().IntVar(&replicas, "replicas", 1, "Number of replicas to deploy.")
-	if err := manifestInstallCmd.RegisterFlagCompletionFunc("replicas", replicasCompletionFunc); err != nil {
+	if err := manifestInstallCmd.RegisterFlagCompletionFunc("replicas", replicasCompletion); err != nil {
 		panic(err)
 	}
 
 	// --node-selector flag
 	manifestInstallCmd.PersistentFlags().StringVar(&nodeSelector, "node-selector", "", "Node selector to use for deployment.")
-	if err := manifestInstallCmd.RegisterFlagCompletionFunc("node-selector", nodeSelectorCompletionFunc); err != nil {
+	if err := manifestInstallCmd.RegisterFlagCompletionFunc("node-selector", nodeSelectorCompletion); err != nil {
 		panic(err)
 	}
-}
-
-//-----------------------------------------------------------------------------
-// contextCompletionFunc
-//-----------------------------------------------------------------------------
-
-func contextCompletionFunc(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-
-	// Get the contexts
-	contexts, err := k8sctx.List()
-	if err != nil {
-		panic(err)
-	}
-
-	// Filter the contexts
-	var completions []string
-	for _, context := range contexts {
-		if strings.HasPrefix(context, toComplete) {
-			completions = append(completions, context)
-		}
-	}
-
-	// Return the completions
-	return completions, cobra.ShellCompDirectiveNoFileComp
-}
-
-//-----------------------------------------------------------------------------
-// replicasCompletionFunc
-//-----------------------------------------------------------------------------
-
-func replicasCompletionFunc(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-	return []string{"1"}, cobra.ShellCompDirectiveNoFileComp
 }
