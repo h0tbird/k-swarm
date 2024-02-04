@@ -27,6 +27,11 @@ var manifestInstallCmd = &cobra.Command{
 	Aliases: []string{"i"},
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 
+		// Run the root PersistentPreRunE
+		if err := rootCmd.PersistentPreRunE(cmd, args); err != nil {
+			return err
+		}
+
 		// Get the contexts that match the regex
 		matches, err := k8sctx.Filter(ctxRegex)
 		if err != nil {
