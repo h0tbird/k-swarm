@@ -23,8 +23,33 @@ import (
 //-------------------------------------------------------------------------
 
 var manifestInstallWorkerCmd = &cobra.Command{
-	Use:     "worker <start:end>",
-	Short:   "Installs worker manifests.",
+	Use:   "worker <start:end>",
+	Short: "Installs worker manifests.",
+	Example: `
+  # Install the workers 1 to 1 to the current context
+  swarmctl manifest install worker 1:1
+
+  # Same using command aliases
+  swarmctl m i w 1:1
+
+  # Same using a shoret command chain
+  swarmctl worker 1:1
+
+  # Same using a short command chain with aliases
+  swarmctl w 1:1
+
+  # Install the workers 1 to 1 to a specific context
+  swarmctl w 1:1 --context my-context
+
+  # Install the workers 1 to 1 to all contexts that match a regex
+  swarmctl w 1:1 --context 'my-.*'
+
+  # Install the workers 1 to 1 to all contexts that match a regex and set the replicas
+  swarmctl w 1:1 --context 'my-.*' --replicas 3
+
+  # Install the workers 1 to 1 to all contexts that match a regex and set the node selector
+  swarmctl w 1:1 --context 'my-.*' --node-selector '{key1: value1, key2: value2}'
+`,
 	Aliases: []string{"w"},
 	Args:    cobra.ExactArgs(1),
 	PreRunE: validateFlags,

@@ -18,8 +18,18 @@ import (
 //-----------------------------------------------------------------------------
 
 var manifestGenerateInformerCmd = &cobra.Command{
-	Use:     "informer",
-	Short:   "Outputs informer manifests.",
+	Use:   "informer",
+	Short: "Outputs informer manifests.",
+	Example: `
+  # Output the generated informer manifest to stdout
+  swarmctl manifest generate informer
+
+  # Same using command aliases
+  swarmctl m g i
+
+  # Set informer replicas and node selector
+  swarmctl m g i --replicas 3 --node-selector '{key1: value1, key2: value2}'
+`,
 	Aliases: []string{"i"},
 	Args:    cobra.ExactArgs(0),
 	PreRunE: validateFlags,

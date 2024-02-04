@@ -24,8 +24,18 @@ import (
 //-----------------------------------------------------------------------------
 
 var manifestDumpCmd = &cobra.Command{
-	Use:       "dump [informer] [worker]",
-	Short:     "Dumps templates to ~/.swarmctl or stdout.",
+	Use:   "dump [informer] [worker]",
+	Short: "Dumps templates to ~/.swarmctl or stdout.",
+	Example: `
+  # Dump the informer and worker templates to ~/.swarmctl
+  swarmctl manifest dump
+
+  # Dump only the informer template to ~/.swarmctl
+  swarmctl m d informer
+
+  # Dump the informer and worker templates to stdout
+  swarmctl m d --stdout
+`,
 	Aliases:   []string{"d"},
 	ValidArgs: []string{"informer", "worker"},
 	Args:      cobra.MatchAll(cobra.MaximumNArgs(2), cobra.OnlyValidArgs),

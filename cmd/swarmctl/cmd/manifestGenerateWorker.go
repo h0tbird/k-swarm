@@ -23,8 +23,18 @@ import (
 //-------------------------------------------------------------------------
 
 var manifestGenerateWorkerCmd = &cobra.Command{
-	Use:     "worker <start:end>",
-	Short:   "Outputs worker manifests.",
+	Use:   "worker <start:end>",
+	Short: "Outputs worker manifests.",
+	Example: `
+	  # Output the generated workers 1 to 1 manifests
+	  swarmctl manifest generate worker 1:1
+
+	  # Same using command aliases
+	  swarmctl m g w 1:1
+
+	  # Set worker replicas and node selector
+	  swarmctl m g w 1:1 --replicas 3 --node-selector '{key1: value1, key2: value2}'
+`,
 	Aliases: []string{"w"},
 	Args:    cobra.ExactArgs(1),
 	PreRunE: validateFlags,

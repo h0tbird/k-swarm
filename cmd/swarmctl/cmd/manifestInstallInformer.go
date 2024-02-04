@@ -21,8 +21,33 @@ import (
 //-----------------------------------------------------------------------------
 
 var manifestInstallInformerCmd = &cobra.Command{
-	Use:     "informer",
-	Short:   "Installs informer manifests.",
+	Use:   "informer",
+	Short: "Installs informer manifests.",
+	Example: `
+  # Install the informer to the current context
+  swarmctl manifest install informer
+
+  # Same using command aliases
+  swarmctl m i i
+
+  # Same using a shoret command chain
+  swarmctl informer
+
+  # Same using a short command chain with aliases
+  swarmctl i
+
+  # Install the informer to a specific context
+  swarmctl i --context my-context
+
+  # Install the informer to all contexts that match a regex
+  swarmctl i --context 'my-.*'
+
+  # Install the informer to all contexts that match a regex and set the replicas
+  swarmctl i --context 'my-.*' --replicas 3
+
+  # Install the informer to all contexts that match a regex and set the node selector
+  swarmctl i --context 'my-.*' --node-selector '{key1: value1, key2: value2}'
+`,
 	Aliases: []string{"i"},
 	Args:    cobra.ExactArgs(0),
 	PreRunE: validateFlags,
