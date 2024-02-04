@@ -20,12 +20,23 @@ import (
 )
 
 //-----------------------------------------------------------------------------
-// dumpCmd
+// manifestDumpCmd
 //-----------------------------------------------------------------------------
 
-var dumpCmd = &cobra.Command{
-	Use:       "dump [informer] [worker]",
-	Short:     "Dumps templates to ~/.swarmctl or stdout.",
+var manifestDumpCmd = &cobra.Command{
+	Use:   "dump [informer] [worker]",
+	Short: "Dumps templates to ~/.swarmctl or stdout.",
+	Example: `
+  # Dump the informer and worker templates to ~/.swarmctl
+  swarmctl manifest dump
+
+  # Dump only the informer template to ~/.swarmctl
+  swarmctl m d informer
+
+  # Dump the informer and worker templates to stdout
+  swarmctl m d --stdout
+`,
+	Aliases:   []string{"d"},
 	ValidArgs: []string{"informer", "worker"},
 	Args:      cobra.MatchAll(cobra.MaximumNArgs(2), cobra.OnlyValidArgs),
 	RunE: func(cmd *cobra.Command, args []string) error {
@@ -33,12 +44,6 @@ var dumpCmd = &cobra.Command{
 		// No args? Default to both
 		if len(args) == 0 {
 			args = []string{"informer", "worker"}
-		}
-
-		// Get the stdout flag
-		stdout, err := cmd.Flags().GetBool("stdout")
-		if err != nil {
-			return fmt.Errorf("error getting stdout flag: %w", err)
 		}
 
 		// Create ~/.swarmctl
@@ -84,6 +89,10 @@ var dumpCmd = &cobra.Command{
 //-----------------------------------------------------------------------------
 
 func init() {
-	manifestCmd.AddCommand(dumpCmd)
-	dumpCmd.Flags().BoolP("stdout", "", false, "Output to stdout")
+
+	// Add the command to the parent
+	manifestCmd.AddCommand(manifestDumpCmd)
+
+	// --stdout flag
+	manifestDumpCmd.Flags().BoolVar(&stdout, "stdout", false, "Output to stdout")
 }

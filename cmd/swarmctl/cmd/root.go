@@ -9,7 +9,6 @@ import (
 	// Stdlib
 	"embed"
 	"errors"
-	"fmt"
 	"strings"
 
 	// Community
@@ -30,9 +29,12 @@ var (
 	cpuProfile     bool
 	memProfile     bool
 	tracing        bool
+	stdout         bool
 	cpuProfileFile string
 	memProfileFile string
 	tracingFile    string
+	nodeSelector   string
+	replicas       int
 )
 
 //-----------------------------------------------------------------------------
@@ -40,8 +42,9 @@ var (
 //-----------------------------------------------------------------------------
 
 var rootCmd = &cobra.Command{
-	Use:   "swarmctl",
-	Short: "swarmctl controls the swarm",
+	Version: "0.0.1",
+	Use:     "swarmctl",
+	Short:   "swarmctl controls the swarm",
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 
 		// Return early if the command is a completion command
@@ -52,54 +55,9 @@ var rootCmd = &cobra.Command{
 		// Handle profiling
 		onStopProfiling = startProfiling()
 
-		// Get the contexts that match the regex
-		matches, err := k8sctx.Filter(ctxRegex)
-		if err != nil {
-			return err
-		}
-
-		// Print
-		cmd.Println("\nMatched contexts:")
-
-		// For every match
-		for _, match := range matches {
-
-			// Print the match
-			cmd.Printf("  - %s\n", match)
-
-			// Create the context
-			c, err := k8sctx.New(match)
-			if err != nil {
-				return err
-			}
-
-			// Store the config
-			contexts[match] = c
-		}
-
-		// A chance to cancel
-		cmd.Print("\nDo you want to continue? [y/N] ")
-		var answer string
-		if _, err := fmt.Scanln(&answer); err != nil {
-			return err
-		}
-		if answer != "y" {
-			return errors.New("aborted")
-		}
-
 		// Return
 		return nil
 	},
-}
-
-//-----------------------------------------------------------------------------
-// Execute adds all child commands to the root command and sets flags appropriately.
-// This is called by main.main(). It only needs to happen once to the rootCmd.
-//-----------------------------------------------------------------------------
-
-func Execute() error {
-	defer stopProfiling()
-	return rootCmd.Execute()
 }
 
 //-----------------------------------------------------------------------------
@@ -115,19 +73,23 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&cpuProfileFile, "cpu-profile-file", "cpu.prof", "file for CPU profiling output")
 	rootCmd.PersistentFlags().StringVar(&memProfileFile, "mem-profile-file", "mem.prof", "file for memory profiling output")
 	rootCmd.PersistentFlags().StringVar(&tracingFile, "tracing-file", "trace.out", "file for tracing output")
-
-	// Context flag
-	rootCmd.PersistentFlags().StringVar(&ctxRegex, "context", "", "regex to match the context name.")
-	if err := rootCmd.RegisterFlagCompletionFunc("context", contextCompletionFunc); err != nil {
-		panic(err)
-	}
 }
 
 //-----------------------------------------------------------------------------
-// contextCompletionFunc
+// This is called by main.main()
 //-----------------------------------------------------------------------------
 
-func contextCompletionFunc(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+func Execute() error {
+	defer stopProfiling()
+	return rootCmd.Execute()
+}
+
+//-----------------------------------------------------------------------------
+// context
+//-----------------------------------------------------------------------------
+
+// contextCompletion
+func contextCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 
 	// Get the contexts
 	contexts, err := k8sctx.List()
@@ -145,4 +107,65 @@ func contextCompletionFunc(cmd *cobra.Command, args []string, toComplete string)
 
 	// Return the completions
 	return completions, cobra.ShellCompDirectiveNoFileComp
+}
+
+// contextIsValid
+func contextIsValid() bool {
+	return true
+}
+
+//-----------------------------------------------------------------------------
+// replicas
+//-----------------------------------------------------------------------------
+
+// replicasCompletion
+func replicasCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	return []string{"1"}, cobra.ShellCompDirectiveNoFileComp
+}
+
+// replicasIsValid
+func replicasIsValid() bool {
+	return true
+}
+
+//-----------------------------------------------------------------------------
+// nodeSelector
+//-----------------------------------------------------------------------------
+
+// nodeSelectorCompletion
+func nodeSelectorCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	return []string{"{key1: value1, key2: value2}"}, cobra.ShellCompDirectiveNoFileComp
+}
+
+// nodeSelectorIsValid
+func nodeSelectorIsValid() bool {
+	return true
+}
+
+//-----------------------------------------------------------------------------
+// validateFlags
+//-----------------------------------------------------------------------------
+
+func validateFlags(cmd *cobra.Command, args []string) error {
+
+	if cmd.Flags().Changed("context") {
+		if valid := contextIsValid(); !valid {
+			return errors.New("invalid context")
+		}
+	}
+
+	if cmd.Flags().Changed("replicas") {
+		if valid := replicasIsValid(); !valid {
+			return errors.New("invalid replicas")
+		}
+	}
+
+	if cmd.Flags().Changed("node-selector") {
+		if valid := nodeSelectorIsValid(); !valid {
+			return errors.New("invalid node-selector")
+		}
+	}
+
+	// Return
+	return nil
 }

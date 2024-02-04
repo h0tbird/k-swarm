@@ -4,18 +4,16 @@ package cmd
 // Imports
 //-----------------------------------------------------------------------------
 
-import (
-	// Community
-	"github.com/spf13/cobra"
-)
+import "github.com/spf13/cobra"
 
 //-----------------------------------------------------------------------------
 // manifestCmd
 //-----------------------------------------------------------------------------
 
 var manifestCmd = &cobra.Command{
-	Use:   "manifest",
-	Short: "The manifest command generates swarm manifests.",
+	Use:     "manifest",
+	Short:   "The manifest command generates swarm manifests.",
+	Aliases: []string{"m"},
 }
 
 //-----------------------------------------------------------------------------
@@ -23,5 +21,7 @@ var manifestCmd = &cobra.Command{
 //-----------------------------------------------------------------------------
 
 func init() {
+
+	// Add the command to the parent
 	rootCmd.AddCommand(manifestCmd)
 }

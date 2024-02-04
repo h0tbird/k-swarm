@@ -17,21 +17,46 @@ import (
 )
 
 //-----------------------------------------------------------------------------
-// installInformerCmd
+// manifestInstallInformerCmd
 //-----------------------------------------------------------------------------
 
-var installInformerCmd = &cobra.Command{
+var manifestInstallInformerCmd = &cobra.Command{
 	Use:   "informer",
 	Short: "Installs informer manifests.",
-	Run: func(cmd *cobra.Command, args []string) {
+	Example: `
+  # Install the informer to the current context
+  swarmctl manifest install informer
 
-		// Get all the flags
-		replicas, _ := cmd.Flags().GetInt("replicas")
+  # Same using command aliases
+  swarmctl m i i
+
+  # Same using a shoret command chain
+  swarmctl informer
+
+  # Same using a short command chain with aliases
+  swarmctl i
+
+  # Install the informer to a specific context
+  swarmctl i --context my-context
+
+  # Install the informer to all contexts that match a regex
+  swarmctl i --context 'my-.*'
+
+  # Install the informer to all contexts that match a regex and set the replicas
+  swarmctl i --context 'my-.*' --replicas 3
+
+  # Install the informer to all contexts that match a regex and set the node selector
+  swarmctl i --context 'my-.*' --node-selector '{key1: value1, key2: value2}'
+`,
+	Aliases: []string{"i"},
+	Args:    cobra.ExactArgs(0),
+	PreRunE: validateFlags,
+	RunE: func(cmd *cobra.Command, args []string) error {
 
 		// Parse the template
 		tmpl, err := util.ParseTemplate(Assets, "informer")
 		if err != nil {
-			panic(err)
+			return err
 		}
 
 		// Loop through all contexts
@@ -42,21 +67,26 @@ var installInformerCmd = &cobra.Command{
 
 			// Render the template
 			docs, err := util.RenderTemplate(tmpl, struct {
-				Replicas int
+				Replicas     int
+				NodeSelector string
 			}{
-				Replicas: replicas,
+				Replicas:     replicas,
+				NodeSelector: nodeSelector,
 			})
 			if err != nil {
-				panic(err)
+				return err
 			}
 
 			// Loop through all yaml documents
 			for _, doc := range docs {
 				if err := context.ApplyYaml(doc); err != nil {
-					panic(err)
+					return err
 				}
 			}
 		}
+
+		// Return
+		return nil
 	},
 }
 
@@ -67,9 +97,6 @@ var installInformerCmd = &cobra.Command{
 func init() {
 
 	// Add command to rootCmd and informerCmd
-	rootCmd.AddCommand(installInformerCmd)
-	installCmd.AddCommand(installInformerCmd)
-
-	// Define the flags
-	installInformerCmd.PersistentFlags().Int("replicas", 1, "Number of replicas to deploy.")
+	rootCmd.AddCommand(manifestInstallInformerCmd)
+	manifestInstallCmd.AddCommand(manifestInstallInformerCmd)
 }

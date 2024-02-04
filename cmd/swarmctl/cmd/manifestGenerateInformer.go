@@ -14,29 +14,44 @@ import (
 )
 
 //-----------------------------------------------------------------------------
-// generateInformerCmd
+// manifestGenerateInformerCmd
 //-----------------------------------------------------------------------------
 
-var generateInformerCmd = &cobra.Command{
+var manifestGenerateInformerCmd = &cobra.Command{
 	Use:   "informer",
 	Short: "Outputs informer manifests.",
-	Run: func(cmd *cobra.Command, args []string) {
+	Example: `
+  # Output the generated informer manifest to stdout
+  swarmctl manifest generate informer
 
-		// Get all the flags
-		replicas, _ := cmd.Flags().GetInt("replicas")
+  # Same using command aliases
+  swarmctl m g i
+
+  # Set informer replicas and node selector
+  swarmctl m g i --replicas 3 --node-selector '{key1: value1, key2: value2}'
+`,
+	Aliases: []string{"i"},
+	Args:    cobra.ExactArgs(0),
+	PreRunE: validateFlags,
+	RunE: func(cmd *cobra.Command, args []string) error {
 
 		// Parse the template
 		tmpl, err := util.ParseTemplate(Assets, "informer")
 		if err != nil {
-			panic(err)
+			return err
 		}
 
 		// Render the template
 		tmpl.Execute(cmd.OutOrStdout(), struct {
-			Replicas int
+			Replicas     int
+			NodeSelector string
 		}{
-			Replicas: replicas,
+			Replicas:     replicas,
+			NodeSelector: nodeSelector,
 		})
+
+		// Return
+		return nil
 	},
 }
 
@@ -46,9 +61,6 @@ var generateInformerCmd = &cobra.Command{
 
 func init() {
 
-	// Add the command to the informerCmd
-	generateCmd.AddCommand(generateInformerCmd)
-
-	// Define the flags
-	generateInformerCmd.PersistentFlags().Int("replicas", 1, "Number of replicas to deploy.")
+	// Add the command to the parent
+	manifestGenerateCmd.AddCommand(manifestGenerateInformerCmd)
 }

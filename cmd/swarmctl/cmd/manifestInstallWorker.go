@@ -19,31 +19,53 @@ import (
 )
 
 //-------------------------------------------------------------------------
-// installWorkerCmd
+// manifestInstallWorkerCmd
 //-------------------------------------------------------------------------
 
-var installWorkerCmd = &cobra.Command{
+var manifestInstallWorkerCmd = &cobra.Command{
 	Use:   "worker <start:end>",
 	Short: "Installs worker manifests.",
-	Args:  cobra.ExactArgs(1),
-	Run: func(cmd *cobra.Command, args []string) {
+	Example: `
+  # Install the workers 1 to 1 to the current context
+  swarmctl manifest install worker 1:1
 
-		// Get all the flags
-		replicas, _ := cmd.Flags().GetInt("replicas")
+  # Same using command aliases
+  swarmctl m i w 1:1
+
+  # Same using a shoret command chain
+  swarmctl worker 1:1
+
+  # Same using a short command chain with aliases
+  swarmctl w 1:1
+
+  # Install the workers 1 to 1 to a specific context
+  swarmctl w 1:1 --context my-context
+
+  # Install the workers 1 to 1 to all contexts that match a regex
+  swarmctl w 1:1 --context 'my-.*'
+
+  # Install the workers 1 to 1 to all contexts that match a regex and set the replicas
+  swarmctl w 1:1 --context 'my-.*' --replicas 3
+
+  # Install the workers 1 to 1 to all contexts that match a regex and set the node selector
+  swarmctl w 1:1 --context 'my-.*' --node-selector '{key1: value1, key2: value2}'
+`,
+	Aliases: []string{"w"},
+	Args:    cobra.ExactArgs(1),
+	PreRunE: validateFlags,
+	RunE: func(cmd *cobra.Command, args []string) error {
 
 		// Split args[0] into start and end
 		parts := strings.Split(args[0], ":")
 		if len(parts) != 2 {
-			fmt.Println("Invalid range format. Please use the format start:end.")
-			return
+			return fmt.Errorf("invalid range format. Please use the format start:end")
 		}
 
 		// Convert start and end to integers
 		start, err1 := strconv.Atoi(parts[0])
 		end, err2 := strconv.Atoi(parts[1])
 		if err1 != nil || err2 != nil {
-			fmt.Println("Invalid range. Both start and end should be integers.")
-			return
+			return fmt.Errorf("invalid range. Both start and end should be integers")
 		}
 
 		// Parse the template
@@ -65,11 +87,13 @@ var installWorkerCmd = &cobra.Command{
 
 				// Render the template
 				docs, err := util.RenderTemplate(tmpl, struct {
-					Replicas  int
-					Namespace string
+					Replicas     int
+					Namespace    string
+					NodeSelector string
 				}{
-					Replicas:  replicas,
-					Namespace: fmt.Sprintf("service-%d", i),
+					Replicas:     replicas,
+					Namespace:    fmt.Sprintf("service-%d", i),
+					NodeSelector: nodeSelector,
 				})
 				if err != nil {
 					panic(err)
@@ -83,6 +107,9 @@ var installWorkerCmd = &cobra.Command{
 				}
 			}
 		}
+
+		// Return
+		return nil
 	},
 }
 
@@ -93,9 +120,6 @@ var installWorkerCmd = &cobra.Command{
 func init() {
 
 	// Add command to rootCmd installCmd
-	rootCmd.AddCommand(installWorkerCmd)
-	installCmd.AddCommand(installWorkerCmd)
-
-	// Define the flags
-	installWorkerCmd.PersistentFlags().Int("replicas", 1, "Number of replicas to deploy.")
+	rootCmd.AddCommand(manifestInstallWorkerCmd)
+	manifestInstallCmd.AddCommand(manifestInstallWorkerCmd)
 }

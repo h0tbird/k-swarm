@@ -19,37 +19,44 @@ import (
 )
 
 //-------------------------------------------------------------------------
-// generateWorkerCmd
+// manifestGenerateWorkerCmd
 //-------------------------------------------------------------------------
 
-var generateWorkerCmd = &cobra.Command{
+var manifestGenerateWorkerCmd = &cobra.Command{
 	Use:   "worker <start:end>",
 	Short: "Outputs worker manifests.",
-	Args:  cobra.ExactArgs(1),
-	Run: func(cmd *cobra.Command, args []string) {
+	Example: `
+	  # Output the generated workers 1 to 1 manifests
+	  swarmctl manifest generate worker 1:1
 
-		// Get all the flags
-		replicas, _ := cmd.Flags().GetInt("replicas")
+	  # Same using command aliases
+	  swarmctl m g w 1:1
+
+	  # Set worker replicas and node selector
+	  swarmctl m g w 1:1 --replicas 3 --node-selector '{key1: value1, key2: value2}'
+`,
+	Aliases: []string{"w"},
+	Args:    cobra.ExactArgs(1),
+	PreRunE: validateFlags,
+	RunE: func(cmd *cobra.Command, args []string) error {
 
 		// Split args[0] into start and end
 		parts := strings.Split(args[0], ":")
 		if len(parts) != 2 {
-			fmt.Println("Invalid range format. Please use the format start:end.")
-			return
+			return fmt.Errorf("invalid range format. Please use the format start:end")
 		}
 
 		// Convert start and end to integers
 		start, err1 := strconv.Atoi(parts[0])
 		end, err2 := strconv.Atoi(parts[1])
 		if err1 != nil || err2 != nil {
-			fmt.Println("Invalid range. Both start and end should be integers.")
-			return
+			return fmt.Errorf("invalid range. Both start and end should be integers")
 		}
 
 		// Parse the template
 		tmpl, err := util.ParseTemplate(Assets, "worker")
 		if err != nil {
-			panic(err)
+			return err
 		}
 
 		// Loop from start to end
@@ -57,13 +64,18 @@ var generateWorkerCmd = &cobra.Command{
 
 			// Render the template
 			tmpl.Execute(cmd.OutOrStdout(), struct {
-				Replicas  int
-				Namespace string
+				Replicas     int
+				Namespace    string
+				NodeSelector string
 			}{
-				Replicas:  replicas,
-				Namespace: fmt.Sprintf("service-%d", i),
+				Replicas:     replicas,
+				Namespace:    fmt.Sprintf("service-%d", i),
+				NodeSelector: nodeSelector,
 			})
 		}
+
+		// Return
+		return nil
 	},
 }
 
@@ -73,9 +85,6 @@ var generateWorkerCmd = &cobra.Command{
 
 func init() {
 
-	// Add the command to the workerCmd
-	generateCmd.AddCommand(generateWorkerCmd)
-
-	// Define the flags
-	generateWorkerCmd.PersistentFlags().Int("replicas", 1, "Number of replicas to deploy.")
+	// Add the command to the parent
+	manifestGenerateCmd.AddCommand(manifestGenerateWorkerCmd)
 }
