@@ -25,7 +25,6 @@ jobs:
           cut-off: A day ago UTC
           account-type: org
           org-name: octoroot
-          keep-at-least: 1
           untagged-only: true
           token: ${{ secrets.GITHUB_TOKEN }}
           token-type: github-token
