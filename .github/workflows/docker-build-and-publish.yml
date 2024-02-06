@@ -20,6 +20,7 @@ on:
       - 'cmd/main.go'
       - 'pkg/**'
       - 'internal/**'
+  workflow_dispatch: {}
 
 env:
   REGISTRY: ghcr.io
