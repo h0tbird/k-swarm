@@ -140,6 +140,8 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY_IMAGE }}
+          tags: |
+            type=ref,event=pr
 
       - name: Create manifest list and push
         working-directory: /tmp/digests
