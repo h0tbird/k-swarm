@@ -39,6 +39,7 @@ jobs:
         scheme: "pull_request"
         repo_name: "k-swarm"
         match_regex: '^pr-(\d+)$|^(\d+)$'
+        do_delete: "true"
 
   #----------------------------------------------------------------------------
   # Cleanup untagged images
