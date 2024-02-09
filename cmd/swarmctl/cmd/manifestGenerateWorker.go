@@ -67,10 +67,12 @@ var manifestGenerateWorkerCmd = &cobra.Command{
 				Replicas     int
 				Namespace    string
 				NodeSelector string
+				Version      string
 			}{
 				Replicas:     replicas,
 				Namespace:    fmt.Sprintf("service-%d", i),
 				NodeSelector: nodeSelector,
+				Version:      version,
 			})
 		}
 

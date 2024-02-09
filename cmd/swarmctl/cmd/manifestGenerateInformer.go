@@ -45,9 +45,11 @@ var manifestGenerateInformerCmd = &cobra.Command{
 		tmpl.Execute(cmd.OutOrStdout(), struct {
 			Replicas     int
 			NodeSelector string
+			Version      string
 		}{
 			Replicas:     replicas,
 			NodeSelector: nodeSelector,
+			Version:      version,
 		})
 
 		// Return

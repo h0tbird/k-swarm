@@ -90,10 +90,12 @@ var manifestInstallWorkerCmd = &cobra.Command{
 					Replicas     int
 					Namespace    string
 					NodeSelector string
+					Version      string
 				}{
 					Replicas:     replicas,
 					Namespace:    fmt.Sprintf("service-%d", i),
 					NodeSelector: nodeSelector,
+					Version:      version,
 				})
 				if err != nil {
 					panic(err)

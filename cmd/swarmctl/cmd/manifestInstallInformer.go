@@ -69,9 +69,11 @@ var manifestInstallInformerCmd = &cobra.Command{
 			docs, err := util.RenderTemplate(tmpl, struct {
 				Replicas     int
 				NodeSelector string
+				Version      string
 			}{
 				Replicas:     replicas,
 				NodeSelector: nodeSelector,
+				Version:      version,
 			})
 			if err != nil {
 				return err
