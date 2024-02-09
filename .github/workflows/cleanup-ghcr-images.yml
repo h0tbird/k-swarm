@@ -40,7 +40,6 @@ jobs:
         repo_name: "k-swarm"
         match_regex: '^pr-(\d+)$|^(\d+)$'
         do_delete: "true"
-        log_level: "debug"
 
   #----------------------------------------------------------------------------
   # Cleanup untagged images
