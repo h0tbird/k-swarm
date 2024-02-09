@@ -16,16 +16,13 @@ jobs:
 
     name: Cleanup ephemeral images
     runs-on: ubuntu-latest
-    env:
-      TOKEN: ${{ secrets.PACKAGE_DELETE_TOKEN }}
 
     steps:
 
     - name: Cleanup ephemeral images
-      if: "${{ env.TOKEN != '' }}"
       uses: stumpylog/image-cleaner-action/ephemeral@v0.5.0
       with:
-        token: "${{ env.TOKEN }}"
+        token: "${{ secrets.PACKAGE_DELETE_TOKEN }}"
         owner: "octoroot"
         is_org: "true"
         package_name: "k-swarm"
@@ -43,16 +40,13 @@ jobs:
       name: Cleanup untagged images
       runs-on: ubuntu-latest
       needs: cleanup-ephemeral-images
-      env:
-        TOKEN: ${{ secrets.PACKAGE_DELETE_TOKEN }}
 
       steps:
 
       - name: Clean untagged images
-        if: "${{ env.TOKEN != '' }}"
         uses: stumpylog/image-cleaner-action/untagged@v0.5.0
         with:
-          token: "${{ env.TOKEN }}"
+          token: "${{ secrets.PACKAGE_DELETE_TOKEN }}"
           owner: "octoroot"
           is_org: "true"
           package_name: "k-swarm"
