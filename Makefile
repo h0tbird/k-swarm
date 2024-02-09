@@ -102,7 +102,9 @@ build: manifests generate fmt vet ## Build manager binary.
 
 .PHONY: swarmctl
 swarmctl: kustomize ## Build swarmctl binary.
-	go build -o bin/swarmctl cmd/swarmctl/main.go
+	go build -a -trimpath \
+	-ldflags "-extldflags '-static' -X 'github.com/octoroot/k-swarm/cmd/swarmctl/cmd.version=0.0.0'" \
+	-o bin/swarmctl cmd/swarmctl/main.go
 
 .PHONY: run
 run: manifests generate fmt vet ## Run a controller from your host.

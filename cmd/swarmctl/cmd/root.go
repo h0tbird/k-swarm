@@ -25,6 +25,7 @@ import (
 var (
 	Assets         embed.FS
 	contexts       = map[string]*k8sctx.Context{}
+	version        = "dev"
 	ctxRegex       string
 	cpuProfile     bool
 	memProfile     bool
@@ -42,7 +43,7 @@ var (
 //-----------------------------------------------------------------------------
 
 var rootCmd = &cobra.Command{
-	Version: "0.0.1",
+	Version: version,
 	Use:     "swarmctl",
 	Short:   "swarmctl controls the swarm",
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
