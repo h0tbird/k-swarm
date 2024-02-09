@@ -50,3 +50,4 @@ jobs:
           owner: "octoroot"
           is_org: "true"
           package_name: "k-swarm"
+          do_delete: "true"
