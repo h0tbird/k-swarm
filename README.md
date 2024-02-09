@@ -18,6 +18,13 @@ Bring up a local dev environment:
 make tilt-up
 ```
 
+Release
+```
+git checkout -b release-0.1
+git tag -a v0.1.0 -m "Release v0.1.0"
+make release
+```
+
 ## Performance Profiling and Benchmarking
 CPU Profiling
 ```
