@@ -3,11 +3,6 @@
 
 ## Developing
 
-Build and publish a multi-arch docker image:
-```
-PUSH_IMG=h0tbird/k-swarm make docker-buildx
-```
-
 Download all the `Makefile` tooling to `./bin/`:
 ```
 make tooling
@@ -21,6 +16,7 @@ make tilt-up
 Release
 ```
 git checkout -b release-0.1
+git push -u origin release-0.1
 git tag -a v0.1.0 -m "Release v0.1.0"
 make release
 ```
