@@ -26,10 +26,6 @@ CONTAINER_TOOL ?= docker
 SHELL = /usr/bin/env bash -o pipefail
 .SHELLFLAGS = -ec
 
-# Define GOOS and GOARCH
-GOOS=$(shell go env GOOS)
-GOARCH=$(shell go env GOARCH)
-
 .PHONY: all
 all: build
 
@@ -106,8 +102,7 @@ build: manifests generate fmt vet ## Build manager binary.
 
 .PHONY: swarmctl
 swarmctl: ## Build swarmctl binary.
-	goreleaser build --snapshot --single-target --clean
-	cp dist/swarmctl_$(GOOS)_$(GOARCH)/swarmctl bin/swarmctl
+	goreleaser build --snapshot --single-target --clean -o bin/swarmctl
 
 .PHONY: run
 run: manifests generate fmt vet ## Run a controller from your host.
