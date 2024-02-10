@@ -138,7 +138,7 @@ docker-buildx: ## Build and push docker image for the manager for cross-platform
 
 .PHOONY: release
 release: ## Create a new release
-	$(GORELEASER) release --skip=publish --clean
+	$(GORELEASER) release --snapshot --clean
 
 #------------------------------------------------------------------------------
 ##@ Deployment
