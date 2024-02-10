@@ -102,7 +102,7 @@ build: manifests generate fmt vet ## Build manager binary.
 
 .PHONY: swarmctl
 swarmctl: ## Build swarmctl binary.
-	goreleaser build --snapshot --single-target --clean -o bin/swarmctl
+	$(GORELEASER) build --snapshot --single-target --clean -o bin/swarmctl
 
 .PHONY: run
 run: manifests generate fmt vet ## Run a controller from your host.
@@ -138,7 +138,7 @@ docker-buildx: ## Build and push docker image for the manager for cross-platform
 
 .PHOONY: release
 release: ## Create a new release
-	goreleaser release --skip=publish --clean
+	$(GORELEASER) release --skip=publish --clean
 
 #------------------------------------------------------------------------------
 ##@ Deployment
@@ -201,11 +201,13 @@ KUSTOMIZE ?= $(LOCALBIN)/kustomize
 CONTROLLER_GEN ?= $(LOCALBIN)/controller-gen
 ENVTEST ?= $(LOCALBIN)/setup-envtest
 CTLPTL ?= $(LOCALBIN)/ctlptl
+GORELEASER ?= $(LOCALBIN)/goreleaser
 
 ## Tool Versions
 KUSTOMIZE_VERSION ?= v5.2.1
 CONTROLLER_TOOLS_VERSION ?= v0.13.0
 CTLPTL_VERSION ?= v0.8.22
+GORELEASER_VERSION ?= v1.24.0
 
 ## Tool install scripts
 KUSTOMIZE_INSTALL_SCRIPT ?= "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"
@@ -232,3 +234,8 @@ envtest: $(LOCALBIN) ## Download envtest-setup locally if necessary.
 ctlptl: $(LOCALBIN) ## Download ctlptl locally if necessary. If wrong version is installed, it will be overwritten.
 	@ test -s $(CTLPTL) && $(CTLPTL) version | grep -q $(CTLPTL_VERSION) || \
 	GOBIN=$(LOCALBIN) go install github.com/tilt-dev/ctlptl/cmd/ctlptl@$(CTLPTL_VERSION)
+
+.PHONY: goreleaser
+goreleaser: ## Download goreleaser locally if necessary. If wrong version is installed, it will be overwritten.
+	@ test -s $(GORELEASER) && $(GORELEASER) --version | grep -q $(GORELEASER_VERSION) || \
+	GOBIN=$(LOCALBIN) go install github.com/goreleaser/goreleaser@$(GORELEASER_VERSION)
