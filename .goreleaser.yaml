@@ -1,8 +1,3 @@
-# This is an example .goreleaser.yml file with some sensible defaults.
-# Make sure to check the documentation at https://goreleaser.com
-
-# The lines below are called `modelines`. See `:help modeline`
-# Feel free to remove those if you don't want/need to use them.
 # yaml-language-server: $schema=https://goreleaser.com/static/schema.json
 # vim: set ts=2 sw=2 tw=0 fo=cnqoj
 
@@ -45,3 +40,19 @@ changelog:
     exclude:
       - "^docs:"
       - "^test:"
+
+brews:
+  - name: swarmctl
+    repository:
+      owner: octoroot
+      name: homebrew-tap
+    folder: Formula
+    homepage: https://github.com/octoroot/k-swarm
+    description: A k8s service swarm
+    license: MIT
+    test: |
+      system "#{bin}/swarmctl -v"
+    extra_install: |-
+      bash_completion.install "completions/swarmctl.bash" => "swarmctl"
+      zsh_completion.install "completions/swarmctl.zsh" => "_swarmctl"
+      fish_completion.install "completions/swarmctl.fish"
