@@ -26,6 +26,10 @@ CONTAINER_TOOL ?= docker
 SHELL = /usr/bin/env bash -o pipefail
 .SHELLFLAGS = -ec
 
+# Define GOOS and GOARCH
+GOOS=$(shell go env GOOS)
+GOARCH=$(shell go env GOARCH)
+
 .PHONY: all
 all: build
 
@@ -101,10 +105,9 @@ build: manifests generate fmt vet ## Build manager binary.
 	go build -o bin/manager cmd/main.go
 
 .PHONY: swarmctl
-swarmctl: kustomize ## Build swarmctl binary.
-	go build -a -trimpath \
-	-ldflags "-extldflags '-static' -X 'github.com/octoroot/k-swarm/cmd/swarmctl/cmd.version=$(shell git describe)'" \
-	-o bin/swarmctl cmd/swarmctl/main.go
+swarmctl: ## Build swarmctl binary.
+	goreleaser build --snapshot --single-target --clean
+	cp dist/swarmctl_$(GOOS)_$(GOARCH)/swarmctl bin/swarmctl
 
 .PHONY: run
 run: manifests generate fmt vet ## Run a controller from your host.
@@ -137,6 +140,10 @@ docker-buildx: ## Build and push docker image for the manager for cross-platform
 	- $(CONTAINER_TOOL) buildx build --push --platform=$(PLATFORMS) --tag ${PUSH_IMG} -f Dockerfile.cross .
 	- $(CONTAINER_TOOL) buildx rm project-v3-builder
 	rm Dockerfile.cross
+
+.PHOONY: release
+release: ## Create a new release
+	goreleaser release --skip=publish --clean
 
 #------------------------------------------------------------------------------
 ##@ Deployment
