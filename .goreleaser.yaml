@@ -3,9 +3,17 @@
 
 version: 1
 
+#------------------------------------------------------------------------------
+# before
+#------------------------------------------------------------------------------
+
 before:
   hooks:
     - go mod tidy
+
+#------------------------------------------------------------------------------
+# builds
+#------------------------------------------------------------------------------
 
 builds:
   - id: swarmctl
@@ -26,6 +34,10 @@ builds:
       - amd64
       - arm64
 
+#------------------------------------------------------------------------------
+# archives
+#------------------------------------------------------------------------------
+
 archives:
   - id: swarmctl
     builds:
@@ -33,6 +45,10 @@ archives:
     format: binary
     name_template: >-
       {{ .Binary }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}
+
+#------------------------------------------------------------------------------
+# changelog
+#------------------------------------------------------------------------------
 
 changelog:
   sort: asc
@@ -45,6 +61,10 @@ changelog:
       - Merge remote-tracking branch
       - Merge branch
       - go mod tidy
+
+#------------------------------------------------------------------------------
+# brews
+#------------------------------------------------------------------------------
 
 brews:
   - name: swarmctl
@@ -61,3 +81,4 @@ brews:
       bash_completion.install "completions/swarmctl.bash" => "swarmctl"
       zsh_completion.install "completions/swarmctl.zsh" => "_swarmctl"
       fish_completion.install "completions/swarmctl.fish"
+    download_strategy: GitHubPrivateRepositoryReleaseDownloadStrategy
