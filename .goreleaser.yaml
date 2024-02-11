@@ -42,9 +42,9 @@ archives:
   - id: swarmctl
     builds:
       - swarmctl
-    format: binary
+    format: tar.gz
     name_template: >-
-      {{ .Binary }}_{{ .Os }}_{{ .Arch }}
+      {{ .Binary }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}
 
 #------------------------------------------------------------------------------
 # changelog
