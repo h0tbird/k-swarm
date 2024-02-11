@@ -44,7 +44,7 @@ archives:
       - swarmctl
     format: binary
     name_template: >-
-      {{ .Binary }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}
+      {{ .Binary }}_{{ .Os }}_{{ .Arch }}
 
 #------------------------------------------------------------------------------
 # changelog
@@ -68,6 +68,8 @@ changelog:
 
 brews:
   - name: swarmctl
+    ids:
+      - swarmctl
     repository:
       owner: octoroot
       name: homebrew-tap
@@ -77,8 +79,4 @@ brews:
     license: MIT
     test: |
       system "#{bin}/swarmctl -v"
-    extra_install: |-
-      bash_completion.install "completions/swarmctl.bash" => "swarmctl"
-      zsh_completion.install "completions/swarmctl.zsh" => "_swarmctl"
-      fish_completion.install "completions/swarmctl.fish"
     download_strategy: GitHubPrivateRepositoryReleaseDownloadStrategy
