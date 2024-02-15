@@ -61,7 +61,8 @@ func server(flags *common.FlagPack) {
 
 	// Setup the router
 	gin.SetMode(gin.ReleaseMode)
-	router := gin.Default()
+	router := gin.New()
+	router.Use(gin.Recovery())
 	router.SetTrustedProxies(nil)
 
 	// Routes
