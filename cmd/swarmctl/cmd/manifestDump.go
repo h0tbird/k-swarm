@@ -43,7 +43,7 @@ var manifestDumpCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 
 		// Set the error prefix
-		cmd.SetErrPrefix("\nError: ")
+		cmd.SetErrPrefix("\nError:")
 
 		// No args? Default to both
 		if len(args) == 0 {

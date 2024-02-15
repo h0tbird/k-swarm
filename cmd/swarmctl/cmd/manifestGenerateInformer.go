@@ -37,7 +37,7 @@ var manifestGenerateInformerCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 
 		// Set the error prefix
-		cmd.SetErrPrefix("\nError: ")
+		cmd.SetErrPrefix("\nError:")
 
 		// Parse the template
 		tmpl, err := util.ParseTemplate(Assets, "informer")

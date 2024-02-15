@@ -57,7 +57,7 @@ var manifestInstallWorkerCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 
 		// Set the error prefix
-		cmd.SetErrPrefix("\nError: ")
+		cmd.SetErrPrefix("\nError:")
 
 		// Split args[0] into start and end
 		parts := strings.Split(args[0], ":")
