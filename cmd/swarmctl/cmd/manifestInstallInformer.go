@@ -86,7 +86,7 @@ var manifestInstallInformerCmd = &cobra.Command{
 			// Loop through all yaml documents
 			for _, doc := range docs {
 				if err := context.ApplyYaml(doc); err != nil {
-					return err
+					fmt.Printf("\nError: %s\n", err)
 				}
 			}
 		}
