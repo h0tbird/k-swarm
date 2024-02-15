@@ -296,6 +296,9 @@ spec:
         command:
         - /manager
         image: ghcr.io/octoroot/k-swarm:{{ if .ImageTag }}{{ .ImageTag }}{{ else }}v{{ .Version }}{{ end }}
+        {{- if .ImageTag}}
+        imagePullPolicy: Always
+        {{- end}}
         livenessProbe:
           httpGet:
             path: /healthz
