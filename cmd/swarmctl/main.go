@@ -8,7 +8,6 @@ import (
 
 	//Stdlib
 	"embed"
-	"fmt"
 	"os"
 
 	// Internal
@@ -25,7 +24,6 @@ var assets embed.FS
 func main() {
 	cmd.Assets = assets
 	if err := cmd.Execute(); err != nil {
-		fmt.Println(err)
 		os.Exit(1)
 	}
 }

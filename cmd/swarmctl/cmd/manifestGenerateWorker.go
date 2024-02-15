@@ -23,8 +23,9 @@ import (
 //-------------------------------------------------------------------------
 
 var manifestGenerateWorkerCmd = &cobra.Command{
-	Use:   "worker <start:end>",
-	Short: "Outputs worker manifests.",
+	Use:          "worker <start:end>",
+	Short:        "Outputs worker manifests.",
+	SilenceUsage: true,
 	Example: `
 	  # Output the generated workers 1 to 1 manifests
 	  swarmctl manifest generate worker 1:1
@@ -39,6 +40,9 @@ var manifestGenerateWorkerCmd = &cobra.Command{
 	Args:    cobra.ExactArgs(1),
 	PreRunE: validateFlags,
 	RunE: func(cmd *cobra.Command, args []string) error {
+
+		// Set the error prefix
+		cmd.SetErrPrefix("\nError: ")
 
 		// Split args[0] into start and end
 		parts := strings.Split(args[0], ":")

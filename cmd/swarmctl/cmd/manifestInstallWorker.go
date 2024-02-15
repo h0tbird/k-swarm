@@ -23,8 +23,9 @@ import (
 //-------------------------------------------------------------------------
 
 var manifestInstallWorkerCmd = &cobra.Command{
-	Use:   "worker <start:end>",
-	Short: "Installs worker manifests.",
+	Use:          "worker <start:end>",
+	Short:        "Installs worker manifests.",
+	SilenceUsage: true,
 	Example: `
   # Install the workers 1 to 1 to the current context
   swarmctl manifest install worker 1:1
@@ -55,6 +56,9 @@ var manifestInstallWorkerCmd = &cobra.Command{
 	PreRunE: validateFlags,
 	RunE: func(cmd *cobra.Command, args []string) error {
 
+		// Set the error prefix
+		cmd.SetErrPrefix("\nError: ")
+
 		// Split args[0] into start and end
 		parts := strings.Split(args[0], ":")
 		if len(parts) != 2 {
@@ -71,7 +75,7 @@ var manifestInstallWorkerCmd = &cobra.Command{
 		// Parse the template
 		tmpl, err := util.ParseTemplate(Assets, "worker")
 		if err != nil {
-			panic(err)
+			return err
 		}
 
 		// Loop through all contexts
@@ -98,13 +102,13 @@ var manifestInstallWorkerCmd = &cobra.Command{
 					Version:      version,
 				})
 				if err != nil {
-					panic(err)
+					return err
 				}
 
 				// Loop through all yaml documents
 				for _, doc := range docs {
 					if err := context.ApplyYaml(doc); err != nil {
-						panic(err)
+						return err
 					}
 				}
 			}
