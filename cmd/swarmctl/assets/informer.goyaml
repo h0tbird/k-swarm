@@ -295,7 +295,7 @@ spec:
         - --informer-bind-address=:8083
         command:
         - /manager
-        image: ghcr.io/octoroot/k-swarm:v{{ .Version }}
+        image: ghcr.io/octoroot/k-swarm:{{ if .ImageTag }}{{ .ImageTag }}{{ else }}v{{ .Version }}{{ end }}
         livenessProbe:
           httpGet:
             path: /healthz

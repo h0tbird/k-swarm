@@ -98,4 +98,10 @@ func init() {
 	if err := manifestInstallCmd.RegisterFlagCompletionFunc("node-selector", nodeSelectorCompletion); err != nil {
 		panic(err)
 	}
+
+	// --image-tag flag
+	manifestInstallCmd.PersistentFlags().StringVar(&imageTag, "image-tag", "", "Image tag to use for deployment.")
+	if err := manifestInstallCmd.RegisterFlagCompletionFunc("image-tag", imageTagCompletion); err != nil {
+		panic(err)
+	}
 }

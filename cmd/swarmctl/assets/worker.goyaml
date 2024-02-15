@@ -69,7 +69,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: spec.nodeName
-        image: ghcr.io/octoroot/k-swarm:v{{ .Version }}
+        image: ghcr.io/octoroot/k-swarm:{{ if .ImageTag }}{{ .ImageTag }}{{ else }}v{{ .Version }}{{ end }}
         name: manager
         ports:
         - containerPort: 8082
