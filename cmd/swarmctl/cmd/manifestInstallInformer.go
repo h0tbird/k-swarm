@@ -21,8 +21,9 @@ import (
 //-----------------------------------------------------------------------------
 
 var manifestInstallInformerCmd = &cobra.Command{
-	Use:   "informer",
-	Short: "Installs informer manifests.",
+	Use:          "informer",
+	Short:        "Installs informer manifests.",
+	SilenceUsage: true,
 	Example: `
   # Install the informer to the current context
   swarmctl manifest install informer
@@ -52,6 +53,9 @@ var manifestInstallInformerCmd = &cobra.Command{
 	Args:    cobra.ExactArgs(0),
 	PreRunE: validateFlags,
 	RunE: func(cmd *cobra.Command, args []string) error {
+
+		// Set the error prefix
+		cmd.SetErrPrefix("\nError: ")
 
 		// Parse the template
 		tmpl, err := util.ParseTemplate(Assets, "informer")

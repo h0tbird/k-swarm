@@ -58,7 +58,7 @@ var manifestInstallCmd = &cobra.Command{
 		}
 
 		// A chance to cancel
-		cmd.Print("\nDo you want to continue? [y/N] ")
+		cmd.Print("\nProceed? (y/N) ")
 		var answer string
 		if _, err := fmt.Scanln(&answer); err != nil {
 			return err

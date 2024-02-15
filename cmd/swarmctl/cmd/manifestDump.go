@@ -24,8 +24,9 @@ import (
 //-----------------------------------------------------------------------------
 
 var manifestDumpCmd = &cobra.Command{
-	Use:   "dump [informer] [worker]",
-	Short: "Dumps templates to ~/.swarmctl or stdout.",
+	Use:          "dump [informer] [worker]",
+	Short:        "Dumps templates to ~/.swarmctl or stdout.",
+	SilenceUsage: true,
 	Example: `
   # Dump the informer and worker templates to ~/.swarmctl
   swarmctl manifest dump
@@ -40,6 +41,9 @@ var manifestDumpCmd = &cobra.Command{
 	ValidArgs: []string{"informer", "worker"},
 	Args:      cobra.MatchAll(cobra.MaximumNArgs(2), cobra.OnlyValidArgs),
 	RunE: func(cmd *cobra.Command, args []string) error {
+
+		// Set the error prefix
+		cmd.SetErrPrefix("\nError: ")
 
 		// No args? Default to both
 		if len(args) == 0 {

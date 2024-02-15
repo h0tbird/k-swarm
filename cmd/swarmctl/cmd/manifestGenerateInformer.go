@@ -18,8 +18,9 @@ import (
 //-----------------------------------------------------------------------------
 
 var manifestGenerateInformerCmd = &cobra.Command{
-	Use:   "informer",
-	Short: "Outputs informer manifests.",
+	Use:          "informer",
+	Short:        "Outputs informer manifests.",
+	SilenceUsage: true,
 	Example: `
   # Output the generated informer manifest to stdout
   swarmctl manifest generate informer
@@ -34,6 +35,9 @@ var manifestGenerateInformerCmd = &cobra.Command{
 	Args:    cobra.ExactArgs(0),
 	PreRunE: validateFlags,
 	RunE: func(cmd *cobra.Command, args []string) error {
+
+		// Set the error prefix
+		cmd.SetErrPrefix("\nError: ")
 
 		// Parse the template
 		tmpl, err := util.ParseTemplate(Assets, "informer")
