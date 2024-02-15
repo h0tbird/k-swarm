@@ -50,10 +50,12 @@ var manifestGenerateInformerCmd = &cobra.Command{
 			Replicas     int
 			NodeSelector string
 			Version      string
+			ImageTag     string
 		}{
 			Replicas:     replicas,
 			NodeSelector: nodeSelector,
 			Version:      version,
+			ImageTag:     imageTag,
 		})
 
 		// Return

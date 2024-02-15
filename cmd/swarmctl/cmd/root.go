@@ -35,6 +35,7 @@ var (
 	memProfileFile string
 	tracingFile    string
 	nodeSelector   string
+	imageTag       string
 	replicas       int
 )
 
@@ -144,6 +145,20 @@ func nodeSelectorIsValid() bool {
 }
 
 //-----------------------------------------------------------------------------
+// imageTag
+//-----------------------------------------------------------------------------
+
+// imageTagCompletion
+func imageTagCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	return []string{"pr-xx"}, cobra.ShellCompDirectiveNoFileComp
+}
+
+// imageTagIsValid
+func imageTagIsValid() bool {
+	return true
+}
+
+//-----------------------------------------------------------------------------
 // validateFlags
 //-----------------------------------------------------------------------------
 
@@ -164,6 +179,12 @@ func validateFlags(cmd *cobra.Command, args []string) error {
 	if cmd.Flags().Changed("node-selector") {
 		if valid := nodeSelectorIsValid(); !valid {
 			return errors.New("invalid node-selector")
+		}
+	}
+
+	if cmd.Flags().Changed("image-tag") {
+		if valid := imageTagIsValid(); !valid {
+			return errors.New("invalid image-tag")
 		}
 	}
 
