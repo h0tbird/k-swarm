@@ -150,7 +150,7 @@ func nodeSelectorIsValid() bool {
 
 // imageTagCompletion
 func imageTagCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-	return []string{"pr-xx"}, cobra.ShellCompDirectiveNoFileComp
+	return []string{"main", "pr-xx"}, cobra.ShellCompDirectiveNoFileComp
 }
 
 // imageTagIsValid
