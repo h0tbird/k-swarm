@@ -14,7 +14,7 @@ Install the `informer` with two replicas:
 swarmctl i --context kind-kind --replicas 2
 ```
 
-Install 5 services with 2 workers each:
+Install services 1 to 5 with 2 `workers` each:
 ```
 swarmctl w --context kind-kind 1:5 --replicas 2
 ```
