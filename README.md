@@ -7,6 +7,18 @@
 HOMEBREW_GITHUB_API_TOKEN=${GITHUB_TOKEN} brew install octoroot/tap/swarmctl
 ```
 
+### Usage
+
+Install the `informer` with two replicas:
+```
+swarmctl i --context kind-kind --replicas 2
+```
+
+Install 5 services with 2 workers each:
+```
+swarmctl w --context kind-kind 1:5 --replicas 2
+```
+
 ## Developing
 
 Download all the `Makefile` tooling to `./bin/`:
@@ -19,7 +31,7 @@ Bring up a local dev environment:
 make tilt-up
 ```
 
-Release
+Create a new release:
 ```
 git checkout -b release-0.1
 git push -u origin release-0.1

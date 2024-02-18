@@ -121,7 +121,7 @@ docker-buildx: ## Build and push docker image for the manager for cross-platform
 .PHONY: release
 release: ## Create a new release
 	$(GORELEASER) release --clean
-	PUSH_IMG=ghcr.io/octoroot/k-swarm:$(shell jq -r '.tag' dist/metadata.json) make docker-buildx
+	PUSH_IMG=ghcr.io/octoroot/k-swarm:$$(jq -r '.tag' dist/metadata.json) make docker-buildx
 
 #------------------------------------------------------------------------------
 ##@ Deployment
