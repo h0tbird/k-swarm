@@ -1,7 +1,7 @@
 # k-swarm
 `k-swarm` is used for deploying a series of k8s services that are capable of identifying and communicating with one another, thus establishing a network of synthetic traffic. This interconnected traffic among various workloads provides a foundational platform for a range of laboratory experiments, including the testing and validation of diverse service mesh configurations at scale.
 
-## Install
+### Install
 
 ```
 HOMEBREW_GITHUB_API_TOKEN=${GITHUB_TOKEN} brew install octoroot/tap/swarmctl
@@ -27,7 +27,7 @@ git tag -a v0.1.0 -m "Release v0.1.0"
 make release
 ```
 
-## Performance Profiling and Benchmarking
+### Performance Profiling and Benchmarking
 CPU Profiling
 ```
 swarmctl w --context 'kind-foo-*' 1:10 --cpu-profile
