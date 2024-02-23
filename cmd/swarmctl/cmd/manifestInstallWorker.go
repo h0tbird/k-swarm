@@ -8,8 +8,6 @@ import (
 
 	// Stdlib
 	"fmt"
-	"strconv"
-	"strings"
 
 	// Community
 	"github.com/spf13/cobra"
@@ -54,22 +52,15 @@ var manifestInstallWorkerCmd = &cobra.Command{
 	Aliases: []string{"w"},
 	Args:    cobra.ExactArgs(1),
 	PreRunE: validateFlags,
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(cmd *cobra.Command, args []string) (err error) {
 
 		// Set the error prefix
 		cmd.SetErrPrefix("\nError:")
 
-		// Split args[0] into start and end
-		parts := strings.Split(args[0], ":")
-		if len(parts) != 2 {
-			return fmt.Errorf("invalid range format. Please use the format start:end")
-		}
-
-		// Convert start and end to integers
-		start, err1 := strconv.Atoi(parts[0])
-		end, err2 := strconv.Atoi(parts[1])
-		if err1 != nil || err2 != nil {
-			return fmt.Errorf("invalid range. Both start and end should be integers")
+		// Parse the range
+		start, end, err = util.ParseRange(args[0])
+		if err != nil {
+			return err
 		}
 
 		// Parse the template

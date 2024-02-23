@@ -9,9 +9,11 @@ import (
 	// Stdlib
 	"bytes"
 	"embed"
+	"errors"
 	"html/template"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	// Community
@@ -107,4 +109,27 @@ func RenderTemplate(tmpl *template.Template, data any) ([]string, error) {
 
 	// Return
 	return docs, nil
+}
+
+//-----------------------------------------------------------------------------
+// ParseRange
+//-----------------------------------------------------------------------------
+
+func ParseRange(arg string) (int, int, error) {
+
+	// Split arg into start and end
+	parts := strings.Split(arg, ":")
+	if len(parts) != 2 {
+		return 0, 0, errors.New("invalid range format. Please use the format start:end")
+	}
+
+	// Convert start and end to integers
+	start, err1 := strconv.Atoi(parts[0])
+	end, err2 := strconv.Atoi(parts[1])
+	if err1 != nil || err2 != nil {
+		return 0, 0, errors.New("invalid range. Both start and end should be integers")
+	}
+
+	// Return
+	return start, end, nil
 }
