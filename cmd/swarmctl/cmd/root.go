@@ -37,6 +37,8 @@ var (
 	nodeSelector   string
 	imageTag       string
 	replicas       int
+	start          int
+	end            int
 )
 
 //-----------------------------------------------------------------------------
