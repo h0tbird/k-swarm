@@ -20,6 +20,7 @@ import (
 
 	// Local
 	"github.com/octoroot/k-swarm/cmd/swarmctl/pkg/k8sctx"
+	"github.com/octoroot/k-swarm/cmd/swarmctl/pkg/profiling"
 	"github.com/octoroot/k-swarm/cmd/swarmctl/pkg/util"
 )
 
@@ -44,7 +45,7 @@ func Root(cmd *cobra.Command, args []string) error {
 	}
 
 	// Handle profiling
-	// onStopProfiling = startProfiling()
+	profiling.OnStop = profiling.Start()
 
 	// Return
 	return nil

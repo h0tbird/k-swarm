@@ -15,6 +15,7 @@ import (
 
 	// Local
 	"github.com/octoroot/k-swarm/cmd/swarmctl/pkg/k8sctx"
+	"github.com/octoroot/k-swarm/cmd/swarmctl/pkg/profiling"
 	"github.com/octoroot/k-swarm/cmd/swarmctl/pkg/swarmctl"
 )
 
@@ -22,15 +23,7 @@ import (
 // Globals
 //-----------------------------------------------------------------------------
 
-var (
-	version        = "dev"
-	cpuProfile     bool
-	memProfile     bool
-	tracing        bool
-	cpuProfileFile string
-	memProfileFile string
-	tracingFile    string
-)
+var version = "dev"
 
 //-----------------------------------------------------------------------------
 // init
@@ -51,12 +44,12 @@ func init() {
 	manifestInstallCmd.AddCommand(manifestInstallWorkerCmd)
 
 	// Profiling flags
-	rootCmd.PersistentFlags().BoolVar(&cpuProfile, "cpu-profile", false, "write cpu profile to file")
-	rootCmd.PersistentFlags().BoolVar(&memProfile, "mem-profile", false, "write memory profile to file")
-	rootCmd.PersistentFlags().BoolVar(&tracing, "tracing", false, "write trace to file")
-	rootCmd.PersistentFlags().StringVar(&cpuProfileFile, "cpu-profile-file", "cpu.prof", "file for CPU profiling output")
-	rootCmd.PersistentFlags().StringVar(&memProfileFile, "mem-profile-file", "mem.prof", "file for memory profiling output")
-	rootCmd.PersistentFlags().StringVar(&tracingFile, "tracing-file", "trace.out", "file for tracing output")
+	rootCmd.PersistentFlags().BoolVar(&profiling.CPUProfile, "cpu-profile", false, "write cpu profile to file")
+	rootCmd.PersistentFlags().BoolVar(&profiling.MemProfile, "mem-profile", false, "write memory profile to file")
+	rootCmd.PersistentFlags().BoolVar(&profiling.Tracing, "tracing", false, "write trace to file")
+	rootCmd.PersistentFlags().StringVar(&profiling.CPUProfileFile, "cpu-profile-file", "cpu.prof", "file for CPU profiling output")
+	rootCmd.PersistentFlags().StringVar(&profiling.MemProfileFile, "mem-profile-file", "mem.prof", "file for memory profiling output")
+	rootCmd.PersistentFlags().StringVar(&profiling.TracingFile, "tracing-file", "trace.out", "file for tracing output")
 
 	// manifestDumpCmd flags
 	manifestDumpCmd.Flags().Bool("stdout", false, "Output to stdout")
@@ -105,11 +98,11 @@ func init() {
 }
 
 //-----------------------------------------------------------------------------
-// This is called by main.main()
+// This is called by main()
 //-----------------------------------------------------------------------------
 
 func Execute() error {
-	defer stopProfiling()
+	defer profiling.Stop()
 	return rootCmd.Execute()
 }
 

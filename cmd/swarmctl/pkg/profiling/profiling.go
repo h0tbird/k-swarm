@@ -1,4 +1,4 @@
-package cmd
+package profiling
 
 //-----------------------------------------------------------------------------
 // Imports
@@ -19,15 +19,21 @@ import (
 //-----------------------------------------------------------------------------
 
 var (
-	onStopProfiling func()
-	profilingOnce   sync.Once
+	OnStop         func()
+	once           sync.Once
+	CPUProfile     bool
+	CPUProfileFile string
+	MemProfile     bool
+	MemProfileFile string
+	Tracing        bool
+	TracingFile    string
 )
 
 //-----------------------------------------------------------------------------
-// startProfiling
+// Start
 //-----------------------------------------------------------------------------
 
-func startProfiling() func() {
+func Start() func() {
 
 	// doOnStop is a list of functions to be called on stop
 	var doOnStop []func()
@@ -45,12 +51,12 @@ func startProfiling() func() {
 	// CPU profiling
 	//---------------
 
-	if cpuProfile {
+	if CPUProfile {
 
 		fmt.Println("cpu profile enabled")
 
 		// Create profiling file
-		f, err := os.Create(cpuProfileFile)
+		f, err := os.Create(CPUProfileFile)
 		if err != nil {
 			fmt.Println("could not create cpu profile file")
 			return stop
@@ -75,12 +81,12 @@ func startProfiling() func() {
 	// Memory profiling
 	//------------------
 
-	if memProfile {
+	if MemProfile {
 
 		fmt.Println("memory profile enabled")
 
 		// Create profiling file
-		f, err := os.Create(memProfileFile)
+		f, err := os.Create(MemProfileFile)
 		if err != nil {
 			fmt.Println("could not create memory profile file")
 			return stop
@@ -105,12 +111,12 @@ func startProfiling() func() {
 	// Tracing
 	//---------
 
-	if tracing {
+	if Tracing {
 
 		fmt.Println("tracing enabled")
 
 		// Create tracing file
-		f, err := os.Create(tracingFile)
+		f, err := os.Create(TracingFile)
 		if err != nil {
 			fmt.Println("could not create tracing file")
 			return stop
@@ -136,11 +142,11 @@ func startProfiling() func() {
 }
 
 //-----------------------------------------------------------------------------
-// stopProfiling
+// Stop
 //-----------------------------------------------------------------------------
 
-func stopProfiling() {
-	if onStopProfiling != nil {
-		profilingOnce.Do(onStopProfiling)
+func Stop() {
+	if OnStop != nil {
+		once.Do(OnStop)
 	}
 }
