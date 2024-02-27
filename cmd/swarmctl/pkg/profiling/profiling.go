@@ -19,7 +19,7 @@ import (
 //-----------------------------------------------------------------------------
 
 var (
-	OnStop         func()
+	onStop         func()
 	once           sync.Once
 	CPUProfile     bool
 	CPUProfileFile string
@@ -33,7 +33,7 @@ var (
 // Start
 //-----------------------------------------------------------------------------
 
-func Start() func() {
+func Start() error {
 
 	// doOnStop is a list of functions to be called on stop
 	var doOnStop []func()
@@ -58,15 +58,13 @@ func Start() func() {
 		// Create profiling file
 		f, err := os.Create(CPUProfileFile)
 		if err != nil {
-			fmt.Println("could not create cpu profile file")
-			return stop
+			return fmt.Errorf("could not create cpu profile file: %w", err)
 		}
 
 		// Start profiling
 		err = pprof.StartCPUProfile(f)
 		if err != nil {
-			fmt.Println("could not start cpu profiling")
-			return stop
+			return fmt.Errorf("could not start cpu profiling: %w", err)
 		}
 
 		// Add function to stop cpu profiling to doOnStop list
@@ -88,15 +86,13 @@ func Start() func() {
 		// Create profiling file
 		f, err := os.Create(MemProfileFile)
 		if err != nil {
-			fmt.Println("could not create memory profile file")
-			return stop
+			return fmt.Errorf("could not create memory profile file: %w", err)
 		}
 
 		// Start profiling
 		err = pprof.WriteHeapProfile(f)
 		if err != nil {
-			fmt.Println("could not start memory profiling")
-			return stop
+			return fmt.Errorf("could not start memory profiling: %w", err)
 		}
 
 		// Add function to stop memory profiling to doOnStop list
@@ -118,15 +114,13 @@ func Start() func() {
 		// Create tracing file
 		f, err := os.Create(TracingFile)
 		if err != nil {
-			fmt.Println("could not create tracing file")
-			return stop
+			return fmt.Errorf("could not create tracing file: %w", err)
 		}
 
 		// Start tracing
 		err = trace.Start(f)
 		if err != nil {
-			fmt.Println("could not start tracing")
-			return stop
+			return fmt.Errorf("could not start tracing: %w", err)
 		}
 
 		// Add function to stop tracing to doOnStop list
@@ -138,7 +132,8 @@ func Start() func() {
 	}
 
 	// Return
-	return stop
+	onStop = stop
+	return nil
 }
 
 //-----------------------------------------------------------------------------
@@ -146,7 +141,7 @@ func Start() func() {
 //-----------------------------------------------------------------------------
 
 func Stop() {
-	if OnStop != nil {
-		once.Do(OnStop)
+	if onStop != nil {
+		once.Do(onStop)
 	}
 }

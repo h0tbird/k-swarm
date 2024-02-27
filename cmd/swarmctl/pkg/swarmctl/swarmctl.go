@@ -45,7 +45,9 @@ func Root(cmd *cobra.Command, args []string) error {
 	}
 
 	// Handle profiling
-	profiling.OnStop = profiling.Start()
+	if err := profiling.Start(); err != nil {
+		return fmt.Errorf("error starting profiling: %w", err)
+	}
 
 	// Return
 	return nil
