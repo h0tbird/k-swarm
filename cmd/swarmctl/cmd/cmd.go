@@ -32,16 +32,12 @@ var version = "dev"
 func init() {
 
 	// Add commands
-	rootCmd.AddCommand(manifestCmd)
-	rootCmd.AddCommand(manifestInstallInformerCmd)
-	rootCmd.AddCommand(manifestInstallWorkerCmd)
-	manifestCmd.AddCommand(manifestDumpCmd)
-	manifestCmd.AddCommand(manifestGenerateCmd)
-	manifestCmd.AddCommand(manifestInstallCmd)
-	manifestGenerateCmd.AddCommand(manifestGenerateInformerCmd)
-	manifestGenerateCmd.AddCommand(manifestGenerateWorkerCmd)
-	manifestInstallCmd.AddCommand(manifestInstallInformerCmd)
-	manifestInstallCmd.AddCommand(manifestInstallWorkerCmd)
+	rootCmd.AddCommand(manifestCmd, manifestInstallInformerCmd, manifestInstallWorkerCmd)
+	manifestCmd.AddCommand(manifestDumpCmd, manifestGenerateCmd, manifestInstallCmd)
+	manifestGenerateCmd.AddCommand(manifestGenerateInformerCmd, manifestGenerateWorkerCmd)
+	manifestGenerateInformerCmd.AddCommand(manifestGenerateInformerTelemetryCmd)
+	manifestGenerateWorkerCmd.AddCommand(manifestGenerateWorkerTelemetryCmd)
+	manifestInstallCmd.AddCommand(manifestInstallInformerCmd, manifestInstallWorkerCmd)
 
 	// Profiling flags
 	rootCmd.PersistentFlags().BoolVar(&profiling.CPUProfile, "cpu-profile", false, "write cpu profile to file")
@@ -113,13 +109,13 @@ func Execute() error {
 var rootCmd = &cobra.Command{
 	Version:           version,
 	Use:               "swarmctl",
-	Short:             "swarmctl controls the swarm",
+	Short:             "swarmctl controls the swarm.",
 	PersistentPreRunE: swarmctl.Root,
 }
 
 var manifestCmd = &cobra.Command{
 	Use:     "manifest",
-	Short:   "The manifest command generates swarm manifests.",
+	Short:   "Manages manifests.",
 	Aliases: []string{"m"},
 }
 
@@ -151,6 +147,18 @@ var manifestGenerateInformerCmd = &cobra.Command{
 	RunE:         swarmctl.GenerateInformer,
 }
 
+var manifestGenerateInformerTelemetryCmd = &cobra.Command{
+	Use:          "telemetry (on|off)",
+	Short:        "Outputs Istio telemetry manifests.",
+	SilenceUsage: true,
+	Example:      swarmctl.GenerateInformerTelemetryExample(),
+	Aliases:      []string{"t"},
+	Args:         cobra.ExactArgs(1),
+	ValidArgs:    []string{"on", "off"},
+	PreRunE:      validateFlags,
+	RunE:         swarmctl.GenerateInformerTelemetry,
+}
+
 var manifestGenerateWorkerCmd = &cobra.Command{
 	Use:          "worker <start:end>",
 	Short:        "Outputs worker manifests.",
@@ -160,6 +168,18 @@ var manifestGenerateWorkerCmd = &cobra.Command{
 	Args:         cobra.RangeArgs(1, 3),
 	PreRunE:      validateFlags,
 	RunE:         swarmctl.GenerateWorker,
+}
+
+var manifestGenerateWorkerTelemetryCmd = &cobra.Command{
+	Use:          "telemetry (on|off)",
+	Short:        "Outputs Istio telemetry manifests.",
+	SilenceUsage: true,
+	Example:      swarmctl.GenerateWorkerTelemetryExample(),
+	Aliases:      []string{"t"},
+	Args:         cobra.ExactArgs(1),
+	ValidArgs:    []string{"on", "off"},
+	PreRunE:      validateFlags,
+	RunE:         swarmctl.GenerateWorkerTelemetry,
 }
 
 var manifestInstallCmd = &cobra.Command{

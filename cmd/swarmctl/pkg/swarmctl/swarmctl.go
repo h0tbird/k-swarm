@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strconv"
 	"strings"
 
 	// Community
@@ -172,6 +173,44 @@ func GenerateInformerExample() string {
 }
 
 //-----------------------------------------------------------------------------
+// GenerateInformerTelemetry outputs the informer telemetry manifest
+//-----------------------------------------------------------------------------
+
+func GenerateInformerTelemetry(cmd *cobra.Command, args []string) error {
+
+	// Set the error prefix
+	cmd.SetErrPrefix("\nError:")
+
+	// Parse the template
+	tmpl, err := util.ParseTemplate(Assets, "telemetry")
+	if err != nil {
+		return err
+	}
+
+	// Render the template
+	tmpl.Execute(cmd.OutOrStdout(), struct {
+		OnOff     string
+		Namespace string
+	}{
+		OnOff:     args[0],
+		Namespace: "informer",
+	})
+
+	// Return
+	return nil
+}
+
+func GenerateInformerTelemetryExample() string {
+	return `
+  # Output the generated informer telemetry manifest to stdout
+  swarmctl manifest generate informer telemetry on
+
+  # Same using command aliases
+  swarmctl m g i t on
+  `
+}
+
+//-----------------------------------------------------------------------------
 // GenerateWorker outputs the worker manifest
 //-----------------------------------------------------------------------------
 
@@ -231,6 +270,61 @@ func GenerateWorkerExample() string {
 
   # Set worker replicas and node selector
   swarmctl m g w 1:1 --replicas 3 --node-selector '{key1: value1, key2: value2}'
+  `
+}
+
+//-----------------------------------------------------------------------------
+// GenerateWorkerTelemetry outputs the worker telemetry manifest
+//-----------------------------------------------------------------------------
+
+func GenerateWorkerTelemetry(cmd *cobra.Command, args []string) error {
+
+	// Set the error prefix
+	cmd.SetErrPrefix("\nError:")
+
+	// Split args[0] into start and end
+	parts := strings.Split(args[0], ":")
+	if len(parts) != 2 {
+		return fmt.Errorf("invalid range format. Please use the format start:end")
+	}
+
+	// Convert start and end to integers
+	start, err1 := strconv.Atoi(parts[0])
+	end, err2 := strconv.Atoi(parts[1])
+	if err1 != nil || err2 != nil {
+		return fmt.Errorf("invalid range. Both start and end should be integers")
+	}
+
+	// Parse the template
+	tmpl, err := util.ParseTemplate(Assets, "telemetry")
+	if err != nil {
+		return err
+	}
+
+	// Loop from start to end
+	for i := start; i <= end; i++ {
+
+		// Render the template
+		tmpl.Execute(cmd.OutOrStdout(), struct {
+			OnOff     string
+			Namespace string
+		}{
+			OnOff:     args[0],
+			Namespace: fmt.Sprintf("service-%d", i),
+		})
+	}
+
+	// Return
+	return nil
+}
+
+func GenerateWorkerTelemetryExample() string {
+	return `
+  # Output the generated worker telemetry manifest to stdout
+  swarmctl manifest generate worker 1:1 telemetry on
+
+  # Same using command aliases
+  swarmctl m g w 1:1 t on
   `
 }
 
