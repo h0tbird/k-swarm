@@ -88,6 +88,24 @@ func ParseTemplate(assets embed.FS, component string) (*template.Template, error
 }
 
 //-----------------------------------------------------------------------------
+// SplitYAML
+//-----------------------------------------------------------------------------
+
+func SplitYAML(buf *bytes.Buffer) []string {
+
+	// Split the YAML into docs
+	var docs []string
+	for _, doc := range strings.Split(buf.String(), "---") {
+		if strings.TrimSpace(doc) != "" {
+			docs = append(docs, doc)
+		}
+	}
+
+	// Return
+	return docs
+}
+
+//-----------------------------------------------------------------------------
 // RenderTemplate
 //-----------------------------------------------------------------------------
 
@@ -99,16 +117,8 @@ func RenderTemplate(tmpl *template.Template, data any) ([]string, error) {
 		return nil, err
 	}
 
-	// Split the YAML into docs
-	var docs []string
-	for _, doc := range strings.Split(buf.String(), "---") {
-		if strings.TrimSpace(doc) != "" {
-			docs = append(docs, doc)
-		}
-	}
-
-	// Return
-	return docs, nil
+	// Return a slice of YAML documents
+	return SplitYAML(&buf), nil
 }
 
 //-----------------------------------------------------------------------------
