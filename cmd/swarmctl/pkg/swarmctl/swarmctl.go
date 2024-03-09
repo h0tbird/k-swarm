@@ -478,6 +478,74 @@ func InstallInformerExample() string {
 }
 
 //-----------------------------------------------------------------------------
+// InstallInformerTelemetry
+//-----------------------------------------------------------------------------
+
+func InstallInformerTelemetry(cmd *cobra.Command, args []string) error {
+
+	// Set the error prefix
+	cmd.SetErrPrefix("\nError:")
+
+	// Read the CRDs
+	crds, err := Assets.ReadFile("assets/crds.yaml")
+	if err != nil {
+		return err
+	}
+
+	// Parse the template
+	tmpl, err := util.ParseTemplate(Assets, "telemetry")
+	if err != nil {
+		return err
+	}
+
+	// Loop through all contexts
+	for name, context := range Contexts {
+
+		// Print the context
+		fmt.Printf("\n%s\n\n", name)
+
+		// Loop through all CRDs
+		for _, doc := range util.SplitYAML(bytes.NewBuffer(crds)) {
+			if err := context.ApplyYaml(doc); err != nil {
+				fmt.Printf("\nError: %s\n", err)
+			}
+		}
+
+		// Render the template
+		docs, err := util.RenderTemplate(tmpl, struct {
+			OnOff     string
+			Namespace string
+		}{
+			OnOff:     args[0],
+			Namespace: "informer",
+		})
+		if err != nil {
+			return err
+		}
+
+		// Loop through all yaml documents
+		for _, doc := range docs {
+			if err := context.ApplyYaml(doc); err != nil {
+				fmt.Printf("\nError: %s\n", err)
+			}
+		}
+	}
+
+	// Return
+	return nil
+}
+
+func InstallInformerTelemetryExample() string {
+	return `
+  # Switch on the informer's telemetry
+  swarmctl informer telemetry on
+
+  # Same using command aliases
+  swarmctl i t on
+  `
+}
+
+//-----------------------------------------------------------------------------
 // InstallWorker
 //-----------------------------------------------------------------------------
 
@@ -584,5 +652,96 @@ func InstallWorkerExample() string {
 
   # Install the workers 1 to 1 to all contexts that match a regex and set the node selector
   swarmctl w 1:1 --context 'my-.*' --node-selector '{key1: value1, key2: value2}'
+  `
+}
+
+//-----------------------------------------------------------------------------
+// InstallWorkerTelemetry
+//-----------------------------------------------------------------------------
+
+func InstallWorkerTelemetry(cmd *cobra.Command, args []string) error {
+
+	// Set the error prefix
+	cmd.SetErrPrefix("\nError:")
+
+	// Parse the range
+	start, end, err := util.ParseRange(args[0])
+	if err != nil {
+		return err
+	}
+
+	// Read the CRDs
+	crds, err := Assets.ReadFile("assets/crds.yaml")
+	if err != nil {
+		return err
+	}
+
+	// Parse the template
+	tmpl, err := util.ParseTemplate(Assets, "telemetry")
+	if err != nil {
+		return err
+	}
+
+	// Loop through all contexts
+	for name, context := range Contexts {
+
+		// Print the context
+		fmt.Printf("\n%s\n\n", name)
+
+		// Loop through all CRDs
+		for _, doc := range util.SplitYAML(bytes.NewBuffer(crds)) {
+			if err := context.ApplyYaml(doc); err != nil {
+				fmt.Printf("\nError: %s\n", err)
+			}
+		}
+
+		// Loop trough all services
+		for i := start; i <= end; i++ {
+
+			fmt.Printf("\n")
+
+			// Render the template
+			docs, err := util.RenderTemplate(tmpl, struct {
+				OnOff     string
+				Namespace string
+			}{
+				OnOff:     args[1],
+				Namespace: fmt.Sprintf("service-%d", i),
+			})
+			if err != nil {
+				return err
+			}
+
+			// Loop through all yaml documents
+			for _, doc := range docs {
+				if err := context.ApplyYaml(doc); err != nil {
+					fmt.Printf("\nError: %s\n", err)
+				}
+			}
+		}
+	}
+
+	// Return
+	return nil
+}
+
+func InstallWorkerTelemetryValidArgs(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	switch len(args) {
+	case 0:
+		return []string{"1:1"}, cobra.ShellCompDirectiveNoFileComp
+	case 1:
+		return []string{"on", "off"}, cobra.ShellCompDirectiveNoFileComp
+	default:
+		return []string{}, cobra.ShellCompDirectiveNoFileComp
+	}
+}
+
+func InstallWorkerTelemetryExample() string {
+	return `
+  # Switch on the worker's telemetry
+  swarmctl worker telemetry 1:1 on
+
+  # Same using command aliases
+  swarmctl w t 1:1 on
   `
 }

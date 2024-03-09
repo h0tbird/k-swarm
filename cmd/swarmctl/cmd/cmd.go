@@ -38,6 +38,8 @@ func init() {
 	manifestGenerateInformerCmd.AddCommand(manifestGenerateInformerTelemetryCmd)
 	manifestGenerateWorkerCmd.AddCommand(manifestGenerateWorkerTelemetryCmd)
 	manifestInstallCmd.AddCommand(manifestInstallInformerCmd, manifestInstallWorkerCmd)
+	manifestInstallInformerCmd.AddCommand(manifestInstallInformerTelemetryCmd)
+	manifestInstallWorkerCmd.AddCommand(manifestInstallWorkerTelemetryCmd)
 
 	// Profiling flags
 	rootCmd.PersistentFlags().BoolVar(&profiling.CPUProfile, "cpu-profile", false, "write cpu profile to file")
@@ -149,7 +151,7 @@ var manifestGenerateInformerCmd = &cobra.Command{
 
 var manifestGenerateInformerTelemetryCmd = &cobra.Command{
 	Use:          "telemetry (on|off)",
-	Short:        "Outputs Istio telemetry manifests.",
+	Short:        "Outputs the informer's telemetry manifests.",
 	SilenceUsage: true,
 	Example:      swarmctl.GenerateInformerTelemetryExample(),
 	Aliases:      []string{"t"},
@@ -200,6 +202,18 @@ var manifestInstallInformerCmd = &cobra.Command{
 	RunE:         swarmctl.InstallInformer,
 }
 
+var manifestInstallInformerTelemetryCmd = &cobra.Command{
+	Use:          "telemetry (on|off)",
+	Short:        "Installs the informer's telemetry manifests.",
+	SilenceUsage: true,
+	Example:      swarmctl.InstallInformerTelemetryExample(),
+	Aliases:      []string{"t"},
+	Args:         cobra.ExactArgs(1),
+	ValidArgs:    []string{"on", "off"},
+	PreRunE:      validateFlags,
+	RunE:         swarmctl.InstallInformerTelemetry,
+}
+
 var manifestInstallWorkerCmd = &cobra.Command{
 	Use:          "worker <start:end>",
 	Short:        "Installs worker manifests.",
@@ -207,8 +221,21 @@ var manifestInstallWorkerCmd = &cobra.Command{
 	Example:      swarmctl.InstallWorkerExample(),
 	Aliases:      []string{"w"},
 	Args:         cobra.ExactArgs(1),
+	ValidArgs:    []string{"1:1"},
 	PreRunE:      validateFlags,
 	RunE:         swarmctl.InstallWorker,
+}
+
+var manifestInstallWorkerTelemetryCmd = &cobra.Command{
+	Use:               "telemetry <start:end> (on|off)",
+	Short:             "Installs the worker's telemetry manifests.",
+	SilenceUsage:      true,
+	Example:           swarmctl.InstallWorkerTelemetryExample(),
+	Aliases:           []string{"t"},
+	Args:              cobra.ExactArgs(2),
+	ValidArgsFunction: swarmctl.InstallWorkerTelemetryValidArgs,
+	PreRunE:           validateFlags,
+	RunE:              swarmctl.InstallWorkerTelemetry,
 }
 
 //-----------------------------------------------------------------------------
