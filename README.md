@@ -9,14 +9,19 @@ HOMEBREW_GITHUB_API_TOKEN=${GITHUB_TOKEN} brew install octoroot/tap/swarmctl
 
 ### Usage
 
-Install the `informer` with two replicas:
+Install the `informer` with two replicas to all `kind` clusters:
 ```
-swarmctl i --context kind-kind --replicas 2
+swarmctl i --context 'kind-*' --replicas 2
 ```
 
-Install services 1 to 5 with 2 `workers` each:
+Install services 1 to 5 with 2 `workers` each to all `kind` clusters:
 ```
-swarmctl w --context kind-kind 1:5 --replicas 2
+swarmctl w --context 'kind-*' 1:5 --replicas 2
+```
+
+Enable telemetry for `service-1` on all `kind` clusters:
+```
+swarmctl w t --context 'kind-*' 1:1 on
 ```
 
 ## Developing
