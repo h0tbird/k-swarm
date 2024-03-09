@@ -12,6 +12,7 @@ import (
 
 	// Internal
 	"github.com/octoroot/k-swarm/cmd/swarmctl/cmd"
+	"github.com/octoroot/k-swarm/cmd/swarmctl/pkg/swarmctl"
 )
 
 //go:embed assets/*
@@ -22,7 +23,7 @@ var assets embed.FS
 //-----------------------------------------------------------------------------
 
 func main() {
-	cmd.Assets = assets
+	swarmctl.Assets = assets
 	if err := cmd.Execute(); err != nil {
 		os.Exit(1)
 	}
