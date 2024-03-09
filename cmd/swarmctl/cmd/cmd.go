@@ -31,6 +31,11 @@ var version = "dev"
 
 func init() {
 
+	// Command grouping
+	rootCmd.AddGroup(&cobra.Group{ID: "install", Title: "Install subcommands:"})
+	manifestInstallCmd.AddGroup(&cobra.Group{ID: "install", Title: "Install subcommands:"})
+	manifestGenerateCmd.AddGroup(&cobra.Group{ID: "generate", Title: "Generate subcommands:"})
+
 	// Add commands
 	rootCmd.AddCommand(manifestCmd, manifestInstallInformerCmd, manifestInstallWorkerCmd)
 	manifestCmd.AddCommand(manifestDumpCmd, manifestGenerateCmd, manifestInstallCmd)
@@ -140,7 +145,8 @@ var manifestGenerateCmd = &cobra.Command{
 
 var manifestGenerateInformerCmd = &cobra.Command{
 	Use:          "informer",
-	Short:        "Outputs informer manifests.",
+	Short:        "Generates the informer's manifests.",
+	GroupID:      "generate",
 	SilenceUsage: true,
 	Example:      swarmctl.GenerateInformerExample(),
 	Aliases:      []string{"i"},
@@ -151,7 +157,7 @@ var manifestGenerateInformerCmd = &cobra.Command{
 
 var manifestGenerateInformerTelemetryCmd = &cobra.Command{
 	Use:          "telemetry (on|off)",
-	Short:        "Outputs the informer's telemetry manifests.",
+	Short:        "Generates the informer's telemetry manifests.",
 	SilenceUsage: true,
 	Example:      swarmctl.GenerateInformerTelemetryExample(),
 	Aliases:      []string{"t"},
@@ -163,7 +169,8 @@ var manifestGenerateInformerTelemetryCmd = &cobra.Command{
 
 var manifestGenerateWorkerCmd = &cobra.Command{
 	Use:          "worker <start:end>",
-	Short:        "Outputs worker manifests.",
+	Short:        "Generates the worker's manifests.",
+	GroupID:      "generate",
 	SilenceUsage: true,
 	Example:      swarmctl.GenerateWorkerExample(),
 	Aliases:      []string{"w"},
@@ -174,7 +181,7 @@ var manifestGenerateWorkerCmd = &cobra.Command{
 
 var manifestGenerateWorkerTelemetryCmd = &cobra.Command{
 	Use:          "telemetry (on|off)",
-	Short:        "Outputs Istio telemetry manifests.",
+	Short:        "Generates the worker's telemetry manifests.",
 	SilenceUsage: true,
 	Example:      swarmctl.GenerateWorkerTelemetryExample(),
 	Aliases:      []string{"t"},
@@ -186,14 +193,15 @@ var manifestGenerateWorkerTelemetryCmd = &cobra.Command{
 
 var manifestInstallCmd = &cobra.Command{
 	Use:               "install",
-	Short:             "Generates a manifest and applies it.",
+	Short:             "Generates manifests and applies them.",
 	Aliases:           []string{"i"},
 	PersistentPreRunE: swarmctl.Install,
 }
 
 var manifestInstallInformerCmd = &cobra.Command{
 	Use:          "informer",
-	Short:        "Installs informer manifests.",
+	Short:        "Installs the informer's manifests.",
+	GroupID:      "install",
 	SilenceUsage: true,
 	Example:      swarmctl.InstallInformerExample(),
 	Aliases:      []string{"i"},
@@ -216,7 +224,8 @@ var manifestInstallInformerTelemetryCmd = &cobra.Command{
 
 var manifestInstallWorkerCmd = &cobra.Command{
 	Use:          "worker <start:end>",
-	Short:        "Installs worker manifests.",
+	Short:        "Installs the worker's manifests.",
+	GroupID:      "install",
 	SilenceUsage: true,
 	Example:      swarmctl.InstallWorkerExample(),
 	Aliases:      []string{"w"},

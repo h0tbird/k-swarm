@@ -374,7 +374,8 @@ func Install(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	if answer != "y" {
-		return errors.New("aborted")
+		cmd.SetErrPrefix("aborted:")
+		return errors.New("by user")
 	}
 
 	// Return
