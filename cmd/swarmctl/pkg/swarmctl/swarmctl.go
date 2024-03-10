@@ -130,7 +130,6 @@ func GenerateInformer(cmd *cobra.Command, args []string) error {
 	// Get the flags
 	replicas, _ := cmd.Flags().GetInt("replicas")
 	nodeSelector, _ := cmd.Flags().GetString("node-selector")
-	version, _ := cmd.Flags().GetString("version")
 	imageTag, _ := cmd.Flags().GetString("image-tag")
 
 	// Set the error prefix
@@ -151,7 +150,7 @@ func GenerateInformer(cmd *cobra.Command, args []string) error {
 	}{
 		Replicas:     replicas,
 		NodeSelector: nodeSelector,
-		Version:      version,
+		Version:      cmd.Root().Version,
 		ImageTag:     imageTag,
 	})
 
@@ -219,7 +218,6 @@ func GenerateWorker(cmd *cobra.Command, args []string) error {
 	// Get the flags
 	replicas, _ := cmd.Flags().GetInt("replicas")
 	nodeSelector, _ := cmd.Flags().GetString("node-selector")
-	version, _ := cmd.Flags().GetString("version")
 	imageTag, _ := cmd.Flags().GetString("image-tag")
 
 	// Set the error prefix
@@ -251,7 +249,7 @@ func GenerateWorker(cmd *cobra.Command, args []string) error {
 			Replicas:     replicas,
 			Namespace:    fmt.Sprintf("service-%d", i),
 			NodeSelector: nodeSelector,
-			Version:      version,
+			Version:      cmd.Root().Version,
 			ImageTag:     imageTag,
 		})
 	}
@@ -391,7 +389,6 @@ func InstallInformer(cmd *cobra.Command, args []string) error {
 	// Get the flags
 	replicas, _ := cmd.Flags().GetInt("replicas")
 	nodeSelector, _ := cmd.Flags().GetString("node-selector")
-	version, _ := cmd.Flags().GetString("version")
 	imageTag, _ := cmd.Flags().GetString("image-tag")
 
 	// Set the error prefix
@@ -431,7 +428,7 @@ func InstallInformer(cmd *cobra.Command, args []string) error {
 		}{
 			Replicas:     replicas,
 			NodeSelector: nodeSelector,
-			Version:      version,
+			Version:      cmd.Root().Version,
 			ImageTag:     imageTag,
 		})
 		if err != nil {
@@ -555,7 +552,6 @@ func InstallWorker(cmd *cobra.Command, args []string) error {
 	// Get the flags
 	replicas, _ := cmd.Flags().GetInt("replicas")
 	nodeSelector, _ := cmd.Flags().GetString("node-selector")
-	version, _ := cmd.Flags().GetString("version")
 	imageTag, _ := cmd.Flags().GetString("image-tag")
 
 	// Set the error prefix
@@ -608,7 +604,7 @@ func InstallWorker(cmd *cobra.Command, args []string) error {
 				Replicas:     replicas,
 				Namespace:    fmt.Sprintf("service-%d", i),
 				NodeSelector: nodeSelector,
-				Version:      version,
+				Version:      cmd.Root().Version,
 				ImageTag:     imageTag,
 			})
 			if err != nil {
