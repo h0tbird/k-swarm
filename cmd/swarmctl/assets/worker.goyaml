@@ -90,18 +90,3 @@ spec:
         runAsNonRoot: true
       serviceAccountName: default
       terminationGracePeriodSeconds: 10
----
-apiVersion: telemetry.istio.io/v1alpha1
-kind: Telemetry
-metadata:
-  name: istio-metrics
-  namespace: {{ .Namespace }}
-spec:
-  metrics:
-  - overrides:
-    - disabled: true
-      match:
-        metric: ALL_METRICS
-        mode: CLIENT_AND_SERVER
-    providers:
-    - name: prometheus
