@@ -38,15 +38,7 @@ make tilt-up
 
 Create a new release:
 ```
-MAJOR=0; MINOR=1; PATCH=0
-VERSION="${MAJOR}.${MINOR}.${PATCH}"
-BRANCH="release-${MAJOR}.${MINOR}"
-TAG="v${VERSION}"
-
-git checkout -b ${BRANCH}
-git push -u origin ${BRANCH}
-git tag -a ${TAG} -m "Release ${TAG}"
-make release
+make release BRANCH='release-0.1' TAG='v0.1.0'
 ```
 
 ### Performance Profiling and Benchmarking
