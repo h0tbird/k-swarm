@@ -249,6 +249,10 @@ spec:
     metadata:
       annotations:
         kubectl.kubernetes.io/default-container: manager
+        sidecar.istio.io/proxyCPU: 50m
+        sidecar.istio.io/proxyCPULimit: 500m
+        sidecar.istio.io/proxyMemory: 64Mi
+        sidecar.istio.io/proxyMemoryLimit: 512Mi
       labels:
         k-swarm/informer: enabled
     spec:
