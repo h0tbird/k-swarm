@@ -131,6 +131,7 @@ func GenerateInformer(cmd *cobra.Command, args []string) error {
 	replicas, _ := cmd.Flags().GetInt("replicas")
 	nodeSelector, _ := cmd.Flags().GetString("node-selector")
 	imageTag, _ := cmd.Flags().GetString("image-tag")
+	istioRevision, _ := cmd.Flags().GetString("istio-revision")
 
 	// Set the error prefix
 	cmd.SetErrPrefix("\nError:")
@@ -143,15 +144,17 @@ func GenerateInformer(cmd *cobra.Command, args []string) error {
 
 	// Render the template
 	tmpl.Execute(cmd.OutOrStdout(), struct {
-		Replicas     int
-		NodeSelector string
-		Version      string
-		ImageTag     string
+		Replicas      int
+		NodeSelector  string
+		Version       string
+		ImageTag      string
+		IstioRevision string
 	}{
-		Replicas:     replicas,
-		NodeSelector: nodeSelector,
-		Version:      cmd.Root().Version,
-		ImageTag:     imageTag,
+		Replicas:      replicas,
+		NodeSelector:  nodeSelector,
+		Version:       cmd.Root().Version,
+		ImageTag:      imageTag,
+		IstioRevision: istioRevision,
 	})
 
 	// Return
@@ -168,6 +171,9 @@ func GenerateInformerExample() string {
 
   # Set informer replicas and node selector
   swarmctl m g i --replicas 3 --node-selector '{key1: value1, key2: value2}'
+
+  # Set informer replicas and Istio revision
+  swarmctl m g i --replicas 3 --istio-revision 1-21-1
   `
 }
 
@@ -219,6 +225,7 @@ func GenerateWorker(cmd *cobra.Command, args []string) error {
 	replicas, _ := cmd.Flags().GetInt("replicas")
 	nodeSelector, _ := cmd.Flags().GetString("node-selector")
 	imageTag, _ := cmd.Flags().GetString("image-tag")
+	istioRevision, _ := cmd.Flags().GetString("istio-revision")
 
 	// Set the error prefix
 	cmd.SetErrPrefix("\nError:")
@@ -240,17 +247,19 @@ func GenerateWorker(cmd *cobra.Command, args []string) error {
 
 		// Render the template
 		tmpl.Execute(cmd.OutOrStdout(), struct {
-			Replicas     int
-			Namespace    string
-			NodeSelector string
-			Version      string
-			ImageTag     string
+			Replicas      int
+			Namespace     string
+			NodeSelector  string
+			Version       string
+			ImageTag      string
+			IstioRevision string
 		}{
-			Replicas:     replicas,
-			Namespace:    fmt.Sprintf("service-%d", i),
-			NodeSelector: nodeSelector,
-			Version:      cmd.Root().Version,
-			ImageTag:     imageTag,
+			Replicas:      replicas,
+			Namespace:     fmt.Sprintf("service-%d", i),
+			NodeSelector:  nodeSelector,
+			Version:       cmd.Root().Version,
+			ImageTag:      imageTag,
+			IstioRevision: istioRevision,
 		})
 	}
 
@@ -268,6 +277,9 @@ func GenerateWorkerExample() string {
 
   # Set worker replicas and node selector
   swarmctl m g w 1:1 --replicas 3 --node-selector '{key1: value1, key2: value2}'
+
+  # Set worker replicas and Istio revision
+  swarmctl m g w 1:1 --replicas 3 --istio-revision 1-21-1
   `
 }
 
@@ -390,6 +402,7 @@ func InstallInformer(cmd *cobra.Command, args []string) error {
 	replicas, _ := cmd.Flags().GetInt("replicas")
 	nodeSelector, _ := cmd.Flags().GetString("node-selector")
 	imageTag, _ := cmd.Flags().GetString("image-tag")
+	istioRevision, _ := cmd.Flags().GetString("istio-revision")
 
 	// Set the error prefix
 	cmd.SetErrPrefix("\nError:")
@@ -421,15 +434,17 @@ func InstallInformer(cmd *cobra.Command, args []string) error {
 
 		// Render the template
 		docs, err := util.RenderTemplate(tmpl, struct {
-			Replicas     int
-			NodeSelector string
-			Version      string
-			ImageTag     string
+			Replicas      int
+			NodeSelector  string
+			Version       string
+			ImageTag      string
+			IstioRevision string
 		}{
-			Replicas:     replicas,
-			NodeSelector: nodeSelector,
-			Version:      cmd.Root().Version,
-			ImageTag:     imageTag,
+			Replicas:      replicas,
+			NodeSelector:  nodeSelector,
+			Version:       cmd.Root().Version,
+			ImageTag:      imageTag,
+			IstioRevision: istioRevision,
 		})
 		if err != nil {
 			return err
@@ -472,6 +487,9 @@ func InstallInformerExample() string {
 
   # Install the informer to all contexts that match a regex and set the node selector
   swarmctl i --context 'my-.*' --node-selector '{key1: value1, key2: value2}'
+
+  # Install the informer to all contexts that match a regex and set the Istio revision
+  swarmctl i --context 'my-.*' --istio-revision 1-21-1
   `
 }
 
@@ -553,6 +571,7 @@ func InstallWorker(cmd *cobra.Command, args []string) error {
 	replicas, _ := cmd.Flags().GetInt("replicas")
 	nodeSelector, _ := cmd.Flags().GetString("node-selector")
 	imageTag, _ := cmd.Flags().GetString("image-tag")
+	istioRevision, _ := cmd.Flags().GetString("istio-revision")
 
 	// Set the error prefix
 	cmd.SetErrPrefix("\nError:")
@@ -595,17 +614,19 @@ func InstallWorker(cmd *cobra.Command, args []string) error {
 
 			// Render the template
 			docs, err := util.RenderTemplate(tmpl, struct {
-				Replicas     int
-				Namespace    string
-				NodeSelector string
-				Version      string
-				ImageTag     string
+				Replicas      int
+				Namespace     string
+				NodeSelector  string
+				Version       string
+				ImageTag      string
+				IstioRevision string
 			}{
-				Replicas:     replicas,
-				Namespace:    fmt.Sprintf("service-%d", i),
-				NodeSelector: nodeSelector,
-				Version:      cmd.Root().Version,
-				ImageTag:     imageTag,
+				Replicas:      replicas,
+				Namespace:     fmt.Sprintf("service-%d", i),
+				NodeSelector:  nodeSelector,
+				Version:       cmd.Root().Version,
+				ImageTag:      imageTag,
+				IstioRevision: istioRevision,
 			})
 			if err != nil {
 				return err
@@ -649,6 +670,9 @@ func InstallWorkerExample() string {
 
   # Install the workers 1 to 1 to all contexts that match a regex and set the node selector
   swarmctl w 1:1 --context 'my-.*' --node-selector '{key1: value1, key2: value2}'
+
+  # Install the workers 1 to 1 to all contexts that match a regex and set the Istio revision
+  swarmctl w 1:1 --context 'my-.*' --istio-revision 1-21-1
   `
 }
 

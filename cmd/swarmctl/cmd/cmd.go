@@ -75,6 +75,12 @@ func init() {
 		panic(err)
 	}
 
+	// --istio-revision flag
+	manifestGenerateCmd.PersistentFlags().String("istio-revision", "", "Istio revision label to use for the namespace.")
+	if err := manifestGenerateCmd.RegisterFlagCompletionFunc("istio-revision", istioRevisionCompletion); err != nil {
+		panic(err)
+	}
+
 	// --context flag
 	manifestInstallCmd.PersistentFlags().String("context", "", "regex to match the context name.")
 	if err := manifestInstallCmd.RegisterFlagCompletionFunc("context", contextCompletion); err != nil {
@@ -96,6 +102,12 @@ func init() {
 	// --image-tag flag
 	manifestInstallCmd.PersistentFlags().String("image-tag", "", "Image tag to use for deployment.")
 	if err := manifestInstallCmd.RegisterFlagCompletionFunc("image-tag", imageTagCompletion); err != nil {
+		panic(err)
+	}
+
+	// --istio-revision flag
+	manifestInstallCmd.PersistentFlags().String("istio-revision", "", "Istio revision label to use for the namespace.")
+	if err := manifestInstallCmd.RegisterFlagCompletionFunc("istio-revision", istioRevisionCompletion); err != nil {
 		panic(err)
 	}
 }
@@ -320,6 +332,20 @@ func imageTagIsValid() bool {
 }
 
 //-----------------------------------------------------------------------------
+// istioRevision
+//-----------------------------------------------------------------------------
+
+// istioRevisionCompletion
+func istioRevisionCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	return []string{"1-19-x", "1-20-x", "1-21-x"}, cobra.ShellCompDirectiveNoFileComp
+}
+
+// istioRevisionIsValid
+func istioRevisionIsValid() bool {
+	return true
+}
+
+//-----------------------------------------------------------------------------
 // validateFlags
 //-----------------------------------------------------------------------------
 
@@ -346,6 +372,12 @@ func validateFlags(cmd *cobra.Command, args []string) error {
 	if cmd.Flags().Changed("image-tag") {
 		if valid := imageTagIsValid(); !valid {
 			return errors.New("invalid image-tag")
+		}
+	}
+
+	if cmd.Flags().Changed("istio-revision") {
+		if valid := istioRevisionIsValid(); !valid {
+			return errors.New("invalid istio-revision")
 		}
 	}
 
