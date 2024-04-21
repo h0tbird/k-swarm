@@ -337,7 +337,7 @@ func imageTagIsValid() bool {
 
 // istioRevisionCompletion
 func istioRevisionCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-	return []string{"1-19-x", "1-20-x"}, cobra.ShellCompDirectiveNoFileComp
+	return []string{"1-19-x", "1-20-x", "1-21-x"}, cobra.ShellCompDirectiveNoFileComp
 }
 
 // istioRevisionIsValid
