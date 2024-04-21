@@ -3,7 +3,11 @@ apiVersion: v1
 kind: Namespace
 metadata:
   labels:
+    {{- if .IstioRevision }}
+    istio.io/rev: {{ .IstioRevision }}
+    {{- else }}
     istio-injection: enabled
+    {{- end }}
   name: informer
 ---
 apiVersion: v1
