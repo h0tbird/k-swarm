@@ -391,8 +391,8 @@ func Install(cmd *cobra.Command, args []string) error {
 		}
 
 		// Check the answer
-		answer = strings.TrimSpace(answer)
-		if answer != "y" {
+		answer = strings.ToLower(strings.TrimSpace(answer))
+		if answer != "y" && answer != "yes" {
 			cmd.SetErrPrefix("aborted:")
 			return errors.New("by user")
 		}
