@@ -31,6 +31,11 @@ Download all the `Makefile` tooling to `./bin/`:
 make tooling
 ```
 
+Upgrade the telemetry CRD:
+```
+k apply view-last-applied crd telemetries.telemetry.istio.io > cmd/swarmctl/assets/crds.yaml
+```
+
 Bring up a local dev environment:
 ```
 make tilt-up
