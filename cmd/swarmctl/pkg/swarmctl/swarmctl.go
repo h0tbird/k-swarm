@@ -385,14 +385,15 @@ func Install(cmd *cobra.Command, args []string) error {
 		// Ask the user
 		cmd.Print("\nProceed? (y/N) ")
 		reader := bufio.NewReader(os.Stdin)
-		answer, err := reader.ReadString('\n')
+
+		// Read the answer
+		answer, err := util.YesOrNo(cmd, reader)
 		if err != nil {
-			return err
+			return fmt.Errorf("error reading user input: %w", err)
 		}
 
-		// Check the answer
-		answer = strings.ToLower(strings.TrimSpace(answer))
-		if answer != "y" && answer != "yes" {
+		// Return early if the answer is no
+		if answer == "" || answer == "n" || answer == "no" {
 			cmd.SetErrPrefix("aborted:")
 			return errors.New("by user")
 		}

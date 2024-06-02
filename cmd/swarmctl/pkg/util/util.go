@@ -7,6 +7,7 @@ package util
 import (
 
 	// Stdlib
+	"bufio"
 	"bytes"
 	"embed"
 	"errors"
@@ -17,6 +18,7 @@ import (
 	"strings"
 
 	// Community
+	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/dynamic"
@@ -142,4 +144,30 @@ func ParseRange(arg string) (int, int, error) {
 
 	// Return
 	return start, end, nil
+}
+
+//-----------------------------------------------------------------------------
+// YesOrNo
+//-----------------------------------------------------------------------------
+
+func YesOrNo(cmd *cobra.Command, reader *bufio.Reader) (string, error) {
+
+	// Loop until we get a valid answer
+	for {
+
+		// Read the answer
+		answer, err := reader.ReadString('\n')
+		if err != nil {
+			return "", err
+		}
+
+		// Check the answer
+		answer = strings.ToLower(strings.TrimSpace(answer))
+		if answer == "y" || answer == "yes" || answer == "" || answer == "n" || answer == "no" {
+			return answer, nil
+		}
+
+		// Insist on a valid answer
+		cmd.Print("Please answer 'y' or 'n': ")
+	}
 }
