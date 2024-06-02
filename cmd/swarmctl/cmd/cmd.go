@@ -81,6 +81,9 @@ func init() {
 		panic(err)
 	}
 
+	// --yes flag
+	manifestInstallCmd.PersistentFlags().Bool("yes", false, "Automatically confirm all prompts with 'yes'.")
+
 	// --context flag
 	manifestInstallCmd.PersistentFlags().String("context", "", "regex to match the context name.")
 	if err := manifestInstallCmd.RegisterFlagCompletionFunc("context", contextCompletion); err != nil {

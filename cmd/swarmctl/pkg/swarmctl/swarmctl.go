@@ -7,6 +7,7 @@ package swarmctl
 import (
 
 	// Stdlib
+	"bufio"
 	"bytes"
 	"embed"
 	"errors"
@@ -346,6 +347,7 @@ func Install(cmd *cobra.Command, args []string) error {
 
 	// Get the flags
 	ctxRegex, _ := cmd.Flags().GetString("context")
+	assumeYes, _ := cmd.Flags().GetBool("yes")
 
 	// Run the root PersistentPreRunE
 	if err := cmd.Root().PersistentPreRunE(cmd, args); err != nil {
@@ -378,14 +380,23 @@ func Install(cmd *cobra.Command, args []string) error {
 	}
 
 	// A chance to cancel
-	cmd.Print("\nProceed? (y/N) ")
-	var answer string
-	if _, err := fmt.Scanln(&answer); err != nil {
-		return err
-	}
-	if answer != "y" {
-		cmd.SetErrPrefix("aborted:")
-		return errors.New("by user")
+	if !assumeYes {
+
+		// Ask the user
+		cmd.Print("\nProceed? (y/N) ")
+		reader := bufio.NewReader(os.Stdin)
+
+		// Read the answer
+		answer, err := util.YesOrNo(cmd, reader)
+		if err != nil {
+			return fmt.Errorf("error reading user input: %w", err)
+		}
+
+		// Return early if the answer is no
+		if answer == "" || answer == "n" || answer == "no" {
+			cmd.SetErrPrefix("aborted:")
+			return errors.New("by user")
+		}
 	}
 
 	// Return
