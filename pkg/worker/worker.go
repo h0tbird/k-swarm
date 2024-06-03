@@ -172,6 +172,14 @@ func fetchServices(url string) ([]string, error) {
 		return nil, err
 	}
 
+	// Filter out any services with empty names
+	var services []string
+	for _, service := range data.Services {
+		if service != "" {
+			services = append(services, service)
+		}
+	}
+
 	// Return the list
-	return data.Services, nil
+	return services, nil
 }
