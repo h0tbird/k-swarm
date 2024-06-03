@@ -120,11 +120,24 @@ docker-buildx: ## Build and push docker image for the manager for cross-platform
 
 .PHONY: release
 release: ## Create a new release
-	git checkout -b ${BRANCH}
+	git checkout -B ${BRANCH}
 	git push -u origin ${BRANCH}
 	git tag -a ${TAG} -m "Release ${TAG}"
 	$(GORELEASER) release --clean
 	PUSH_IMG=ghcr.io/octoroot/k-swarm:$$(jq -r '.tag' dist/metadata.json) make docker-buildx
+
+# Checkout branch or create it if it doesn't exist
+# Pull all changes from main
+
+BRANCH ?= release
+TAG ?= v0.0.0
+.PHONY: release
+release:
+	git checkout -b ${BRANCH} || git checkout ${BRANCH} || git checkout -b ${BRANCH} origin/${BRANCH} || git checkout -b ${BRANCH} origin/main
+	git tag -a ${TAG} -m "Release ${TAG}"
+	git push -u origin ${BRANCH}
+	git push origin ${TAG}
+	$(GORELEASER) release --rm-dist
 
 #------------------------------------------------------------------------------
 ##@ Deployment
