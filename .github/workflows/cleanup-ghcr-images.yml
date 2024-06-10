@@ -20,14 +20,14 @@ jobs:
     steps:
 
     - name: Log into registry ghcr.io
-      uses: docker/login-action@e92390c5fb421da1463c202d546fed0ec5c39f20 # v3.1.0
+      uses: docker/login-action@0d4c9c5ea7693da7b068278f7b52bda2a190a446 # v3.2.0
       with:
         registry: ghcr.io
         username: ${{ github.actor }}
         password: ${{ secrets.PACKAGE_DELETE_TOKEN }}
 
     - name: Cleanup ephemeral images
-      uses: stumpylog/image-cleaner-action/ephemeral@v0.6.0
+      uses: stumpylog/image-cleaner-action/ephemeral@v0.7.0
       with:
         token: "${{ secrets.PACKAGE_DELETE_TOKEN }}"
         owner: "octoroot"
@@ -51,14 +51,14 @@ jobs:
       steps:
 
       - name: Log into registry ghcr.io
-        uses: docker/login-action@e92390c5fb421da1463c202d546fed0ec5c39f20 # v3.1.0
+        uses: docker/login-action@0d4c9c5ea7693da7b068278f7b52bda2a190a446 # v3.2.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.PACKAGE_DELETE_TOKEN }}
 
       - name: Clean untagged images
-        uses: stumpylog/image-cleaner-action/untagged@v0.6.0
+        uses: stumpylog/image-cleaner-action/untagged@v0.7.0
         with:
           token: "${{ secrets.PACKAGE_DELETE_TOKEN }}"
           owner: "octoroot"
