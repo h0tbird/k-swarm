@@ -98,3 +98,23 @@ spec:
         runAsNonRoot: true
       serviceAccountName: default
       terminationGracePeriodSeconds: 10
+---
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: worker
+  namespace: {{ .Namespace }}
+spec:
+  host: worker
+  trafficPolicy:
+    connectionPool:
+      http:
+        maxRequestsPerConnection: 1
+    loadBalancer:
+      simple: LEAST_REQUEST
+      localityLbSetting:
+        enabled: true
+    outlierDetection:
+      consecutive5xxErrors: 1
+      interval: 1s
+      baseEjectionTime: 10s
