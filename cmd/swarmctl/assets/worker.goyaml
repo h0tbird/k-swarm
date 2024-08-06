@@ -130,3 +130,22 @@ spec:
       k-swarm/worker: enabled
   mtls:
     mode: STRICT
+---
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: worker
+  namespace: {{ .Namespace }}
+spec:
+  selector:
+    matchLabels:
+      k-swarm/worker: enabled
+  action: ALLOW
+  rules:
+  - from:
+    - source:
+        namespaces: ["*"]
+    to:
+    - operation:
+        methods: ["GET"]
+        paths: ["/data"]

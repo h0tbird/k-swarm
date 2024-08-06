@@ -348,3 +348,22 @@ spec:
       k-swarm/informer: enabled
   mtls:
     mode: STRICT
+---
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: informer
+  namespace: informer
+spec:
+  selector:
+    matchLabels:
+      k-swarm/informer: enabled
+  action: ALLOW
+  rules:
+  - from:
+    - source:
+        namespaces: ["*"]
+    to:
+    - operation:
+        methods: ["GET"]
+        paths: ["/services"]
