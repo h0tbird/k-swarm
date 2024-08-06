@@ -336,3 +336,15 @@ spec:
         runAsNonRoot: true
       serviceAccountName: controller-manager
       terminationGracePeriodSeconds: 10
+---
+apiVersion: security.istio.io/v1
+kind: PeerAuthentication
+metadata:
+  name: informer
+  namespace: {{ .Namespace }}
+spec:
+  selector:
+    matchLabels:
+      k-swarm/informer: enabled
+  mtls:
+    mode: STRICT
