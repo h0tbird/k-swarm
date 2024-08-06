@@ -118,3 +118,15 @@ spec:
       consecutive5xxErrors: 1
       interval: 1s
       baseEjectionTime: 10s
+---
+apiVersion: security.istio.io/v1
+kind: PeerAuthentication
+metadata:
+  name: worker
+  namespace: {{ .Namespace }}
+spec:
+  selector:
+    matchLabels:
+      k-swarm/worker: enabled
+  mtls:
+    mode: STRICT
