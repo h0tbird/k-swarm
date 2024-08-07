@@ -159,9 +159,12 @@ spec:
   commonName: '{{ .Namespace }}.demo.lab'
   duration: 24h0m0s
   renewBefore: 20h0m0s
-  secretName: worker
+  secretName: worker-{{ .Namespace }}
   issuerRef:
     group: cert-manager.io
     kind: ClusterIssuer
     name: ingress-ca
   revisionHistoryLimit: 2
+  secretTemplate:
+    annotations:
+      replicator.v1.mittwald.de/replicate-to: 'istio-system'
