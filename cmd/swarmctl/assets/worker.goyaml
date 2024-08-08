@@ -168,3 +168,22 @@ spec:
   secretTemplate:
     annotations:
       replicator.v1.mittwald.de/replicate-to: 'istio-system'
+---
+apiVersion: networking.istio.io/v1
+kind: Gateway
+metadata:
+  name: worker
+  namespace: {{ .Namespace }}
+spec:
+  selector:
+    istio: nsgw
+  servers:
+  - hosts:
+    - '{{ .Namespace }}.demo.lab'
+    port:
+      name: https
+      number: 443
+      protocol: HTTPS
+    tls:
+      mode: SIMPLE
+      credentialName: worker-{{ .Namespace }}
