@@ -186,4 +186,4 @@ spec:
       protocol: HTTPS
     tls:
       mode: SIMPLE
-      CredentialName: worker-{{ .Namespace }}
+      credentialName: worker-{{ .Namespace }}
