@@ -156,10 +156,11 @@ metadata:
   name: worker
   namespace: {{ .Namespace }}
 spec:
-  commonName: '{{ .Namespace }}.demo.lab'
   duration: 24h0m0s
-  renewBefore: 20h0m0s
+  renewBefore: 12h0m0s
   secretName: worker-{{ .Namespace }}
+  dnsNames:
+  - '{{ .Namespace }}.demo.lab'
   issuerRef:
     group: cert-manager.io
     kind: ClusterIssuer
@@ -187,3 +188,23 @@ spec:
     tls:
       mode: SIMPLE
       credentialName: worker-{{ .Namespace }}
+---
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: worker
+  namespace: {{ .Namespace }}
+spec:
+  gateways:
+  - worker
+  hosts:
+  - '{{ .Namespace }}.demo.lab'
+  http:
+  - match:
+    - port: 443
+    route:
+    - destination:
+        host: worker
+        port:
+          number: 80
+      weight: 100
