@@ -1,6 +1,8 @@
 module github.com/octoroot/k-swarm
 
-go 1.20
+go 1.22
+
+toolchain go1.23.1
 
 require (
 	github.com/onsi/ginkgo/v2 v2.20.2
