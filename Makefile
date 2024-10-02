@@ -6,7 +6,7 @@ PUSH_IMG ?= ${REGISTRY_HOST}/k-swarm:latest
 # Image URL to use for pulling image targets
 PULL_IMG ?= dev-registry:5000/k-swarm:latest
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
-ENVTEST_K8S_VERSION = 1.28.0
+ENVTEST_K8S_VERSION = 1.31.0
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -76,7 +76,7 @@ test: manifests generate fmt vet envtest ## Run tests.
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" go test ./... -coverprofile cover.out
 
 GOLANGCI_LINT = $(shell pwd)/bin/golangci-lint
-GOLANGCI_LINT_VERSION ?= v1.54.2
+GOLANGCI_LINT_VERSION ?= v1.61.0
 golangci-lint:
 	@[ -f $(GOLANGCI_LINT) ] || { \
 	set -e ;\
@@ -190,10 +190,10 @@ CTLPTL ?= $(LOCALBIN)/ctlptl
 GORELEASER ?= $(LOCALBIN)/goreleaser
 
 ## Tool Versions
-KUSTOMIZE_VERSION ?= v5.2.1
-CONTROLLER_TOOLS_VERSION ?= v0.13.0
-CTLPTL_VERSION ?= v0.8.22
-GORELEASER_VERSION ?= v1.24.0
+KUSTOMIZE_VERSION ?= v5.4.3
+CONTROLLER_TOOLS_VERSION ?= v0.16.1
+CTLPTL_VERSION ?= v0.8.34
+GORELEASER_VERSION ?= v2.3.2
 
 ## Tool install scripts
 KUSTOMIZE_INSTALL_SCRIPT ?= "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"
@@ -224,4 +224,4 @@ ctlptl: $(LOCALBIN) ## Download ctlptl locally if necessary. If wrong version is
 .PHONY: goreleaser
 goreleaser: ## Download goreleaser locally if necessary. If wrong version is installed, it will be overwritten.
 	@ test -s $(GORELEASER) && $(GORELEASER) --version | grep -q $(GORELEASER_VERSION) || \
-	GOBIN=$(LOCALBIN) go install github.com/goreleaser/goreleaser@$(GORELEASER_VERSION)
+	GOBIN=$(LOCALBIN) go install github.com/goreleaser/goreleaser/v2@$(GORELEASER_VERSION)
