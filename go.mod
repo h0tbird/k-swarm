@@ -1,4 +1,4 @@
-module github.com/octoroot/k-swarm
+module github.com/h0tbird/k-swarm
 
 go 1.23
 

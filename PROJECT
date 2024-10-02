@@ -6,7 +6,7 @@ domain: github.com
 layout:
 - go.kubebuilder.io/v4
 projectName: k-swarm
-repo: github.com/octoroot/k-swarm
+repo: github.com/h0tbird/k-swarm
 resources:
 - controller: true
   group: core

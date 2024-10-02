@@ -18,9 +18,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	// Internal
-	"github.com/octoroot/k-swarm/pkg/common"
-	"github.com/octoroot/k-swarm/pkg/informer"
-	"github.com/octoroot/k-swarm/pkg/worker"
+	"github.com/h0tbird/k-swarm/pkg/common"
+	"github.com/h0tbird/k-swarm/pkg/informer"
+	"github.com/h0tbird/k-swarm/pkg/worker"
 	//+kubebuilder:scaffold:imports
 )
 

@@ -124,7 +124,7 @@ release: ## Create a new release
 	git push -u origin ${BRANCH}
 	git tag -a ${TAG} -m "Release ${TAG}"
 	$(GORELEASER) release --clean
-	PUSH_IMG=ghcr.io/octoroot/k-swarm:$$(jq -r '.tag' dist/metadata.json) make docker-buildx
+	PUSH_IMG=ghcr.io/h0tbird/k-swarm:$$(jq -r '.tag' dist/metadata.json) make docker-buildx
 
 #------------------------------------------------------------------------------
 ##@ Deployment

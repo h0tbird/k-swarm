@@ -77,7 +77,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: spec.nodeName
-        image: ghcr.io/octoroot/k-swarm:{{ if .ImageTag }}{{ .ImageTag }}{{ else }}v{{ .Version }}{{ end }}
+        image: ghcr.io/h0tbird/k-swarm:{{ if .ImageTag }}{{ .ImageTag }}{{ else }}v{{ .Version }}{{ end }}
         {{- if .ImageTag}}
         imagePullPolicy: Always
         {{- end}}

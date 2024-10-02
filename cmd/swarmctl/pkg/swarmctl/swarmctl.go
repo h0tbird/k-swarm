@@ -21,9 +21,9 @@ import (
 	"github.com/spf13/cobra"
 
 	// Local
-	"github.com/octoroot/k-swarm/cmd/swarmctl/pkg/k8sctx"
-	"github.com/octoroot/k-swarm/cmd/swarmctl/pkg/profiling"
-	"github.com/octoroot/k-swarm/cmd/swarmctl/pkg/util"
+	"github.com/h0tbird/k-swarm/cmd/swarmctl/pkg/k8sctx"
+	"github.com/h0tbird/k-swarm/cmd/swarmctl/pkg/profiling"
+	"github.com/h0tbird/k-swarm/cmd/swarmctl/pkg/util"
 )
 
 //-----------------------------------------------------------------------------

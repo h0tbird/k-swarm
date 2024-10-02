@@ -303,7 +303,7 @@ spec:
         - --informer-bind-address=:8083
         command:
         - /manager
-        image: ghcr.io/octoroot/k-swarm:{{ if .ImageTag }}{{ .ImageTag }}{{ else }}v{{ .Version }}{{ end }}
+        image: ghcr.io/h0tbird/k-swarm:{{ if .ImageTag }}{{ .ImageTag }}{{ else }}v{{ .Version }}{{ end }}
         {{- if .ImageTag}}
         imagePullPolicy: Always
         {{- end}}

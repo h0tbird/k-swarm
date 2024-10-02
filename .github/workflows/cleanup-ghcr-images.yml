@@ -30,7 +30,7 @@ jobs:
       uses: stumpylog/image-cleaner-action/ephemeral@v0.8.0
       with:
         token: "${{ secrets.PACKAGE_DELETE_TOKEN }}"
-        owner: "octoroot"
+        owner: "h0tbird"
         is_org: "true"
         package_name: "k-swarm"
         scheme: "pull_request"
@@ -61,7 +61,7 @@ jobs:
         uses: stumpylog/image-cleaner-action/untagged@v0.8.0
         with:
           token: "${{ secrets.PACKAGE_DELETE_TOKEN }}"
-          owner: "octoroot"
+          owner: "h0tbird"
           is_org: "true"
           package_name: "k-swarm"
           do_delete: "true"
