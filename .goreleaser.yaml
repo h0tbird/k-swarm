@@ -1,7 +1,7 @@
 # yaml-language-server: $schema=https://goreleaser.com/static/schema.json
 # vim: set ts=2 sw=2 tw=0 fo=cnqoj
 
-version: 1
+version: 2
 
 #------------------------------------------------------------------------------
 # before
@@ -73,7 +73,6 @@ brews:
     repository:
       owner: h0tbird
       name: homebrew-tap
-    folder: Formula
     homepage: https://github.com/h0tbird/k-swarm
     description: A k8s service swarm
     license: MIT
