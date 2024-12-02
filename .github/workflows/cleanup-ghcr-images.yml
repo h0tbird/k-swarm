@@ -27,7 +27,7 @@ jobs:
         password: ${{ secrets.PACKAGE_DELETE_TOKEN }}
 
     - name: Cleanup ephemeral images
-      uses: stumpylog/image-cleaner-action/ephemeral@v0.8.0
+      uses: stumpylog/image-cleaner-action/ephemeral@v0.9.0
       with:
         token: "${{ secrets.PACKAGE_DELETE_TOKEN }}"
         owner: "h0tbird"
@@ -58,7 +58,7 @@ jobs:
           password: ${{ secrets.PACKAGE_DELETE_TOKEN }}
 
       - name: Clean untagged images
-        uses: stumpylog/image-cleaner-action/untagged@v0.8.0
+        uses: stumpylog/image-cleaner-action/untagged@v0.9.0
         with:
           token: "${{ secrets.PACKAGE_DELETE_TOKEN }}"
           owner: "h0tbird"
