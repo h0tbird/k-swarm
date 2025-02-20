@@ -190,10 +190,10 @@ CTLPTL ?= $(LOCALBIN)/ctlptl
 GORELEASER ?= $(LOCALBIN)/goreleaser
 
 ## Tool Versions
-KUSTOMIZE_VERSION ?= v5.4.3
-CONTROLLER_TOOLS_VERSION ?= v0.16.1
-CTLPTL_VERSION ?= v0.8.34
-GORELEASER_VERSION ?= v2.3.2
+KUSTOMIZE_VERSION ?= v5.4.3          # https://github.com/kubernetes-sigs/kustomize/releases
+CONTROLLER_TOOLS_VERSION ?= v0.16.1  # https://github.com/kubernetes-sigs/controller-tools/releases
+CTLPTL_VERSION ?= v0.8.34            # https://github.com/tilt-dev/ctlptl/releases
+GORELEASER_VERSION ?= v2.3.2         # https://github.com/goreleaser/goreleaser/releases
 
 ## Tool install scripts
 KUSTOMIZE_INSTALL_SCRIPT ?= "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"
