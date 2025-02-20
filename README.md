@@ -8,7 +8,7 @@
 ### Install
 
 ```
-HOMEBREW_GITHUB_API_TOKEN=${GITHUB_TOKEN} brew install h0tbird/tap/swarmctl
+brew install h0tbird/tap/swarmctl
 ```
 
 ### Usage
