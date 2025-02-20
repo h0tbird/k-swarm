@@ -78,5 +78,3 @@ brews:
     license: MIT
     test: |
       system "#{bin}/swarmctl -v"
-    download_strategy: GitHubPrivateRepositoryReleaseDownloadStrategy
-    custom_require: "../lib/custom_download_strategy"
