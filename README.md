@@ -1,5 +1,5 @@
 [![Build and publish to ghcr.io](https://github.com/h0tbird/k-swarm/actions/workflows/docker-build-and-publish.yml/badge.svg)](https://github.com/h0tbird/k-swarm/actions/workflows/docker-build-and-publish.yml)
-[![Cleanup ghcr.io images](https://github.com/h0tbird/k-swarm/actions/workflows/cleanup-ghcr-images.yml/badge.svg)](https://github.com/h0tbird/k-swarm/actions/workflows/cleanup-ghcr-images.yml)
+[![Cleanup old ghcr.io images](https://github.com/h0tbird/k-swarm/actions/workflows/cleanup-ghcr-images.yml/badge.svg)](https://github.com/h0tbird/k-swarm/actions/workflows/cleanup-ghcr-images.yml)
 [![Dependabot Updates](https://github.com/h0tbird/k-swarm/actions/workflows/dependabot/dependabot-updates/badge.svg)](https://github.com/h0tbird/k-swarm/actions/workflows/dependabot/dependabot-updates)
 
 # k-swarm
