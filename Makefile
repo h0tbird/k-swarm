@@ -122,7 +122,7 @@ docker-buildx: ## Build and push docker image for the manager for cross-platform
 release: ## Create a new release
 	git checkout -B ${BRANCH}
 	git push -u origin ${BRANCH}
-	git tag -a ${TAG} -m "Release ${TAG}"
+	git tag -a ${TAG} -m "Release ${TAG}" || true
 	$(GORELEASER) release --clean
 	PUSH_IMG=ghcr.io/h0tbird/k-swarm:$$(jq -r '.tag' dist/metadata.json) make docker-buildx
 
