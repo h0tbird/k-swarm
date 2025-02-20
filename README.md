@@ -1,3 +1,7 @@
+[![Build and publish to ghcr.io](https://github.com/h0tbird/k-swarm/actions/workflows/docker-build-and-publish.yml/badge.svg)](https://github.com/h0tbird/k-swarm/actions/workflows/docker-build-and-publish.yml)
+[![Cleanup ghcr.io images](https://github.com/h0tbird/k-swarm/actions/workflows/cleanup-ghcr-images.yml/badge.svg)](https://github.com/h0tbird/k-swarm/actions/workflows/cleanup-ghcr-images.yml)
+[![Dependabot Updates](https://github.com/h0tbird/k-swarm/actions/workflows/dependabot/dependabot-updates/badge.svg)](https://github.com/h0tbird/k-swarm/actions/workflows/dependabot/dependabot-updates)
+
 # k-swarm
 `k-swarm` is used for deploying a series of k8s services that are capable of identifying and communicating with one another, thus establishing a network of synthetic traffic. This interconnected traffic among various workloads provides a foundational platform for a range of laboratory experiments, including the testing and validation of diverse service mesh configurations at scale.
 
