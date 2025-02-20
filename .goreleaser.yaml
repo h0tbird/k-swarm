@@ -73,6 +73,7 @@ brews:
     repository:
       owner: h0tbird
       name: homebrew-tap
+    directory: Formula
     homepage: https://github.com/h0tbird/k-swarm
     description: A k8s service swarm
     license: MIT
