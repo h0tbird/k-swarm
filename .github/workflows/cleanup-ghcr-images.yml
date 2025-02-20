@@ -1,4 +1,4 @@
-name: Cleanup ghcr.io images
+name: Cleanup old ghcr.io images
 
 on:
   workflow_dispatch: {}
