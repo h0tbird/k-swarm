@@ -5,8 +5,6 @@ REGISTRY_HOST = $(shell $(CTLPTL) get cluster kind-dev -o template --template '{
 PUSH_IMG ?= ${REGISTRY_HOST}/k-swarm:latest
 # Image URL to use for pulling image targets
 PULL_IMG ?= dev-registry:5000/k-swarm:latest
-# ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
-ENVTEST_K8S_VERSION = 1.31.0
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -192,6 +190,7 @@ GORELEASER ?= $(LOCALBIN)/goreleaser
 ## Tool Versions
 KUSTOMIZE_VERSION ?= v5.5.0          # https://github.com/kubernetes-sigs/kustomize/releases
 CONTROLLER_TOOLS_VERSION ?= v0.17.2  # https://github.com/kubernetes-sigs/controller-tools/releases
+ENVTEST_K8S_VERSION = 1.32.0         # https://github.com/kubernetes-sigs/controller-runtime/tree/main/tools/setup-envtest
 CTLPTL_VERSION ?= v0.8.39            # https://github.com/tilt-dev/ctlptl/releases
 GORELEASER_VERSION ?= v2.7.0         # https://github.com/goreleaser/goreleaser/releases
 
@@ -214,7 +213,7 @@ controller-gen: $(LOCALBIN) ## Download controller-gen locally if necessary. If 
 
 .PHONY: envtest
 envtest: $(LOCALBIN) ## Download envtest-setup locally if necessary.
-	@ test -s $(ENVTEST) || GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
+	@ test -s $(ENVTEST) || GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-runtime/tools/setup-envtest@$(ENVTEST_K8S_VERSION)
 
 .PHONY: ctlptl
 ctlptl: $(LOCALBIN) ## Download ctlptl locally if necessary. If wrong version is installed, it will be overwritten.
