@@ -169,6 +169,8 @@ spec:
   secretTemplate:
     annotations:
       replicator.v1.mittwald.de/replicate-to: 'istio-system'
+  privateKey:
+    rotationPolicy: Always
 ---
 apiVersion: networking.istio.io/v1
 kind: Gateway
