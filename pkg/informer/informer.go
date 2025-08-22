@@ -157,13 +157,19 @@ func (i Informer) Start(ctx context.Context) error {
 	// Setup the router
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
-	router.SetTrustedProxies(nil)
+	if err := router.SetTrustedProxies(nil); err != nil {
+		log.Error(err, "unable to set trusted proxies")
+		return err
+	}
 
 	// Routes
 	router.GET("/services", getServices)
 
 	// Start the server
-	endless.ListenAndServe(i.flags.InformerBindAddr, router)
+	if err := endless.ListenAndServe(i.flags.InformerBindAddr, router); err != nil {
+		log.Error(err, "unable to start informer server")
+		return err
+	}
 
 	// Return no error
 	return nil
