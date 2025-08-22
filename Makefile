@@ -130,6 +130,13 @@ swarmctl: ## Build swarmctl binary.
 run: manifests generate fmt vet ## Run a controller from your host.
 	go run ./cmd/main.go
 
+# If you wish to build the manager image targeting other platforms you can use the --platform flag.
+# (i.e. docker build --platform linux/arm64). However, you must enable docker buildKit for it.
+# More info: https://docs.docker.com/develop/develop-images/build_enhancements/
+.PHONY: docker-build
+docker-build: ## Build docker image with the manager.
+	$(CONTAINER_TOOL) build -t ${IMG} .
+
 .PHONY: docker-buildx
 docker-buildx: ## Build and push docker image for the manager for cross-platform support
 	- $(CONTAINER_TOOL) buildx create --name k-swarm-builder
