@@ -24,7 +24,7 @@ import (
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 //-----------------------------------------------------------------------------
@@ -167,7 +167,7 @@ func (c *Context) ApplyYaml(doc string) error {
 	// Cluster-scoped resources
 	if !resource.Namespaced {
 		foo := c.DynCli.Resource(gvr)
-		if _, err = foo.Patch(context.TODO(), obj.GetName(), types.ApplyPatchType, []byte(doc), metav1.PatchOptions{FieldManager: "swarmctl-manager", Force: pointer.Bool(true)}); err != nil {
+		if _, err = foo.Patch(context.TODO(), obj.GetName(), types.ApplyPatchType, []byte(doc), metav1.PatchOptions{FieldManager: "swarmctl-manager", Force: ptr.To(true)}); err != nil {
 			return fmt.Errorf("failed to create resource %s with GVR %v: %w", obj.GetName(), gvr, err)
 		}
 		fmt.Printf("  - %s/%s serverside-applied\n", resource.Kind, obj.GetName())
@@ -176,7 +176,7 @@ func (c *Context) ApplyYaml(doc string) error {
 	// Namespaced resources
 	if resource.Namespaced {
 		foo := c.DynCli.Resource(gvr).Namespace(namespace)
-		if _, err = foo.Patch(context.TODO(), obj.GetName(), types.ApplyPatchType, []byte(doc), metav1.PatchOptions{FieldManager: "swarmctl-manager", Force: pointer.Bool(true)}); err != nil {
+		if _, err = foo.Patch(context.TODO(), obj.GetName(), types.ApplyPatchType, []byte(doc), metav1.PatchOptions{FieldManager: "swarmctl-manager", Force: ptr.To(true)}); err != nil {
 			return fmt.Errorf("failed to apply resource %s with GVR %v: %w", obj.GetName(), gvr, err)
 		}
 		fmt.Printf("  - %s/%s serverside-applied\n", resource.Kind, obj.GetName())
