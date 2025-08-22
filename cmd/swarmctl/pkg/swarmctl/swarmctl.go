@@ -144,7 +144,7 @@ func GenerateInformer(cmd *cobra.Command, args []string) error {
 	}
 
 	// Render the template
-	tmpl.Execute(cmd.OutOrStdout(), struct {
+	if err := tmpl.Execute(cmd.OutOrStdout(), struct {
 		Replicas      int
 		NodeSelector  string
 		Version       string
@@ -156,7 +156,9 @@ func GenerateInformer(cmd *cobra.Command, args []string) error {
 		Version:       cmd.Root().Version,
 		ImageTag:      imageTag,
 		IstioRevision: istioRevision,
-	})
+	}); err != nil {
+		return err
+	}
 
 	// Return
 	return nil
@@ -194,13 +196,15 @@ func GenerateInformerTelemetry(cmd *cobra.Command, args []string) error {
 	}
 
 	// Render the template
-	tmpl.Execute(cmd.OutOrStdout(), struct {
+	if err := tmpl.Execute(cmd.OutOrStdout(), struct {
 		OnOff     string
 		Namespace string
 	}{
 		OnOff:     args[0],
 		Namespace: "informer",
-	})
+	}); err != nil {
+		return err
+	}
 
 	// Return
 	return nil
@@ -247,7 +251,7 @@ func GenerateWorker(cmd *cobra.Command, args []string) error {
 	for i := start; i <= end; i++ {
 
 		// Render the template
-		tmpl.Execute(cmd.OutOrStdout(), struct {
+		if err := tmpl.Execute(cmd.OutOrStdout(), struct {
 			Replicas      int
 			Namespace     string
 			NodeSelector  string
@@ -261,7 +265,9 @@ func GenerateWorker(cmd *cobra.Command, args []string) error {
 			Version:       cmd.Root().Version,
 			ImageTag:      imageTag,
 			IstioRevision: istioRevision,
-		})
+		}); err != nil {
+			return err
+		}
 	}
 
 	// Return
@@ -316,13 +322,15 @@ func GenerateWorkerTelemetry(cmd *cobra.Command, args []string) error {
 	for i := start; i <= end; i++ {
 
 		// Render the template
-		tmpl.Execute(cmd.OutOrStdout(), struct {
+		if err := tmpl.Execute(cmd.OutOrStdout(), struct {
 			OnOff     string
 			Namespace string
 		}{
 			OnOff:     args[0],
 			Namespace: fmt.Sprintf("service-%d", i),
-		})
+		}); err != nil {
+			return err
+		}
 	}
 
 	// Return
