@@ -199,9 +199,9 @@ func List() ([]string, error) {
 	}
 
 	// Iterate over the contexts
-	var contexts []string
-	for context := range config.Contexts {
-		contexts = append(contexts, context)
+	contexts := make([]string, 0, len(config.Contexts))
+	for ctxName := range config.Contexts {
+		contexts = append(contexts, ctxName)
 	}
 
 	// Return the contexts.
@@ -233,11 +233,11 @@ func Filter(regex string) ([]string, error) {
 	}
 
 	// Iterate over the contexts
-	for _, context := range contexts {
+	for _, ctxName := range contexts {
 
 		// If the context matches the regex
-		if match, err := regexp.MatchString(regex, context); match && err == nil {
-			matchingContexts = append(matchingContexts, context)
+		if match, err := regexp.MatchString(regex, ctxName); match && err == nil {
+			matchingContexts = append(matchingContexts, ctxName)
 		} else if err != nil {
 			return nil, err
 		}
