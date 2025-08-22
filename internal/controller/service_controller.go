@@ -61,17 +61,17 @@ func (r *ServiceReconciler) SetupWithManager(mgr ctrl.Manager) error {
 func (r *ServiceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 
 	// Set up logging
-	log := log.Log.WithName(controllerName).WithValues("service", req.Name)
+	logger := log.Log.WithName(controllerName).WithValues("service", req.Name)
 
 	// Get all the swarm services
 	var services corev1.ServiceList
 	if err := r.List(ctx, &services, client.MatchingLabels{"app": appLabel}); err != nil {
-		log.Error(err, "unable to list services")
+		logger.Error(err, "unable to list services")
 		return ctrl.Result{}, err
 	}
 
 	// Log this reconciliation
-	log.V(1).Info("reconcile")
+	logger.V(1).Info("reconcile")
 
 	// Send the services to the comm channel
 	var serviceNames []string

@@ -63,13 +63,19 @@ func server(flags *common.FlagPack) {
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.New()
 	router.Use(gin.Recovery())
-	router.SetTrustedProxies(nil)
+	if err := router.SetTrustedProxies(nil); err != nil {
+		log.Error(err, "unable to set trusted proxies")
+		os.Exit(1)
+	}
 
 	// Routes
 	router.GET("/data", getData)
 
 	// Start the server
-	endless.ListenAndServe(flags.WorkerBindAddr, router)
+	if err := endless.ListenAndServe(flags.WorkerBindAddr, router); err != nil {
+		log.Error(err, "unable to start worker server")
+		os.Exit(1)
+	}
 }
 
 //-----------------------------------------------------------------------------
@@ -153,7 +159,13 @@ func fetchServices(url string) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+
+	// Defer closing the response body
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			log.Error(err, "failed to close response body")
+		}
+	}()
 
 	// Check the status code
 	if resp.StatusCode != http.StatusOK {
