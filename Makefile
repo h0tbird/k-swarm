@@ -13,6 +13,9 @@ else
 GOBIN=$(shell go env GOBIN)
 endif
 
+# CRD directory
+CRD_DIR ?= config/crd
+
 # CONTAINER_TOOL defines the container tool to be used for building images.
 # Be aware that the target commands are only tested with Docker which is
 # scaffolded by default. However, you might want to replace it to use other
@@ -55,7 +58,7 @@ help: ## Display this help.
 
 .PHONY: manifests
 manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
-	$(CONTROLLER_GEN) rbac:roleName=manager-role crd webhook paths="./..." output:crd:artifacts:config=config/crd/bases
+	$(CONTROLLER_GEN) rbac:roleName=manager-role crd webhook paths="./..." output:crd:artifacts:config=$(CRD_DIR)/bases
 
 .PHONY: generate
 generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
@@ -162,11 +165,15 @@ endif
 
 .PHONY: install
 install: manifests kustomize ## Install CRDs into the K8s cluster specified in ~/.kube/config.
-	$(KUSTOMIZE) build config/crd | $(KUBECTL) apply -f -
+	@[ -d "$(CRD_DIR)" ] && $(KUSTOMIZE) build "$(CRD_DIR)" | $(KUBECTL) apply -f - || { \
+		echo "No CRDs found in $(CRD_DIR) (skipping install)"; \
+	}
 
 .PHONY: uninstall
 uninstall: manifests kustomize ## Uninstall CRDs from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
-	$(KUSTOMIZE) build config/crd | $(KUBECTL) delete --ignore-not-found=$(ignore-not-found) -f -
+	@[ -d "$(CRD_DIR)" ] && $(KUSTOMIZE) build "$(CRD_DIR)" | $(KUBECTL) delete --ignore-not-found=$(ignore-not-found) -f - || { \
+		echo "No CRDs found in $(CRD_DIR) (skipping uninstall)"; \
+	}
 
 .PHONY: deploy
 deploy: manifests kustomize ## Deploy controller to the K8s cluster specified in ~/.kube/config.
