@@ -1,5 +1,5 @@
 # Build the manager binary
-FROM --platform=${BUILDPLATFORM} golang:1.23 AS builder
+FROM --platform=${BUILDPLATFORM} golang:1.24 AS builder
 ARG TARGETOS
 ARG TARGETARCH
 
@@ -15,7 +15,7 @@ RUN go mod download
 COPY cmd/main.go cmd/main.go
 # COPY api/ api/
 COPY pkg/ pkg/
-COPY internal/controller/ internal/controller/
+COPY internal/ internal/
 
 # Build
 # the GOARCH has not a default value to allow the binary be built according to the host where the command
@@ -28,6 +28,6 @@ RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} go build -a -o ma
 FROM nicolaka/netshoot
 WORKDIR /
 COPY --from=builder /workspace/manager .
-USER 65534:65534
+USER 65532:65532
 
 ENTRYPOINT ["/manager"]

@@ -1,8 +1,6 @@
 module github.com/h0tbird/k-swarm
 
-go 1.23.0
-
-toolchain go1.24.0
+go 1.24.0
 
 require (
 	github.com/fvbock/endless v0.0.0-20170109170031-447134032cb6
