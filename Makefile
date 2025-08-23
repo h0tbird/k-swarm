@@ -218,7 +218,7 @@ CTLPTL ?= $(LOCALBIN)/ctlptl
 GORELEASER ?= $(LOCALBIN)/goreleaser
 
 ## Tool Versions
-KUSTOMIZE_VERSION ?= v5.5.0          # https://github.com/kubernetes-sigs/kustomize/releases
+KUSTOMIZE_VERSION ?= v5.6.0          # https://github.com/kubernetes-sigs/kustomize/releases
 CONTROLLER_TOOLS_VERSION ?= v0.17.2  # https://github.com/kubernetes-sigs/controller-tools/releases
 CTLPTL_VERSION ?= v0.8.39            # https://github.com/tilt-dev/ctlptl/releases
 GORELEASER_VERSION ?= v2.7.0         # https://github.com/goreleaser/goreleaser/releases
@@ -235,10 +235,9 @@ KUSTOMIZE_INSTALL_SCRIPT ?= "https://raw.githubusercontent.com/kubernetes-sigs/k
 tooling: kustomize controller-gen envtest ctlptl goreleaser ## Install all the tooling.
 
 .PHONY: kustomize
-kustomize: $(LOCALBIN) ## Download kustomize locally if necessary. If wrong version is installed, it will be removed before downloading.
-	@ test -s $(KUSTOMIZE) && $(KUSTOMIZE) version | grep -q $(KUSTOMIZE_VERSION) || \
-	{ rm -rf $(KUSTOMIZE); curl -Ss $(KUSTOMIZE_INSTALL_SCRIPT) | bash -s -- $(subst v,,$(KUSTOMIZE_VERSION)) $(LOCALBIN); } \
-	> /dev/null
+kustomize: $(KUSTOMIZE) ## Download kustomize locally if necessary.
+$(KUSTOMIZE): $(LOCALBIN)
+	$(call go-install-tool,$(KUSTOMIZE),sigs.k8s.io/kustomize/kustomize/v5,$(KUSTOMIZE_VERSION))
 
 .PHONY: controller-gen
 controller-gen: $(LOCALBIN) ## Download controller-gen locally if necessary. If wrong version is installed, it will be overwritten.
