@@ -32,11 +32,38 @@ func initFlags(fs *pflag.FlagSet) *common.FlagPack {
 
 	flags := &common.FlagPack{}
 
+	//--------------
+	// Common flags
+	//--------------
+
 	fs.StringVar(
 		&flags.MetricsAddr,
 		"metrics-bind-address",
 		":8080",
 		"The address the metric endpoint binds to.")
+
+	flag.BoolVar(&flags.SecureMetrics,
+		"metrics-secure",
+		true,
+		"If set, the metrics endpoint is served securely via HTTPS. Use --metrics-secure=false to use HTTP instead.")
+
+	flag.StringVar(
+		&flags.MetricsCertPath,
+		"metrics-cert-path",
+		"",
+		"The directory that contains the metrics server certificate.")
+
+	flag.StringVar(
+		&flags.MetricsCertName,
+		"metrics-cert-name",
+		"tls.crt",
+		"The name of the metrics server certificate file.")
+
+	flag.StringVar(
+		&flags.MetricsCertKey,
+		"metrics-cert-key",
+		"tls.key",
+		"The name of the metrics server key file.")
 
 	fs.StringVar(
 		&flags.ProbeAddr,
@@ -55,6 +82,12 @@ func initFlags(fs *pflag.FlagSet) *common.FlagPack {
 		"sync-period",
 		10*time.Hour,
 		"The minimum interval at which watched resources are reconciled.")
+
+	flag.BoolVar(
+		&flags.EnableHTTP2,
+		"enable-http2",
+		false,
+		"If set, HTTP/2 will be enabled for the metrics and webhook servers")
 
 	//----------------
 	// Informer flags
