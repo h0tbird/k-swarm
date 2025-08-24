@@ -92,7 +92,15 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: spec.nodeName
+        ports:
+        - containerPort: 8082
+          name: worker
+          protocol: TCP
+        - containerPort: 8083
+          name: informer
+          protocol: TCP
         securityContext:
+          readOnlyRootFilesystem: true
           allowPrivilegeEscalation: false
           capabilities:
             drop:
@@ -118,13 +126,6 @@ spec:
           requests:
             cpu: 10m
             memory: 64Mi
-        ports:
-        - containerPort: 8082
-          name: worker
-          protocol: TCP
-        - containerPort: 8083
-          name: informer
-          protocol: TCP
       serviceAccountName: controller-manager
       terminationGracePeriodSeconds: 10
 ---
