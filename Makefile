@@ -218,8 +218,8 @@ CTLPTL ?= $(LOCALBIN)/ctlptl
 GORELEASER ?= $(LOCALBIN)/goreleaser
 
 ## Tool Versions
-KUSTOMIZE_VERSION ?= v5.6.0          # https://github.com/kubernetes-sigs/kustomize/releases
-CONTROLLER_TOOLS_VERSION ?= v0.17.2  # https://github.com/kubernetes-sigs/controller-tools/releases
+KUSTOMIZE_VERSION ?= v5.6.0
+CONTROLLER_TOOLS_VERSION ?= v0.17.2
 CTLPTL_VERSION ?= v0.8.39            # https://github.com/tilt-dev/ctlptl/releases
 GORELEASER_VERSION ?= v2.7.0         # https://github.com/goreleaser/goreleaser/releases
 #ENVTEST_VERSION is the version of controller-runtime release branch to fetch the envtest setup script (i.e. release-0.20)
