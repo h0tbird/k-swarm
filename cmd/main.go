@@ -42,7 +42,8 @@ func initFlags(fs *pflag.FlagSet) *common.FlagPack {
 		":8080",
 		"The address the metric endpoint binds to.")
 
-	flag.BoolVar(&flags.SecureMetrics,
+	flag.BoolVar(
+		&flags.SecureMetrics,
 		"metrics-secure",
 		true,
 		"If set, the metrics endpoint is served securely via HTTPS. Use --metrics-secure=false to use HTTP instead.")
