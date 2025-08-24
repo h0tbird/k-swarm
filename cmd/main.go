@@ -145,4 +145,7 @@ func main() {
 
 	// Wait
 	wg.Wait()
+
+	// Shutdown
+	ctrl.Log.WithName("main").Info("Shutting down")
 }
