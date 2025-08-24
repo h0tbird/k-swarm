@@ -159,18 +159,19 @@ func main() {
 	// Logger setup
 	log := zap.New(zap.UseFlagOptions(&zapOpts))
 	ctrl.SetLogger(log)
+	ctrl.Log.WithName("main").Info("Starting")
 
 	// Setup a common context
 	ctx := ctrl.SetupSignalHandler()
 
-	// Run as an informer
+	// Run as an informer (gin web framework)
 	if flags.EnableInformer {
 		wg.Add(1)
 		ctrl.Log.WithName("main").Info("Starting informer")
 		go informer.Start(ctx, &wg, flags)
 	}
 
-	// Run as a worker
+	// Run as a worker (controller-runtime)
 	if flags.EnableWorker {
 		wg.Add(1)
 		ctrl.Log.WithName("main").Info("Starting worker")
@@ -179,7 +180,5 @@ func main() {
 
 	// Wait
 	wg.Wait()
-
-	// Shutdown
 	ctrl.Log.WithName("main").Info("Shutting down")
 }
