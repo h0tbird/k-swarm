@@ -34,9 +34,7 @@ SHELL = /usr/bin/env bash -o pipefail
 .PHONY: all
 all: build
 
-#------------------------------------------------------------------------------
 ##@ General
-#------------------------------------------------------------------------------
 
 # The help target prints out all targets with their descriptions organized
 # beneath their categories. The categories are represented by '##@' and the
@@ -53,9 +51,7 @@ all: build
 help: ## Display this help.
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z_0-9-]+:.*?##/ { printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
 
-#------------------------------------------------------------------------------
 ##@ Development
-#------------------------------------------------------------------------------
 
 .PHONY: manifests
 manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
@@ -107,16 +103,18 @@ cleanup-test-e2e: ## Tear down the Kind cluster used for e2e tests
 	@$(KIND) delete cluster --name $(KIND_CLUSTER)
 
 .PHONY: lint
-lint: golangci-lint ## Run golangci-lint linter & yamllint
+lint: golangci-lint ## Run golangci-lint linter
 	$(GOLANGCI_LINT) run
 
 .PHONY: lint-fix
 lint-fix: golangci-lint ## Run golangci-lint linter and perform fixes
 	$(GOLANGCI_LINT) run --fix
 
-#------------------------------------------------------------------------------
+.PHONY: lint-config
+lint-config: golangci-lint ## Verify golangci-lint linter configuration
+	$(GOLANGCI_LINT) config verify
+
 ##@ Build
-#------------------------------------------------------------------------------
 
 .PHONY: build-devel
 build-devel: generate ## Build a manager binary without optimizations and inlining for Alpine musl linux/ARCH.
@@ -156,9 +154,7 @@ release: ## Create a new release
 	$(GORELEASER) release --clean
 	PUSH_IMG=ghcr.io/h0tbird/k-swarm:$$(jq -r '.tag' dist/metadata.json) make docker-buildx
 
-#------------------------------------------------------------------------------
 ##@ Deployment
-#------------------------------------------------------------------------------
 
 ifndef ignore-not-found
   ignore-not-found = false
@@ -190,9 +186,7 @@ overlay: kustomize ## Render a kustomize overlay to stdout.
 	@ cd config/manager && $(KUSTOMIZE) edit set image controller=${PULL_IMG}
 	@ $(KUSTOMIZE) build config/overlays/$(OVERLAY)
 
-#------------------------------------------------------------------------------
 ##@ Tilt / Kind
-#------------------------------------------------------------------------------
 
 .PHONY: kind-create
 kind-create: ctlptl  ## Create a kind cluster with a local registry.
@@ -206,9 +200,7 @@ tilt-up: kind-create ## Start kind and tilt.
 kind-delete: ctlptl ## Delete the local development cluster.
 	$(CTLPTL) delete --cascade true -f hack/dev-cluster.yaml
 
-#------------------------------------------------------------------------------
 ##@ Build Dependencies
-#------------------------------------------------------------------------------
 
 ## Location to install dependencies to
 LOCALBIN ?= $(shell pwd)/bin
