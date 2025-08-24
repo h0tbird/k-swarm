@@ -147,7 +147,7 @@ func initFlags(fs *pflag.FlagSet) *common.FlagPack {
 
 func main() {
 
-	zapOpts := zap.Options{}
+	zapOpts := zap.Options{Development: true}
 	var wg sync.WaitGroup
 
 	// Handle flags
