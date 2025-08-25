@@ -4,10 +4,17 @@ import "time"
 
 // FlagPack
 type FlagPack struct {
+
+	// Common flags
 	MetricsAddr          string
+	MetricsCertPath      string
+	MetricsCertName      string
+	MetricsCertKey       string
+	SecureMetrics        bool
 	EnableLeaderElection bool
 	SyncPeriod           time.Duration
 	ProbeAddr            string
+	EnableHTTP2          bool
 
 	// Informer flags
 	EnableInformer   bool

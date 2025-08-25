@@ -4,6 +4,7 @@ import (
 
 	// Stdlib
 	"context"
+	"crypto/tls"
 	"os"
 	"sync"
 
@@ -15,6 +16,7 @@ import (
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
+	"sigs.k8s.io/controller-runtime/pkg/metrics/filters"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
 	// Internal
@@ -49,10 +51,35 @@ func Start(ctx context.Context, wg *sync.WaitGroup, flags *common.FlagPack) {
 
 	defer wg.Done()
 
+	var tlsOpts []func(*tls.Config)
+
+	// Function to disable HTTP2
+	disableHTTP2 := func(c *tls.Config) {
+		log.Info("disabling http/2")
+		c.NextProtos = []string{"http/1.1"}
+	}
+
+	// Disable HTTP2
+	if !flags.EnableHTTP2 {
+		tlsOpts = append(tlsOpts, disableHTTP2)
+	}
+
+	// Metrics server options
+	metricsServerOptions := metricsserver.Options{
+		BindAddress:   flags.MetricsAddr,
+		SecureServing: flags.SecureMetrics,
+		TLSOpts:       tlsOpts,
+	}
+
+	// Protect the metrics endpoint with authn/authz.
+	if flags.SecureMetrics {
+		metricsServerOptions.FilterProvider = filters.WithAuthenticationAndAuthorization
+	}
+
 	// Initializes a new controller manager
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:                 scheme,
-		Metrics:                metricsserver.Options{BindAddress: flags.MetricsAddr},
+		Metrics:                metricsServerOptions,
 		HealthProbeBindAddress: flags.ProbeAddr,
 		LeaderElection:         flags.EnableLeaderElection,
 		LeaderElectionID:       "bb4dbf8a.github.com",

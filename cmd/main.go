@@ -32,11 +32,39 @@ func initFlags(fs *pflag.FlagSet) *common.FlagPack {
 
 	flags := &common.FlagPack{}
 
+	//--------------
+	// Common flags
+	//--------------
+
 	fs.StringVar(
 		&flags.MetricsAddr,
 		"metrics-bind-address",
 		":8080",
 		"The address the metric endpoint binds to.")
+
+	flag.BoolVar(
+		&flags.SecureMetrics,
+		"metrics-secure",
+		true,
+		"If set, the metrics endpoint is served securely via HTTPS. Use --metrics-secure=false to use HTTP instead.")
+
+	flag.StringVar(
+		&flags.MetricsCertPath,
+		"metrics-cert-path",
+		"",
+		"The directory that contains the metrics server certificate.")
+
+	flag.StringVar(
+		&flags.MetricsCertName,
+		"metrics-cert-name",
+		"tls.crt",
+		"The name of the metrics server certificate file.")
+
+	flag.StringVar(
+		&flags.MetricsCertKey,
+		"metrics-cert-key",
+		"tls.key",
+		"The name of the metrics server key file.")
 
 	fs.StringVar(
 		&flags.ProbeAddr,
@@ -55,6 +83,12 @@ func initFlags(fs *pflag.FlagSet) *common.FlagPack {
 		"sync-period",
 		10*time.Hour,
 		"The minimum interval at which watched resources are reconciled.")
+
+	flag.BoolVar(
+		&flags.EnableHTTP2,
+		"enable-http2",
+		false,
+		"If set, HTTP/2 will be enabled for the metrics and webhook servers")
 
 	//----------------
 	// Informer flags
@@ -113,7 +147,7 @@ func initFlags(fs *pflag.FlagSet) *common.FlagPack {
 
 func main() {
 
-	zapOpts := zap.Options{}
+	zapOpts := zap.Options{Development: true}
 	var wg sync.WaitGroup
 
 	// Handle flags
@@ -125,18 +159,19 @@ func main() {
 	// Logger setup
 	log := zap.New(zap.UseFlagOptions(&zapOpts))
 	ctrl.SetLogger(log)
+	ctrl.Log.WithName("main").Info("Starting")
 
 	// Setup a common context
 	ctx := ctrl.SetupSignalHandler()
 
-	// Run as an informer
+	// Run as an informer (gin web framework)
 	if flags.EnableInformer {
 		wg.Add(1)
 		ctrl.Log.WithName("main").Info("Starting informer")
 		go informer.Start(ctx, &wg, flags)
 	}
 
-	// Run as a worker
+	// Run as a worker (controller-runtime)
 	if flags.EnableWorker {
 		wg.Add(1)
 		ctrl.Log.WithName("main").Info("Starting worker")
@@ -145,7 +180,5 @@ func main() {
 
 	// Wait
 	wg.Wait()
-
-	// Shutdown
 	ctrl.Log.WithName("main").Info("Shutting down")
 }
