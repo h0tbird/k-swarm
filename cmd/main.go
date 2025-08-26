@@ -32,9 +32,20 @@ func initFlags(fs *pflag.FlagSet) *common.FlagPack {
 
 	flags := &common.FlagPack{}
 
-	//--------------
-	// Common flags
-	//--------------
+	//----------------
+	// Informer flags
+	//----------------
+
+	fs.BoolVar(
+		&flags.EnableInformer,
+		"enable-informer",
+		false,
+		"Enable the informer.")
+
+	fs.StringVar(
+		&flags.InformerBindAddr,
+		"informer-bind-address", ":8083",
+		"The address the informer binds to.")
 
 	fs.StringVar(
 		&flags.MetricsAddr,
@@ -89,21 +100,6 @@ func initFlags(fs *pflag.FlagSet) *common.FlagPack {
 		"enable-http2",
 		false,
 		"If set, HTTP/2 will be enabled for the metrics and webhook servers")
-
-	//----------------
-	// Informer flags
-	//----------------
-
-	fs.BoolVar(
-		&flags.EnableInformer,
-		"enable-informer",
-		false,
-		"Enable the informer.")
-
-	fs.StringVar(
-		&flags.InformerBindAddr,
-		"informer-bind-address", ":8083",
-		"The address the informer binds to.")
 
 	//--------------
 	// Worker flags
@@ -164,14 +160,14 @@ func main() {
 	// Setup a common context
 	ctx := ctrl.SetupSignalHandler()
 
-	// Run as an informer (gin web framework)
+	// Run as an informer
 	if flags.EnableInformer {
 		wg.Add(1)
 		ctrl.Log.WithName("main").Info("Starting informer")
 		go informer.Start(ctx, &wg, flags)
 	}
 
-	// Run as a worker (controller-runtime)
+	// Run as a worker
 	if flags.EnableWorker {
 		wg.Add(1)
 		ctrl.Log.WithName("main").Info("Starting worker")
