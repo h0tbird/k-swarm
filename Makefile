@@ -1,11 +1,5 @@
 # Image URL to use all building/pushing image targets
 IMG ?= controller:latest
-# Local registry host:port
-REGISTRY_HOST = $(shell $(CTLPTL) get cluster kind-dev -o template --template '{{.status.localRegistryHosting.host}}' || echo 'localhost:5000')
-# Image URL to use for pushing image targets
-PUSH_IMG ?= ${REGISTRY_HOST}/k-swarm:latest
-# Image URL to use for pulling image targets
-PULL_IMG ?= dev-registry:5000/k-swarm:latest
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -14,17 +8,11 @@ else
 GOBIN=$(shell go env GOBIN)
 endif
 
-# CRD directory
-CRD_DIR ?= config/crd
-
 # CONTAINER_TOOL defines the container tool to be used for building images.
 # Be aware that the target commands are only tested with Docker which is
 # scaffolded by default. However, you might want to replace it to use other
 # tools. (i.e. podman)
 CONTAINER_TOOL ?= docker
-
-# Platform list for multi-arch buildx
-PLATFORMS ?= linux/arm64,linux/amd64
 
 # Setting SHELL to bash allows bash commands to be executed by recipes.
 # Options are set to exit when a recipe line exits non-zero or a piped command fails.
@@ -55,7 +43,7 @@ help: ## Display this help.
 
 .PHONY: manifests
 manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
-	$(CONTROLLER_GEN) rbac:roleName=manager-role crd webhook paths="./..." output:crd:artifacts:config=$(CRD_DIR)/bases
+	$(CONTROLLER_GEN) rbac:roleName=manager-role crd webhook paths="./..." output:crd:artifacts:config=config/crd/bases
 
 .PHONY: generate
 generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
@@ -116,17 +104,9 @@ lint-config: golangci-lint ## Verify golangci-lint linter configuration
 
 ##@ Build
 
-.PHONY: build-devel
-build-devel: generate ## Build a manager binary without optimizations and inlining for Alpine musl linux/ARCH.
-	GO111MODULE=on go build -gcflags "-N -l" -o bin/manager cmd/main.go
-
 .PHONY: build
 build: manifests generate fmt vet ## Build manager binary.
 	go build -o bin/manager cmd/main.go
-
-.PHONY: swarmctl
-swarmctl: ## Build swarmctl binary.
-	$(GORELEASER) build --snapshot --single-target --clean -o bin/swarmctl
 
 .PHONY: run
 run: manifests generate fmt vet ## Run a controller from your host.
@@ -139,20 +119,32 @@ run: manifests generate fmt vet ## Run a controller from your host.
 docker-build: ## Build docker image with the manager.
 	$(CONTAINER_TOOL) build -t ${IMG} .
 
+.PHONY: docker-push
+docker-push: ## Push docker image with the manager.
+	$(CONTAINER_TOOL) push ${IMG}
+
+# PLATFORMS defines the target platforms for the manager image be built to provide support to multiple
+# architectures. (i.e. make docker-buildx IMG=myregistry/mypoperator:0.0.1). To use this option you need to:
+# - be able to use docker buildx. More info: https://docs.docker.com/build/buildx/
+# - have enabled BuildKit. More info: https://docs.docker.com/develop/develop-images/build_enhancements/
+# - be able to push the image to your registry (i.e. if you do not set a valid value via IMG=<myregistry/image:<tag>> then the export will fail)
+# To adequately provide solutions that are compatible with multiple platforms, you should consider using this option.
+PLATFORMS ?= linux/arm64,linux/amd64,linux/s390x,linux/ppc64le
 .PHONY: docker-buildx
 docker-buildx: ## Build and push docker image for the manager for cross-platform support
+	# copy existing Dockerfile and insert --platform=${BUILDPLATFORM} into Dockerfile.cross, and preserve the original Dockerfile
+	sed -e '1 s/\(^FROM\)/FROM --platform=\$$\{BUILDPLATFORM\}/; t' -e ' 1,// s//FROM --platform=\$$\{BUILDPLATFORM\}/' Dockerfile > Dockerfile.cross
 	- $(CONTAINER_TOOL) buildx create --name k-swarm-builder
 	$(CONTAINER_TOOL) buildx use k-swarm-builder
-	- $(CONTAINER_TOOL) buildx build --push --platform=$(PLATFORMS) --tag ${PUSH_IMG} .
+	- $(CONTAINER_TOOL) buildx build --push --platform=$(PLATFORMS) --tag ${IMG} -f Dockerfile.cross .
 	- $(CONTAINER_TOOL) buildx rm k-swarm-builder
+	rm Dockerfile.cross
 
-.PHONY: release
-release: ## Create a new release
-	git checkout -B ${BRANCH}
-	git push -u origin ${BRANCH}
-	git tag -a ${TAG} -m "Release ${TAG}"
-	$(GORELEASER) release --clean
-	PUSH_IMG=ghcr.io/h0tbird/k-swarm:$$(jq -r '.tag' dist/metadata.json) make docker-buildx
+.PHONY: build-installer
+build-installer: manifests generate kustomize ## Generate a consolidated YAML with CRDs and deployment.
+	mkdir -p dist
+	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
+	$(KUSTOMIZE) build config/default > dist/install.yaml
 
 ##@ Deployment
 
@@ -162,15 +154,11 @@ endif
 
 .PHONY: install
 install: manifests kustomize ## Install CRDs into the K8s cluster specified in ~/.kube/config.
-	@[ -d "$(CRD_DIR)" ] && $(KUSTOMIZE) build "$(CRD_DIR)" | $(KUBECTL) apply -f - || { \
-		echo "No CRDs found in $(CRD_DIR) (skipping install)"; \
-	}
+	$(KUSTOMIZE) build config/crd | $(KUBECTL) apply -f -
 
 .PHONY: uninstall
 uninstall: manifests kustomize ## Uninstall CRDs from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
-	@[ -d "$(CRD_DIR)" ] && $(KUSTOMIZE) build "$(CRD_DIR)" | $(KUBECTL) delete --ignore-not-found=$(ignore-not-found) -f - || { \
-		echo "No CRDs found in $(CRD_DIR) (skipping uninstall)"; \
-	}
+	$(KUSTOMIZE) build config/crd | $(KUBECTL) delete --ignore-not-found=$(ignore-not-found) -f -
 
 .PHONY: deploy
 deploy: manifests kustomize ## Deploy controller to the K8s cluster specified in ~/.kube/config.
@@ -181,26 +169,7 @@ deploy: manifests kustomize ## Deploy controller to the K8s cluster specified in
 undeploy: kustomize ## Undeploy controller from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
 	$(KUSTOMIZE) build config/default | $(KUBECTL) delete --ignore-not-found=$(ignore-not-found) -f -
 
-.PHONY: overlay
-overlay: kustomize ## Render a kustomize overlay to stdout.
-	@ cd config/manager && $(KUSTOMIZE) edit set image controller=${PULL_IMG}
-	@ $(KUSTOMIZE) build config/overlays/$(OVERLAY)
-
-##@ Tilt / Kind
-
-.PHONY: kind-create
-kind-create: ctlptl  ## Create a kind cluster with a local registry.
-	$(CTLPTL) apply -f hack/dev-cluster.yaml
-
-.PHONY: tilt-up
-tilt-up: kind-create ## Start kind and tilt.
-	tilt up -- --flags '--leader-elect=false --enable-informer=true --enable-worker=true --worker-bind-address=:8082 --informer-bind-address=:8083 --informer-url=http://k-swarm-informer.k-swarm-system --informer-poll-interval=10s --worker-request-interval=2s --zap-devel'
-
-.PHONY: kind-delete
-kind-delete: ctlptl ## Delete the local development cluster.
-	$(CTLPTL) delete --cascade true -f hack/dev-cluster.yaml
-
-##@ Build Dependencies
+##@ Dependencies
 
 ## Location to install dependencies to
 LOCALBIN ?= $(shell pwd)/bin
@@ -214,14 +183,10 @@ KUSTOMIZE ?= $(LOCALBIN)/kustomize
 CONTROLLER_GEN ?= $(LOCALBIN)/controller-gen
 ENVTEST ?= $(LOCALBIN)/setup-envtest
 GOLANGCI_LINT = $(LOCALBIN)/golangci-lint
-CTLPTL ?= $(LOCALBIN)/ctlptl
-GORELEASER ?= $(LOCALBIN)/goreleaser
 
 ## Tool Versions
 KUSTOMIZE_VERSION ?= v5.6.0
 CONTROLLER_TOOLS_VERSION ?= v0.18.0
-CTLPTL_VERSION ?= v0.8.39            # https://github.com/tilt-dev/ctlptl/releases
-GORELEASER_VERSION ?= v2.7.0         # https://github.com/goreleaser/goreleaser/releases
 #ENVTEST_VERSION is the version of controller-runtime release branch to fetch the envtest setup script (i.e. release-0.20)
 ENVTEST_VERSION ?= $(shell go list -m -f "{{ .Version }}" sigs.k8s.io/controller-runtime | awk -F'[v.]' '{printf "release-%d.%d", $$2, $$3}')
 #ENVTEST_K8S_VERSION is the version of Kubernetes to use for setting up ENVTEST binaries (i.e. 1.31)
@@ -256,16 +221,6 @@ golangci-lint: $(GOLANGCI_LINT) ## Download golangci-lint locally if necessary.
 $(GOLANGCI_LINT): $(LOCALBIN)
 	$(call go-install-tool,$(GOLANGCI_LINT),github.com/golangci/golangci-lint/v2/cmd/golangci-lint,$(GOLANGCI_LINT_VERSION))
 
-.PHONY: ctlptl
-ctlptl: $(LOCALBIN) ## Download ctlptl locally if necessary. If wrong version is installed, it will be overwritten.
-	@ test -s $(CTLPTL) && $(CTLPTL) version | grep -q $(CTLPTL_VERSION) || \
-	GOBIN=$(LOCALBIN) go install github.com/tilt-dev/ctlptl/cmd/ctlptl@$(CTLPTL_VERSION)
-
-.PHONY: goreleaser
-goreleaser: ## Download goreleaser locally if necessary. If wrong version is installed, it will be overwritten.
-	@ test -s $(GORELEASER) && $(GORELEASER) --version | grep -q $(GORELEASER_VERSION) || \
-	GOBIN=$(LOCALBIN) go install github.com/goreleaser/goreleaser/v2@$(GORELEASER_VERSION)
-
 # go-install-tool will 'go install' any package with custom target and name of binary, if it doesn't exist
 # $1 - target path with name of binary
 # $2 - package url which can be installed
@@ -281,3 +236,6 @@ mv $(1) $(1)-$(3) ;\
 } ;\
 ln -sf $(1)-$(3) $(1)
 endef
+
+# --- User customizations (keep this line stable across updates) ---
+-include Makefile.custom
