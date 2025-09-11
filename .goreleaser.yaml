@@ -1,0 +1,81 @@
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
+# vim: set ts=2 sw=2 tw=0 fo=cnqoj
+
+version: 2
+
+#------------------------------------------------------------------------------
+# before
+#------------------------------------------------------------------------------
+
+before:
+  hooks:
+    - go mod tidy
+
+#------------------------------------------------------------------------------
+# builds
+#------------------------------------------------------------------------------
+
+builds:
+  - id: swarmctl
+    main: ./cmd/swarmctl
+    binary: swarmctl
+    env:
+      - CGO_ENABLED=0
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w
+      - -extldflags "-static"
+      - -X github.com/h0tbird/k-swarm/cmd/swarmctl/cmd.version={{.Version}}
+    goos:
+      - linux
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+
+#------------------------------------------------------------------------------
+# archives
+#------------------------------------------------------------------------------
+
+archives:
+  - id: swarmctl
+    builds:
+      - swarmctl
+    format: tar.gz
+    name_template: >-
+      {{ .Binary }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}
+
+#------------------------------------------------------------------------------
+# changelog
+#------------------------------------------------------------------------------
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^test:"
+      - "^chore"
+      - "merge conflict"
+      - Merge pull request
+      - Merge remote-tracking branch
+      - Merge branch
+      - go mod tidy
+
+#------------------------------------------------------------------------------
+# brews
+#------------------------------------------------------------------------------
+
+brews:
+  - name: swarmctl
+    ids:
+      - swarmctl
+    repository:
+      owner: h0tbird
+      name: homebrew-tap
+    directory: Formula
+    homepage: https://github.com/h0tbird/k-swarm
+    description: A k8s service swarm
+    license: MIT
+    test: |
+      system "#{bin}/swarmctl -v"
