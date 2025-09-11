@@ -50,6 +50,16 @@ Create a new release:
 make release BRANCH='release-0.1' TAG='v0.1.0'
 ```
 
+## Upgrade kubebuilder
+```
+kubebuilder alpha update --from-branch main
+# Fix merge conflicts now
+git commit
+make manifests generate fmt vet lint-fix
+git branch -m kubebuilder-update-from-v4.7.1-to-v4.8.0
+git push --set-upstream origin kubebuilder-update-from-v4.7.1-to-v4.8.0
+```
+
 ### Performance Profiling and Benchmarking
 CPU Profiling
 ```
