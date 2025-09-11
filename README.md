@@ -1,135 +1,78 @@
+[![Build and publish to ghcr.io](https://github.com/h0tbird/k-swarm/actions/workflows/docker-build-and-publish.yml/badge.svg)](https://github.com/h0tbird/k-swarm/actions/workflows/docker-build-and-publish.yml)
+[![Cleanup old ghcr.io images](https://github.com/h0tbird/k-swarm/actions/workflows/cleanup-ghcr-images.yml/badge.svg)](https://github.com/h0tbird/k-swarm/actions/workflows/cleanup-ghcr-images.yml)
+[![Dependabot Updates](https://github.com/h0tbird/k-swarm/actions/workflows/dependabot/dependabot-updates/badge.svg)](https://github.com/h0tbird/k-swarm/actions/workflows/dependabot/dependabot-updates)
+
 # k-swarm
-// TODO(user): Add simple overview of use/purpose
+`k-swarm` is used for deploying a series of k8s services that are capable of identifying and communicating with one another, thus establishing a network of synthetic traffic. This interconnected traffic among various workloads provides a foundational platform for a range of laboratory experiments, including the testing and validation of diverse service mesh configurations at scale.
 
-## Description
-// TODO(user): An in-depth paragraph about your project and overview of use
+### Install
 
-## Getting Started
-
-### Prerequisites
-- go version v1.24.0+
-- docker version 17.03+.
-- kubectl version v1.11.3+.
-- Access to a Kubernetes v1.11.3+ cluster.
-
-### To Deploy on the cluster
-**Build and push your image to the location specified by `IMG`:**
-
-```sh
-make docker-build docker-push IMG=<some-registry>/k-swarm:tag
+```
+brew install h0tbird/tap/swarmctl
 ```
 
-**NOTE:** This image ought to be published in the personal registry you specified.
-And it is required to have access to pull the image from the working environment.
-Make sure you have the proper permission to the registry if the above commands don’t work.
+### Usage
 
-**Install the CRDs into the cluster:**
-
-```sh
-make install
+Install the `informer` with two replicas to all `kind` clusters:
+```
+swarmctl i --context 'kind-*' --replicas 2
 ```
 
-**Deploy the Manager to the cluster with the image specified by `IMG`:**
-
-```sh
-make deploy IMG=<some-registry>/k-swarm:tag
+Install services 1 to 5 with 2 `workers` each to all `kind` clusters:
+```
+swarmctl w --context 'kind-*' 1:5 --replicas 2
 ```
 
-> **NOTE**: If you encounter RBAC errors, you may need to grant yourself cluster-admin
-privileges or be logged in as admin.
-
-**Create instances of your solution**
-You can apply the samples (examples) from the config/sample:
-
-```sh
-kubectl apply -k config/samples/
+Enable telemetry for `service-1` on all `kind` clusters:
+```
+swarmctl w t --context 'kind-*' 1:1 on
 ```
 
->**NOTE**: Ensure that the samples has default values to test it out.
+## Developing
 
-### To Uninstall
-**Delete the instances (CRs) from the cluster:**
-
-```sh
-kubectl delete -k config/samples/
+Download all the `Makefile` tooling to `./bin/`:
+```
+make tooling
 ```
 
-**Delete the APIs(CRDs) from the cluster:**
-
-```sh
-make uninstall
+Upgrade the telemetry CRD:
+```
+k apply view-last-applied crd telemetries.telemetry.istio.io > cmd/swarmctl/assets/crds.yaml
 ```
 
-**UnDeploy the controller from the cluster:**
-
-```sh
-make undeploy
+Bring up a local dev environment:
+```
+make tilt-up
 ```
 
-## Project Distribution
-
-Following the options to release and provide this solution to the users.
-
-### By providing a bundle with all YAML files
-
-1. Build the installer for the image built and published in the registry:
-
-```sh
-make build-installer IMG=<some-registry>/k-swarm:tag
+Create a new release:
+```
+make release BRANCH='release-0.1' TAG='v0.1.0'
 ```
 
-**NOTE:** The makefile target mentioned above generates an 'install.yaml'
-file in the dist directory. This file contains all the resources built
-with Kustomize, which are necessary to install this project without its
-dependencies.
-
-2. Using the installer
-
-Users can just run 'kubectl apply -f <URL for YAML BUNDLE>' to install
-the project, i.e.:
-
-```sh
-kubectl apply -f https://raw.githubusercontent.com/<org>/k-swarm/<tag or branch>/dist/install.yaml
+### Performance Profiling and Benchmarking
+CPU Profiling
+```
+swarmctl w --context 'kind-foo-*' 1:10 --cpu-profile
+go tool pprof --http localhost:3000 cpu.prof
 ```
 
-### By providing a Helm Chart
-
-1. Build the chart using the optional helm plugin
-
-```sh
-kubebuilder edit --plugins=helm/v1-alpha
+Memory Profiling
+```
+swarmctl w --context 'kind-foo-*' 1:10 --mem-profile
+go tool pprof --http localhost:3000 mem.prof
 ```
 
-2. See that a chart was generated under 'dist/chart', and users
-can obtain this solution from there.
+Tracing
+```
+swarmctl i --contextkind-foo-1 --tracing
+go tool trace trace.out
+```
 
-**NOTE:** If you change the project, you need to update the Helm Chart
-using the same command above to sync the latest changes. Furthermore,
-if you create webhooks, you need to use the above command with
-the '--force' flag and manually ensure that any custom configuration
-previously added to 'dist/chart/values.yaml' or 'dist/chart/manager/manager.yaml'
-is manually re-applied afterwards.
-
-## Contributing
-// TODO(user): Add detailed information on how you would like others to contribute to this project
-
-**NOTE:** Run `make help` for more information on all potential `make` targets
-
-More information can be found via the [Kubebuilder Documentation](https://book.kubebuilder.io/introduction.html)
-
-## License
-
-Copyright 2025.
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-
+Benchmarking
+```
+go test -bench=. -benchmem -memprofile 0-mem.prof -cpuprofile 0-cpu.prof -benchtime=100x -count=10 ./cmd/swarmctl/pkg/k8sctx | tee 0-bench.txt
+go test -bench=. -benchmem -memprofile 1-mem.prof -cpuprofile 1-cpu.prof -benchtime=100x -count=10 ./cmd/swarmctl/pkg/k8sctx | tee 1-bench.txt
+go test -bench=. -benchmem -memprofile 2-mem.prof -cpuprofile 2-cpu.prof -benchtime=100x -count=10 ./cmd/swarmctl/pkg/k8sctx | tee 2-bench.txt
+benchstat 0-bench.txt 1-bench.txt 2-bench.txt
+```
