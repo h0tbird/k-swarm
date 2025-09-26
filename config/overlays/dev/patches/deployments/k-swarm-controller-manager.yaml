@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: controller-manager
+spec:
+  template:
+    spec:
+      securityContext:
+        runAsNonRoot: false
+        runAsUser: 0
+        fsGroup: 0
+      containers:
+      - name: manager
+        args:
+        - --health-probe-bind-address=:8081
+        - --metrics-bind-address=127.0.0.1:8080
+        - --leader-elect=false
+        - --sync-period=1m
+        livenessProbe:
+          $patch: delete
+        readinessProbe:
+          $patch: delete
+        ports:
+        - containerPort: 40000
+        resources:
+          $patch: delete
+      - name: kube-rbac-proxy
+        resources:
+          $patch: delete

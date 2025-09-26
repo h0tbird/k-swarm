@@ -1,0 +1,212 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    {{- if .IstioRevision }}
+    istio.io/rev: {{ .IstioRevision }}
+    {{- else }}
+    istio-injection: enabled
+    {{- end }}
+  name: {{ .Namespace }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: k-swarm
+  name: worker
+  namespace: {{ .Namespace }}
+spec:
+  ports:
+  - name: http
+    port: 80
+    protocol: TCP
+    targetPort: worker
+  selector:
+    k-swarm/worker: enabled
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: worker
+  namespace: {{ .Namespace }}
+spec:
+  replicas: {{ .Replicas }}
+  selector:
+    matchLabels:
+      k-swarm/worker: enabled
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: manager
+        sidecar.istio.io/proxyCPU: 50m
+        sidecar.istio.io/proxyCPULimit: 500m
+        sidecar.istio.io/proxyMemory: 64Mi
+        sidecar.istio.io/proxyMemoryLimit: 512Mi
+      labels:
+        k-swarm/worker: enabled
+    spec:
+      containers:
+      - args:
+        - --leader-elect=false
+        - --enable-informer=false
+        - --enable-worker=true
+        - --worker-bind-address=:8082
+        - --informer-url=http://informer.informer
+        - --informer-poll-interval=60s
+        - --worker-request-interval=2s
+        command:
+        - /manager
+        env:
+        - name: CLUSTER_NAME
+          value: kind-dev
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        image: ghcr.io/h0tbird/k-swarm:{{ if .ImageTag }}{{ .ImageTag }}{{ else }}v{{ .Version }}{{ end }}
+        {{- if .ImageTag}}
+        imagePullPolicy: Always
+        {{- end}}
+        name: manager
+        ports:
+        - containerPort: 8082
+          name: worker
+          protocol: TCP
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+      {{- if .NodeSelector}}
+      nodeSelector: {{.NodeSelector}}
+      {{- end}}
+      securityContext:
+        runAsNonRoot: true
+      serviceAccountName: default
+      terminationGracePeriodSeconds: 10
+---
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: worker
+  namespace: {{ .Namespace }}
+spec:
+  host: worker
+  trafficPolicy:
+    connectionPool:
+      http:
+        maxRequestsPerConnection: 1
+    loadBalancer:
+      simple: LEAST_REQUEST
+      localityLbSetting:
+        enabled: true
+    outlierDetection:
+      consecutive5xxErrors: 1
+      interval: 1s
+      baseEjectionTime: 10s
+---
+apiVersion: security.istio.io/v1
+kind: PeerAuthentication
+metadata:
+  name: worker
+  namespace: {{ .Namespace }}
+spec:
+  selector:
+    matchLabels:
+      k-swarm/worker: enabled
+  mtls:
+    mode: STRICT
+---
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: worker
+  namespace: {{ .Namespace }}
+spec:
+  selector:
+    matchLabels:
+      k-swarm/worker: enabled
+  action: ALLOW
+  rules:
+  - from:
+    - source:
+        namespaces: ["*"]
+    to:
+    - operation:
+        methods: ["GET"]
+        paths: ["/data"]
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: worker
+  namespace: {{ .Namespace }}
+spec:
+  duration: 24h0m0s
+  renewBefore: 12h0m0s
+  secretName: worker-{{ .Namespace }}
+  dnsNames:
+  - '{{ .Namespace }}.demo.lab'
+  issuerRef:
+    group: cert-manager.io
+    kind: ClusterIssuer
+    name: ingress-ca
+  revisionHistoryLimit: 2
+  secretTemplate:
+    annotations:
+      replicator.v1.mittwald.de/replicate-to: 'istio-system'
+  privateKey:
+    rotationPolicy: Always
+---
+apiVersion: networking.istio.io/v1
+kind: Gateway
+metadata:
+  name: worker
+  namespace: {{ .Namespace }}
+spec:
+  selector:
+    istio: nsgw
+  servers:
+  - hosts:
+    - '{{ .Namespace }}.demo.lab'
+    port:
+      name: https
+      number: 443
+      protocol: HTTPS
+    tls:
+      mode: SIMPLE
+      credentialName: worker-{{ .Namespace }}
+---
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: worker
+  namespace: {{ .Namespace }}
+spec:
+  gateways:
+  - worker
+  hosts:
+  - '{{ .Namespace }}.demo.lab'
+  http:
+  - match:
+    - port: 443
+    route:
+    - destination:
+        host: worker
+        port:
+          number: 80
+      weight: 100
