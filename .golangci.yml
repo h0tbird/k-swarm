@@ -12,7 +12,6 @@ linters:
     - gocyclo
     - govet
     - ineffassign
-    - lll
     - misspell
     - nakedret
     - prealloc
@@ -24,7 +23,6 @@ linters:
   settings:
     revive:
       rules:
-        - name: comment-spacings
         - name: import-shadowing
   exclusions:
     generated: lax
