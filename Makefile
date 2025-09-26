@@ -154,15 +154,11 @@ endif
 
 .PHONY: install
 install: manifests kustomize ## Install CRDs into the K8s cluster specified in ~/.kube/config.
-	@[ -d "$(CRD_DIR)" ] && $(KUSTOMIZE) build "$(CRD_DIR)" | $(KUBECTL) apply -f - || { \
-		echo "No CRDs found in $(CRD_DIR) (skipping install)"; \
-	}
+	$(KUSTOMIZE) build config/crd | $(KUBECTL) apply -f -
 
 .PHONY: uninstall
 uninstall: manifests kustomize ## Uninstall CRDs from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
-	@[ -d "$(CRD_DIR)" ] && $(KUSTOMIZE) build "$(CRD_DIR)" | $(KUBECTL) delete --ignore-not-found=$(ignore-not-found) -f - || { \
-		echo "No CRDs found in $(CRD_DIR) (skipping uninstall)"; \
-	}
+	$(KUSTOMIZE) build config/crd | $(KUBECTL) delete --ignore-not-found=$(ignore-not-found) -f -
 
 .PHONY: deploy
 deploy: manifests kustomize ## Deploy controller to the K8s cluster specified in ~/.kube/config.
@@ -240,6 +236,3 @@ mv $(1) $(1)-$(3) ;\
 } ;\
 ln -sf $$(realpath $(1)-$(3)) $(1)
 endef
-
-# User customizations (keep this line stable across updates)
--include hack/custom.mk
