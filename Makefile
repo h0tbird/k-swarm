@@ -248,3 +248,6 @@ endef
 define gomodver
 $(shell go list -m -f '{{if .Replace}}{{.Replace.Version}}{{else}}{{.Version}}{{end}}' $(1) 2>/dev/null)
 endef
+
+# User customizations (keep this line stable across updates)
+-include hack/custom.mk
