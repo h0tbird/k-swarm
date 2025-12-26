@@ -238,6 +238,3 @@ mv $(1) $(1)-$(3) ;\
 } ;\
 ln -sf $$(realpath $(1)-$(3)) $(1)
 endef
-
-# User customizations (keep this line stable across updates)
--include hack/custom.mk
