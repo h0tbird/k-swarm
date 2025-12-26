@@ -11,6 +11,14 @@ CRD_DIR ?= config/crd
 # Platform list for multi-arch buildx
 PLATFORMS ?= linux/arm64,linux/amd64
 
+.PHONY: tooling
+tooling: kustomize controller-gen envtest ctlptl goreleaser ## Install all the tooling.
+
+.PHONY: ctlptl
+ctlptl: $(LOCALBIN) ## Download ctlptl locally if necessary. If wrong version is installed, it will be overwritten.
+	@ test -s $(CTLPTL) && $(CTLPTL) version | grep -q $(CTLPTL_VERSION) || \
+	GOBIN=$(LOCALBIN) go install github.com/tilt-dev/ctlptl/cmd/ctlptl@$(CTLPTL_VERSION)
+
 .PHONY: build-devel
 build-devel: generate ## Build a manager binary without optimizations and inlining for Alpine musl linux/ARCH.
 	GO111MODULE=on go build -gcflags "-N -l" -o bin/manager cmd/main.go
