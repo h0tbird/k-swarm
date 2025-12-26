@@ -24,6 +24,3 @@ spec:
         - containerPort: 40000
         resources:
           $patch: delete
-      - name: kube-rbac-proxy
-        resources:
-          $patch: delete
