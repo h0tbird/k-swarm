@@ -45,6 +45,8 @@ spec:
         sidecar.istio.io/proxyMemory: 64Mi
         sidecar.istio.io/proxyMemoryLimit: 512Mi
       labels:
+        app: worker
+        version: v1
         k-swarm/worker: enabled
     spec:
       containers:

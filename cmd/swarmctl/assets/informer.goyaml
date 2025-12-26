@@ -258,6 +258,8 @@ spec:
         sidecar.istio.io/proxyMemory: 64Mi
         sidecar.istio.io/proxyMemoryLimit: 512Mi
       labels:
+        app: informer
+        version: v1
         k-swarm/informer: enabled
     spec:
       affinity:
