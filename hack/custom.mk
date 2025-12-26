@@ -33,7 +33,7 @@ release: ## Create a new release
 	git push -u origin ${BRANCH}
 	git tag -a ${TAG} -m "Release ${TAG}"
 	$(GORELEASER) release --clean
-	PUSH_IMG=ghcr.io/h0tbird/k-swarm:$$(jq -r '.tag' dist/metadata.json) make docker-buildx
+	IMG=ghcr.io/h0tbird/k-swarm:$$(jq -r '.tag' dist/metadata.json) make docker-buildx
 
 .PHONY: overlay
 overlay: kustomize ## Render a kustomize overlay to stdout.
