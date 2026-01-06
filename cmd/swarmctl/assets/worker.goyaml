@@ -208,7 +208,7 @@ spec:
     - port: 443
     route:
     - destination:
-        host: worker
+        host: 'worker.{{ .Namespace }}.svc.{{ .ClusterDomain }}'
         port:
           number: 80
       weight: 100

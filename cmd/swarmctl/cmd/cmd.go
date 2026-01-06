@@ -81,6 +81,12 @@ func init() {
 		panic(err)
 	}
 
+	// --cluster-domain flag
+	manifestGenerateCmd.PersistentFlags().String("cluster-domain", "", "Cluster domain suffix (default: cluster.local for generate, auto-detect for install).")
+	if err := manifestGenerateCmd.RegisterFlagCompletionFunc("cluster-domain", clusterDomainCompletion); err != nil {
+		panic(err)
+	}
+
 	// --yes flag
 	manifestInstallCmd.PersistentFlags().Bool("yes", false, "Automatically confirm all prompts with 'yes'.")
 
@@ -111,6 +117,12 @@ func init() {
 	// --istio-revision flag
 	manifestInstallCmd.PersistentFlags().String("istio-revision", "", "Istio revision label to use for the namespace.")
 	if err := manifestInstallCmd.RegisterFlagCompletionFunc("istio-revision", istioRevisionCompletion); err != nil {
+		panic(err)
+	}
+
+	// --cluster-domain flag
+	manifestInstallCmd.PersistentFlags().String("cluster-domain", "", "Cluster domain suffix (default: cluster.local for generate, auto-detect for install).")
+	if err := manifestInstallCmd.RegisterFlagCompletionFunc("cluster-domain", clusterDomainCompletion); err != nil {
 		panic(err)
 	}
 }
@@ -349,6 +361,20 @@ func istioRevisionIsValid() bool {
 }
 
 //-----------------------------------------------------------------------------
+// clusterDomain
+//-----------------------------------------------------------------------------
+
+// clusterDomainCompletion
+func clusterDomainCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	return []string{"cluster.local"}, cobra.ShellCompDirectiveNoFileComp
+}
+
+// clusterDomainIsValid
+func clusterDomainIsValid() bool {
+	return true
+}
+
+//-----------------------------------------------------------------------------
 // validateFlags
 //-----------------------------------------------------------------------------
 
@@ -381,6 +407,12 @@ func validateFlags(cmd *cobra.Command, args []string) error {
 	if cmd.Flags().Changed("istio-revision") {
 		if valid := istioRevisionIsValid(); !valid {
 			return errors.New("invalid istio-revision")
+		}
+	}
+
+	if cmd.Flags().Changed("cluster-domain") {
+		if valid := clusterDomainIsValid(); !valid {
+			return errors.New("invalid cluster-domain")
 		}
 	}
 
