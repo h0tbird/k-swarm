@@ -231,6 +231,12 @@ func GenerateWorker(cmd *cobra.Command, args []string) error {
 	nodeSelector, _ := cmd.Flags().GetString("node-selector")
 	imageTag, _ := cmd.Flags().GetString("image-tag")
 	istioRevision, _ := cmd.Flags().GetString("istio-revision")
+	clusterDomain, _ := cmd.Flags().GetString("cluster-domain")
+
+	// Default cluster domain for generate command (no live cluster)
+	if clusterDomain == "" {
+		clusterDomain = "cluster.local"
+	}
 
 	// Set the error prefix
 	cmd.SetErrPrefix("\nError:")
@@ -258,6 +264,7 @@ func GenerateWorker(cmd *cobra.Command, args []string) error {
 			Version       string
 			ImageTag      string
 			IstioRevision string
+			ClusterDomain string
 		}{
 			Replicas:      replicas,
 			Namespace:     fmt.Sprintf("service-%d", i),
@@ -265,6 +272,7 @@ func GenerateWorker(cmd *cobra.Command, args []string) error {
 			Version:       cmd.Root().Version,
 			ImageTag:      imageTag,
 			IstioRevision: istioRevision,
+			ClusterDomain: clusterDomain,
 		}); err != nil {
 			return err
 		}
@@ -591,6 +599,7 @@ func InstallWorker(cmd *cobra.Command, args []string) error {
 	nodeSelector, _ := cmd.Flags().GetString("node-selector")
 	imageTag, _ := cmd.Flags().GetString("image-tag")
 	istioRevision, _ := cmd.Flags().GetString("istio-revision")
+	clusterDomainFlag, _ := cmd.Flags().GetString("cluster-domain")
 
 	// Set the error prefix
 	cmd.SetErrPrefix("\nError:")
@@ -619,6 +628,12 @@ func InstallWorker(cmd *cobra.Command, args []string) error {
 		// Print the context
 		fmt.Printf("\n%s\n\n", name)
 
+		// Determine cluster domain: flag override or auto-detect from CoreDNS
+		clusterDomain := clusterDomainFlag
+		if clusterDomain == "" {
+			clusterDomain = context.GetClusterDomain(cmd.Context())
+		}
+
 		// Loop through all CRDs
 		for _, doc := range util.SplitYAML(bytes.NewBuffer(crds)) {
 			if err := context.ApplyYaml(doc); err != nil {
@@ -639,6 +654,7 @@ func InstallWorker(cmd *cobra.Command, args []string) error {
 				Version       string
 				ImageTag      string
 				IstioRevision string
+				ClusterDomain string
 			}{
 				Replicas:      replicas,
 				Namespace:     fmt.Sprintf("service-%d", i),
@@ -646,6 +662,7 @@ func InstallWorker(cmd *cobra.Command, args []string) error {
 				Version:       cmd.Root().Version,
 				ImageTag:      imageTag,
 				IstioRevision: istioRevision,
+				ClusterDomain: clusterDomain,
 			})
 			if err != nil {
 				return err

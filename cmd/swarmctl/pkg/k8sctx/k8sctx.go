@@ -13,6 +13,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime/trace"
+	"strings"
 
 	// Community
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -245,4 +246,72 @@ func Filter(regex string) ([]string, error) {
 
 	// Return the matching contexts.
 	return matchingContexts, nil
+}
+
+//-----------------------------------------------------------------------------
+// GetClusterDomain reads the cluster domain from the CoreDNS ConfigMap.
+// Falls back to "cluster.local" if unable to read or parse.
+//-----------------------------------------------------------------------------
+
+func (c *Context) GetClusterDomain(ctx context.Context) string {
+
+	const defaultDomain = "cluster.local"
+
+	// Define the GVR for ConfigMaps
+	gvr := schema.GroupVersionResource{Group: "", Version: "v1", Resource: "configmaps"}
+
+	// Get the coredns ConfigMap from kube-system namespace
+	cm, err := c.DynCli.Resource(gvr).Namespace("kube-system").Get(ctx, "coredns", metav1.GetOptions{})
+	if err != nil {
+		return defaultDomain
+	}
+
+	// Get the Corefile data
+	data, found, err := unstructured.NestedStringMap(cm.Object, "data")
+	if err != nil || !found {
+		return defaultDomain
+	}
+
+	corefile, ok := data["Corefile"]
+	if !ok {
+		return defaultDomain
+	}
+
+	// Parse the Corefile to find the kubernetes plugin line
+	// Example: "kubernetes cluster.local in-addr.arpa ip6.arpa {"
+	domain := parseClusterDomainFromCorefile(corefile)
+	if domain == "" {
+		return defaultDomain
+	}
+
+	return domain
+}
+
+//-----------------------------------------------------------------------------
+// parseClusterDomainFromCorefile extracts the cluster domain from Corefile.
+// Looks for pattern: kubernetes <domain> [in-addr.arpa ip6.arpa] {
+//-----------------------------------------------------------------------------
+
+func parseClusterDomainFromCorefile(corefile string) string {
+
+	// Regex to match: kubernetes <domain> ...
+	// The domain is typically the first argument after "kubernetes"
+	re := regexp.MustCompile(`(?m)^\s*kubernetes\s+(\S+)`)
+	matches := re.FindStringSubmatch(corefile)
+
+	if len(matches) < 2 {
+		return ""
+	}
+
+	domain := matches[1]
+
+	// Validate it looks like a domain (contains at least one dot, no special chars except dots)
+	if !strings.Contains(domain, ".") {
+		return ""
+	}
+
+	// Clean up any trailing characters
+	domain = strings.TrimSpace(domain)
+
+	return domain
 }
