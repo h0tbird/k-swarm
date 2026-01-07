@@ -144,10 +144,7 @@ spec:
       k-swarm/worker: enabled
   action: ALLOW
   rules:
-  - from:
-    - source:
-        namespaces: ["*"]
-    to:
+  - to:
     - operation:
         methods: ["GET"]
         paths: ["/data"]

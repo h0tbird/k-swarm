@@ -362,10 +362,7 @@ spec:
       k-swarm/informer: enabled
   action: ALLOW
   rules:
-  - from:
-    - source:
-        namespaces: ["*"]
-    to:
+  - to:
     - operation:
         methods: ["GET"]
         paths: ["/services"]
