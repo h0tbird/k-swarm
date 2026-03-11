@@ -40,8 +40,6 @@ builds:
 
 archives:
   - id: swarmctl
-    builds:
-      - swarmctl
     formats:
       - tar.gz
     name_template: >-
@@ -64,10 +62,10 @@ changelog:
       - go mod tidy
 
 #------------------------------------------------------------------------------
-# brews
+# homebrew_casks
 #------------------------------------------------------------------------------
 
-brews:
+homebrew_casks:
   - name: swarmctl
     ids:
       - swarmctl
