@@ -62,8 +62,8 @@ kind-delete: ctlptl ## Delete the local development cluster.
 CTLPTL ?= $(LOCALBIN)/ctlptl
 GORELEASER ?= $(LOCALBIN)/goreleaser
 
-CTLPTL_VERSION ?= v0.9.0     # https://github.com/tilt-dev/ctlptl/releases
-GORELEASER_VERSION ?= v2.7.0 # https://github.com/goreleaser/goreleaser/releases
+CTLPTL_VERSION ?= v0.9.0      # https://github.com/tilt-dev/ctlptl/releases
+GORELEASER_VERSION ?= v2.14.3 # https://github.com/goreleaser/goreleaser/releases
 
 .PHONY: goreleaser
 goreleaser: ## Download goreleaser locally if necessary. If wrong version is installed, it will be overwritten.
