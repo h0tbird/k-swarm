@@ -50,7 +50,7 @@ WORKDIR /
 
 local_resource(
   'binary',
-  cmd='CGO_ENABLED=0 GOOS=linux GOARCH={ARCH} make build-devel'.format(ARCH=ARCH),
+  cmd='make generate && CGO_ENABLED=0 GOOS=linux GOARCH={ARCH} make build-devel'.format(ARCH=ARCH),
   deps=['internal', 'pkg', 'cmd', 'go.mod', 'go.sum'],
   labels=['manager'],
   allow_parallel=False, # Wait for the binary before starting the docker build

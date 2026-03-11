@@ -25,7 +25,7 @@ clean: ## Remove the bin directory.
 	rm -rf ./bin/
 
 .PHONY: build-devel
-build-devel: generate ## Build a manager binary without optimizations and inlining for Alpine musl linux/ARCH.
+build-devel: ## Build a manager binary without optimizations and inlining for Alpine musl linux/ARCH.
 	GO111MODULE=on go build -gcflags "-N -l" -o bin/manager cmd/main.go
 
 .PHONY: swarmctl
