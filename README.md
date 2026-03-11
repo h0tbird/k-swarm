@@ -37,7 +37,10 @@ make tooling
 
 Upgrade the telemetry CRD:
 ```
-k apply view-last-applied crd telemetries.telemetry.istio.io > cmd/swarmctl/assets/crds.yaml
+make kind-create
+istioctl --context kind-dev install --set profile=demo -y
+k --context kind-dev get crd telemetries.telemetry.istio.io -o yaml > cmd/swarmctl/assets/crds.yaml
+make kind-delete
 ```
 
 Bring up a local dev environment:
