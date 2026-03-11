@@ -19,6 +19,11 @@ ctlptl: $(LOCALBIN) ## Download ctlptl locally if necessary. If wrong version is
 	@ test -s $(CTLPTL) && $(CTLPTL) version | grep -q $(CTLPTL_VERSION) || \
 	GOBIN=$(LOCALBIN) go install github.com/tilt-dev/ctlptl/cmd/ctlptl@$(CTLPTL_VERSION)
 
+.PHONY: clean
+clean: ## Remove the bin directory.
+	chmod -R u+w ./bin/ 2>/dev/null || true
+	rm -rf ./bin/
+
 .PHONY: build-devel
 build-devel: generate ## Build a manager binary without optimizations and inlining for Alpine musl linux/ARCH.
 	GO111MODULE=on go build -gcflags "-N -l" -o bin/manager cmd/main.go

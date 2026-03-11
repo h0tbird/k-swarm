@@ -52,6 +52,7 @@ make release BRANCH='release-0.1' TAG='v0.1.0'
 
 ## Upgrade kubebuilder
 ```
+make clean
 kubebuilder alpha update --from-branch main
 # Fix merge conflicts now
 git commit
