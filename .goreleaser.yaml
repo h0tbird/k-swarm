@@ -76,5 +76,3 @@ homebrew_casks:
     homepage: https://github.com/h0tbird/k-swarm
     description: A k8s service swarm
     license: MIT
-    test: |
-      system "#{bin}/swarmctl -v"
