@@ -107,6 +107,7 @@ spec:
         runAsNonRoot: true
       serviceAccountName: default
       terminationGracePeriodSeconds: 10
+{{- if ne .DataplaneMode "ambient" }}
 ---
 apiVersion: networking.istio.io/v1
 kind: DestinationRule
@@ -139,6 +140,7 @@ spec:
       k-swarm/worker: enabled
   mtls:
     mode: STRICT
+{{- end }}
 ---
 apiVersion: security.istio.io/v1
 kind: AuthorizationPolicy
