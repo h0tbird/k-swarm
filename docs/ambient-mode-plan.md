@@ -2,7 +2,7 @@
 
 ## TL;DR
 
-Add a `--dataplane-mode {sidecar|ambient}` flag (default `sidecar`) and a
+Add a `--dataplane-mode {sidecar|ambient}` flag (default `ambient`) and a
 `--waypoint-name` flag to `swarmctl`. Conditionally render templates so that
 in ambient mode:
 
@@ -45,7 +45,7 @@ add this file, push, open draft PR.
 *Commits*: (1.a) "swarmctl: add --dataplane-mode and --waypoint-name flags";
 (1.b) "swarmctl: thread DataplaneMode/WaypointName into template data".
 
-1. Add `--dataplane-mode` (string, default `sidecar`, values `sidecar|ambient`)
+1. Add `--dataplane-mode` (string, default `ambient`, values `sidecar|ambient`)
    and `--waypoint-name` (string, default `waypoint`) as persistent flags on
    both `manifestGenerateCmd` and `manifestInstallCmd` in
    `cmd/swarmctl/cmd/cmd.go` `init()`.
@@ -67,20 +67,32 @@ annotations"; (2.b) "worker template: gate PeerAuthentication and
 DestinationRule on sidecar mode"; (2.c) "worker template: ambient ingress via
 Gateway API + per-namespace waypoint".
 
-5. Namespace labels: add an `else if eq .DataplaneMode "ambient"` branch that
-   emits `istio.io/dataplane-mode: ambient` (keep `istio-injection: enabled`
-   as the sidecar/default branch).
+5. Namespace labels: emit `istio.io/rev` and `istio.io/dataplane-mode`
+   independently so they can coexist (ambient on a revisioned control
+   plane). `istio-injection: enabled` is only emitted when there is no
+   revision **and** the mode is not ambient. The four valid combinations:
+   ambient (default rev), ambient + `istio.io/rev`, sidecar + `istio.io/rev`,
+   sidecar (default rev → `istio-injection: enabled`).
 6. Deployment pod template:
    - Wrap the four `sidecar.istio.io/proxy*` annotations in
      `{{- if ne .DataplaneMode "ambient" }} … {{- end }}`.
-   - In the `template.metadata.labels` block, add
-     `{{- if eq .DataplaneMode "ambient" }}istio.io/use-waypoint: {{ .WaypointName }}{{- end }}`.
+   - **(corrected during validation)** The `istio.io/use-waypoint`
+     label belongs on the **`Service`**, not on the pod template — the
+     waypoint Gateway carries the default `istio.io/waypoint-for: service`,
+     so service-addressed traffic only transits the waypoint when the
+     Service (or namespace) is labeled. Add
+     `{{- if eq .DataplaneMode "ambient" }}istio.io/use-waypoint: {{ .WaypointName }}{{- end }}`
+     to the worker `Service` metadata labels.
 7. `DestinationRule worker`: wrap the entire document in
    `{{- if ne .DataplaneMode "ambient" }} … {{- end }}`.
 8. `PeerAuthentication worker`: wrap in `{{- if ne .DataplaneMode "ambient" }}`
    (ambient default is mTLS via ztunnel).
-9. `AuthorizationPolicy worker`: keep unchanged. Works through the waypoint
-   in ambient mode (waypoint enforces L7 rules).
+9. `AuthorizationPolicy worker`: **(corrected during validation)** in
+   ambient mode the policy must attach via `targetRefs: [{kind: Service,
+   group: "", name: worker}]` so the waypoint enforces it at L7. With
+   `selector` only, ztunnel enforces at L4 and rejects HTTP-rule policies
+   (resulting in `503`). Sidecar mode keeps the existing `selector`-based
+   form.
 10. Replace Istio `Gateway` + `VirtualService` documents with conditional
     branches:
     - Sidecar branch: existing Istio `Gateway` + `VirtualService` (unchanged).
@@ -102,10 +114,12 @@ pod annotations"; (3.b) "informer template: gate PeerAuthentication on
 sidecar + add waypoint Gateway".
 
 12. Namespace labels: same change as step 5.
-13. Deployment pod template: same changes as step 6 (drop sidecar annotations,
-    add `istio.io/use-waypoint` label conditionally).
+13. Deployment pod template: drop sidecar annotations as in step 6. The
+    `istio.io/use-waypoint` label goes on the `Service informer`, not on
+    the pod template (same correction as step 6).
 14. `PeerAuthentication informer`: same wrap as step 8.
-15. `AuthorizationPolicy informer`: keep unchanged.
+15. `AuthorizationPolicy informer`: same correction as step 9 — use
+    `targetRefs: [{kind: Service, name: informer}]` in ambient mode.
 16. Append the same waypoint `Gateway` document (ambient only) for namespace
     `informer`.
 
@@ -171,6 +185,27 @@ Validation commands:
   `kubectl --context <ctx> delete ns informer service-1 service-2 --ignore-not-found`
   for each context.
 
+## Validation results (kind-pasta-1, kind-pasta-2)
+
+Performed against `kind-pasta-1` and `kind-pasta-2`, both with Istio ambient
+(istio-cni + ztunnel + waypoint controller) and Gateway API CRDs installed.
+
+- `bin/swarmctl manifest install informer --context 'kind-pasta-.*' --image-tag main --yes`
+  and the equivalent `worker 1:2` invocation apply cleanly. `--image-tag main`
+  is required because the default `Version=0.0.0` would resolve to a
+  non-existent `ghcr.io/h0tbird/k-swarm:v0.0.0` image.
+- `kubectl get pods` in `informer`, `service-1`, `service-2` shows workload
+  pods at `1/1 Running` (no sidecar). Per-namespace `waypoint-*` pods are
+  also `1/1 Running`.
+- `kubectl get gateway` shows `worker` (ingress, class `istio`) and
+  `waypoint` (class `istio-waypoint`) with `PROGRAMMED=True`.
+- `istioctl ztunnel-config service` shows the `informer` and `worker`
+  Services with `WAYPOINT=waypoint` after the Service-label correction.
+- Worker logs show successful `polling service list` against
+  `http://informer.informer/services` and successful peer
+  `sending a request {"service": "worker.service-1:80" ...}` after the
+  `targetRefs` AuthorizationPolicy correction.
+
 ## Relevant files
 
 - `cmd/swarmctl/assets/worker.goyaml` — namespace label, pod
@@ -214,6 +249,5 @@ Validation commands:
    Istio `Gateway` uses `tls.mode: SIMPLE` with `credentialName`. Gateway API
    equivalent is `Terminate` with `certificateRefs`. Recommendation: keep the
    cert-manager `Certificate` unchanged and reference the same secret.
-3. Should the `--dataplane-mode` default flip to `ambient` at some point?
-   Recommendation: keep `sidecar` default for now; revisit after the meshlab
-   PR `#28` lands and ambient is the primary deployment target.
+3. `--dataplane-mode` defaults to `ambient` (per user preference); pass
+   `--dataplane-mode sidecar` to opt back into the sidecar dataplane.

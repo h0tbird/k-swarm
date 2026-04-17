@@ -5,7 +5,10 @@ metadata:
   labels:
     {{- if .IstioRevision }}
     istio.io/rev: {{ .IstioRevision }}
-    {{- else }}
+    {{- end }}
+    {{- if eq .DataplaneMode "ambient" }}
+    istio.io/dataplane-mode: ambient
+    {{- else if not .IstioRevision }}
     istio-injection: enabled
     {{- end }}
   name: {{ .Namespace }}
@@ -15,6 +18,9 @@ kind: Service
 metadata:
   labels:
     app: k-swarm
+    {{- if eq .DataplaneMode "ambient" }}
+    istio.io/use-waypoint: {{ .WaypointName }}
+    {{- end }}
   name: worker
   namespace: {{ .Namespace }}
 spec:
@@ -40,10 +46,12 @@ spec:
     metadata:
       annotations:
         kubectl.kubernetes.io/default-container: manager
+        {{- if ne .DataplaneMode "ambient" }}
         sidecar.istio.io/proxyCPU: 50m
         sidecar.istio.io/proxyCPULimit: 500m
         sidecar.istio.io/proxyMemory: 64Mi
         sidecar.istio.io/proxyMemoryLimit: 512Mi
+        {{- end }}
       labels:
         app: worker
         version: v1
@@ -100,6 +108,7 @@ spec:
         runAsNonRoot: true
       serviceAccountName: default
       terminationGracePeriodSeconds: 10
+{{- if ne .DataplaneMode "ambient" }}
 ---
 apiVersion: networking.istio.io/v1
 kind: DestinationRule
@@ -132,6 +141,7 @@ spec:
       k-swarm/worker: enabled
   mtls:
     mode: STRICT
+{{- end }}
 ---
 apiVersion: security.istio.io/v1
 kind: AuthorizationPolicy
@@ -139,9 +149,16 @@ metadata:
   name: worker
   namespace: {{ .Namespace }}
 spec:
+  {{- if eq .DataplaneMode "ambient" }}
+  targetRefs:
+  - kind: Service
+    group: ""
+    name: worker
+  {{- else }}
   selector:
     matchLabels:
       k-swarm/worker: enabled
+  {{- end }}
   action: ALLOW
   rules:
   - to:
@@ -170,6 +187,7 @@ spec:
       replicator.v1.mittwald.de/replicate-to: 'istio-system'
   privateKey:
     rotationPolicy: Always
+{{- if ne .DataplaneMode "ambient" }}
 ---
 apiVersion: networking.istio.io/v1
 kind: Gateway
@@ -209,3 +227,55 @@ spec:
         port:
           number: 80
       weight: 100
+{{- else }}
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: worker
+  namespace: {{ .Namespace }}
+spec:
+  gatewayClassName: istio
+  listeners:
+  - name: https
+    hostname: '{{ .Namespace }}.demo.lab'
+    port: 443
+    protocol: HTTPS
+    tls:
+      mode: Terminate
+      certificateRefs:
+      - kind: Secret
+        name: worker-{{ .Namespace }}
+    allowedRoutes:
+      namespaces:
+        from: Same
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: worker
+  namespace: {{ .Namespace }}
+spec:
+  parentRefs:
+  - name: worker
+  hostnames:
+  - '{{ .Namespace }}.demo.lab'
+  rules:
+  - backendRefs:
+    - name: worker
+      port: 80
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: {{ .WaypointName }}
+  namespace: {{ .Namespace }}
+  labels:
+    istio.io/waypoint-for: service
+spec:
+  gatewayClassName: istio-waypoint
+  listeners:
+  - name: mesh
+    port: 15008
+    protocol: HBONE
+{{- end }}

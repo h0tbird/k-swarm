@@ -133,6 +133,8 @@ func GenerateInformer(cmd *cobra.Command, args []string) error {
 	nodeSelector, _ := cmd.Flags().GetString("node-selector")
 	imageTag, _ := cmd.Flags().GetString("image-tag")
 	istioRevision, _ := cmd.Flags().GetString("istio-revision")
+	dataplaneMode, _ := cmd.Flags().GetString("dataplane-mode")
+	waypointName, _ := cmd.Flags().GetString("waypoint-name")
 
 	// Set the error prefix
 	cmd.SetErrPrefix("\nError:")
@@ -150,12 +152,16 @@ func GenerateInformer(cmd *cobra.Command, args []string) error {
 		Version       string
 		ImageTag      string
 		IstioRevision string
+		DataplaneMode string
+		WaypointName  string
 	}{
 		Replicas:      replicas,
 		NodeSelector:  nodeSelector,
 		Version:       cmd.Root().Version,
 		ImageTag:      imageTag,
 		IstioRevision: istioRevision,
+		DataplaneMode: dataplaneMode,
+		WaypointName:  waypointName,
 	}); err != nil {
 		return err
 	}
@@ -177,6 +183,9 @@ func GenerateInformerExample() string {
 
   # Set informer replicas and Istio revision
   swarmctl m g i --replicas 3 --istio-revision 1-21-1
+
+  # Generate the informer manifests for Istio ambient mode
+  swarmctl m g i --dataplane-mode ambient
   `
 }
 
@@ -232,6 +241,8 @@ func GenerateWorker(cmd *cobra.Command, args []string) error {
 	imageTag, _ := cmd.Flags().GetString("image-tag")
 	istioRevision, _ := cmd.Flags().GetString("istio-revision")
 	clusterDomain, _ := cmd.Flags().GetString("cluster-domain")
+	dataplaneMode, _ := cmd.Flags().GetString("dataplane-mode")
+	waypointName, _ := cmd.Flags().GetString("waypoint-name")
 
 	// Default cluster domain for generate command (no live cluster)
 	if clusterDomain == "" {
@@ -265,6 +276,8 @@ func GenerateWorker(cmd *cobra.Command, args []string) error {
 			ImageTag      string
 			IstioRevision string
 			ClusterDomain string
+			DataplaneMode string
+			WaypointName  string
 		}{
 			Replicas:      replicas,
 			Namespace:     fmt.Sprintf("service-%d", i),
@@ -273,6 +286,8 @@ func GenerateWorker(cmd *cobra.Command, args []string) error {
 			ImageTag:      imageTag,
 			IstioRevision: istioRevision,
 			ClusterDomain: clusterDomain,
+			DataplaneMode: dataplaneMode,
+			WaypointName:  waypointName,
 		}); err != nil {
 			return err
 		}
@@ -295,6 +310,9 @@ func GenerateWorkerExample() string {
 
   # Set worker replicas and Istio revision
   swarmctl m g w 1:1 --replicas 3 --istio-revision 1-21-1
+
+  # Generate the worker manifests for Istio ambient mode
+  swarmctl m g w 1:1 --dataplane-mode ambient
   `
 }
 
@@ -430,6 +448,8 @@ func InstallInformer(cmd *cobra.Command, args []string) error {
 	nodeSelector, _ := cmd.Flags().GetString("node-selector")
 	imageTag, _ := cmd.Flags().GetString("image-tag")
 	istioRevision, _ := cmd.Flags().GetString("istio-revision")
+	dataplaneMode, _ := cmd.Flags().GetString("dataplane-mode")
+	waypointName, _ := cmd.Flags().GetString("waypoint-name")
 
 	// Set the error prefix
 	cmd.SetErrPrefix("\nError:")
@@ -466,12 +486,16 @@ func InstallInformer(cmd *cobra.Command, args []string) error {
 			Version       string
 			ImageTag      string
 			IstioRevision string
+			DataplaneMode string
+			WaypointName  string
 		}{
 			Replicas:      replicas,
 			NodeSelector:  nodeSelector,
 			Version:       cmd.Root().Version,
 			ImageTag:      imageTag,
 			IstioRevision: istioRevision,
+			DataplaneMode: dataplaneMode,
+			WaypointName:  waypointName,
 		})
 		if err != nil {
 			return err
@@ -517,6 +541,9 @@ func InstallInformerExample() string {
 
   # Install the informer to all contexts that match a regex and set the Istio revision
   swarmctl i --context 'my-.*' --istio-revision 1-21-1
+
+  # Install the informer to all contexts that match a regex in Istio ambient mode
+  swarmctl i --context 'my-.*' --dataplane-mode ambient
   `
 }
 
@@ -600,6 +627,8 @@ func InstallWorker(cmd *cobra.Command, args []string) error {
 	imageTag, _ := cmd.Flags().GetString("image-tag")
 	istioRevision, _ := cmd.Flags().GetString("istio-revision")
 	clusterDomainFlag, _ := cmd.Flags().GetString("cluster-domain")
+	dataplaneMode, _ := cmd.Flags().GetString("dataplane-mode")
+	waypointName, _ := cmd.Flags().GetString("waypoint-name")
 
 	// Set the error prefix
 	cmd.SetErrPrefix("\nError:")
@@ -655,6 +684,8 @@ func InstallWorker(cmd *cobra.Command, args []string) error {
 				ImageTag      string
 				IstioRevision string
 				ClusterDomain string
+				DataplaneMode string
+				WaypointName  string
 			}{
 				Replicas:      replicas,
 				Namespace:     fmt.Sprintf("service-%d", i),
@@ -663,6 +694,8 @@ func InstallWorker(cmd *cobra.Command, args []string) error {
 				ImageTag:      imageTag,
 				IstioRevision: istioRevision,
 				ClusterDomain: clusterDomain,
+				DataplaneMode: dataplaneMode,
+				WaypointName:  waypointName,
 			})
 			if err != nil {
 				return err
@@ -709,6 +742,9 @@ func InstallWorkerExample() string {
 
   # Install the workers 1 to 1 to all contexts that match a regex and set the Istio revision
   swarmctl w 1:1 --context 'my-.*' --istio-revision 1-21-1
+
+  # Install the workers 1 to 1 to all contexts that match a regex in Istio ambient mode
+  swarmctl w 1:1 --context 'my-.*' --dataplane-mode ambient
   `
 }
 

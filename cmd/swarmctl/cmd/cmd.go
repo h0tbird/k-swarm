@@ -87,6 +87,18 @@ func init() {
 		panic(err)
 	}
 
+	// --dataplane-mode flag
+	manifestGenerateCmd.PersistentFlags().String("dataplane-mode", "ambient", "Istio dataplane mode: sidecar or ambient.")
+	if err := manifestGenerateCmd.RegisterFlagCompletionFunc("dataplane-mode", dataplaneModeCompletion); err != nil {
+		panic(err)
+	}
+
+	// --waypoint-name flag
+	manifestGenerateCmd.PersistentFlags().String("waypoint-name", "waypoint", "Name of the per-namespace ambient waypoint Gateway.")
+	if err := manifestGenerateCmd.RegisterFlagCompletionFunc("waypoint-name", waypointNameCompletion); err != nil {
+		panic(err)
+	}
+
 	// --yes flag
 	manifestInstallCmd.PersistentFlags().Bool("yes", false, "Automatically confirm all prompts with 'yes'.")
 
@@ -123,6 +135,18 @@ func init() {
 	// --cluster-domain flag
 	manifestInstallCmd.PersistentFlags().String("cluster-domain", "", "Cluster domain suffix (default: cluster.local for generate, auto-detect for install).")
 	if err := manifestInstallCmd.RegisterFlagCompletionFunc("cluster-domain", clusterDomainCompletion); err != nil {
+		panic(err)
+	}
+
+	// --dataplane-mode flag
+	manifestInstallCmd.PersistentFlags().String("dataplane-mode", "ambient", "Istio dataplane mode: sidecar or ambient.")
+	if err := manifestInstallCmd.RegisterFlagCompletionFunc("dataplane-mode", dataplaneModeCompletion); err != nil {
+		panic(err)
+	}
+
+	// --waypoint-name flag
+	manifestInstallCmd.PersistentFlags().String("waypoint-name", "waypoint", "Name of the per-namespace ambient waypoint Gateway.")
+	if err := manifestInstallCmd.RegisterFlagCompletionFunc("waypoint-name", waypointNameCompletion); err != nil {
 		panic(err)
 	}
 }
@@ -375,6 +399,34 @@ func clusterDomainIsValid() bool {
 }
 
 //-----------------------------------------------------------------------------
+// dataplaneMode
+//-----------------------------------------------------------------------------
+
+// dataplaneModeCompletion
+func dataplaneModeCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	return []string{"ambient", "sidecar"}, cobra.ShellCompDirectiveNoFileComp
+}
+
+// dataplaneModeIsValid
+func dataplaneModeIsValid(value string) bool {
+	return value == "sidecar" || value == "ambient"
+}
+
+//-----------------------------------------------------------------------------
+// waypointName
+//-----------------------------------------------------------------------------
+
+// waypointNameCompletion
+func waypointNameCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	return []string{"waypoint"}, cobra.ShellCompDirectiveNoFileComp
+}
+
+// waypointNameIsValid
+func waypointNameIsValid(value string) bool {
+	return value != ""
+}
+
+//-----------------------------------------------------------------------------
 // validateFlags
 //-----------------------------------------------------------------------------
 
@@ -413,6 +465,20 @@ func validateFlags(cmd *cobra.Command, args []string) error {
 	if cmd.Flags().Changed("cluster-domain") {
 		if valid := clusterDomainIsValid(); !valid {
 			return errors.New("invalid cluster-domain")
+		}
+	}
+
+	if cmd.Flags().Changed("dataplane-mode") {
+		value, _ := cmd.Flags().GetString("dataplane-mode")
+		if !dataplaneModeIsValid(value) {
+			return errors.New("invalid dataplane-mode (must be 'sidecar' or 'ambient')")
+		}
+	}
+
+	if cmd.Flags().Changed("waypoint-name") {
+		value, _ := cmd.Flags().GetString("waypoint-name")
+		if !waypointNameIsValid(value) {
+			return errors.New("invalid waypoint-name")
 		}
 	}
 
