@@ -187,7 +187,7 @@ Validation commands:
 Performed against `kind-pasta-1` and `kind-pasta-2`, both with Istio ambient
 (istio-cni + ztunnel + waypoint controller) and Gateway API CRDs installed.
 
-- `bin/swarmctl manifest install informer --context 'kind-pasta-.*' --dataplane-mode ambient --image-tag main --yes`
+- `bin/swarmctl manifest install informer --context 'kind-pasta-.*' --image-tag main --yes`
   and the equivalent `worker 1:2` invocation apply cleanly. `--image-tag main`
   is required because the default `Version=0.0.0` would resolve to a
   non-existent `ghcr.io/h0tbird/k-swarm:v0.0.0` image.
