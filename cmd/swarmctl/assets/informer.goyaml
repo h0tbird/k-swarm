@@ -5,6 +5,8 @@ metadata:
   labels:
     {{- if .IstioRevision }}
     istio.io/rev: {{ .IstioRevision }}
+    {{- else if eq .DataplaneMode "ambient" }}
+    istio.io/dataplane-mode: ambient
     {{- else }}
     istio-injection: enabled
     {{- end }}
@@ -220,14 +222,19 @@ spec:
     metadata:
       annotations:
         kubectl.kubernetes.io/default-container: manager
+        {{- if ne .DataplaneMode "ambient" }}
         sidecar.istio.io/proxyCPU: 50m
         sidecar.istio.io/proxyCPULimit: 500m
         sidecar.istio.io/proxyMemory: 64Mi
         sidecar.istio.io/proxyMemoryLimit: 512Mi
+        {{- end }}
       labels:
         app: informer
         version: v1
         k-swarm/informer: enabled
+        {{- if eq .DataplaneMode "ambient" }}
+        istio.io/use-waypoint: {{ .WaypointName }}
+        {{- end }}
     spec:
       affinity:
         podAntiAffinity:
