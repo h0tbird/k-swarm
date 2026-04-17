@@ -133,6 +133,8 @@ func GenerateInformer(cmd *cobra.Command, args []string) error {
 	nodeSelector, _ := cmd.Flags().GetString("node-selector")
 	imageTag, _ := cmd.Flags().GetString("image-tag")
 	istioRevision, _ := cmd.Flags().GetString("istio-revision")
+	dataplaneMode, _ := cmd.Flags().GetString("dataplane-mode")
+	waypointName, _ := cmd.Flags().GetString("waypoint-name")
 
 	// Set the error prefix
 	cmd.SetErrPrefix("\nError:")
@@ -150,12 +152,16 @@ func GenerateInformer(cmd *cobra.Command, args []string) error {
 		Version       string
 		ImageTag      string
 		IstioRevision string
+		DataplaneMode string
+		WaypointName  string
 	}{
 		Replicas:      replicas,
 		NodeSelector:  nodeSelector,
 		Version:       cmd.Root().Version,
 		ImageTag:      imageTag,
 		IstioRevision: istioRevision,
+		DataplaneMode: dataplaneMode,
+		WaypointName:  waypointName,
 	}); err != nil {
 		return err
 	}
@@ -232,6 +238,8 @@ func GenerateWorker(cmd *cobra.Command, args []string) error {
 	imageTag, _ := cmd.Flags().GetString("image-tag")
 	istioRevision, _ := cmd.Flags().GetString("istio-revision")
 	clusterDomain, _ := cmd.Flags().GetString("cluster-domain")
+	dataplaneMode, _ := cmd.Flags().GetString("dataplane-mode")
+	waypointName, _ := cmd.Flags().GetString("waypoint-name")
 
 	// Default cluster domain for generate command (no live cluster)
 	if clusterDomain == "" {
@@ -265,6 +273,8 @@ func GenerateWorker(cmd *cobra.Command, args []string) error {
 			ImageTag      string
 			IstioRevision string
 			ClusterDomain string
+			DataplaneMode string
+			WaypointName  string
 		}{
 			Replicas:      replicas,
 			Namespace:     fmt.Sprintf("service-%d", i),
@@ -273,6 +283,8 @@ func GenerateWorker(cmd *cobra.Command, args []string) error {
 			ImageTag:      imageTag,
 			IstioRevision: istioRevision,
 			ClusterDomain: clusterDomain,
+			DataplaneMode: dataplaneMode,
+			WaypointName:  waypointName,
 		}); err != nil {
 			return err
 		}
@@ -430,6 +442,8 @@ func InstallInformer(cmd *cobra.Command, args []string) error {
 	nodeSelector, _ := cmd.Flags().GetString("node-selector")
 	imageTag, _ := cmd.Flags().GetString("image-tag")
 	istioRevision, _ := cmd.Flags().GetString("istio-revision")
+	dataplaneMode, _ := cmd.Flags().GetString("dataplane-mode")
+	waypointName, _ := cmd.Flags().GetString("waypoint-name")
 
 	// Set the error prefix
 	cmd.SetErrPrefix("\nError:")
@@ -466,12 +480,16 @@ func InstallInformer(cmd *cobra.Command, args []string) error {
 			Version       string
 			ImageTag      string
 			IstioRevision string
+			DataplaneMode string
+			WaypointName  string
 		}{
 			Replicas:      replicas,
 			NodeSelector:  nodeSelector,
 			Version:       cmd.Root().Version,
 			ImageTag:      imageTag,
 			IstioRevision: istioRevision,
+			DataplaneMode: dataplaneMode,
+			WaypointName:  waypointName,
 		})
 		if err != nil {
 			return err
@@ -600,6 +618,8 @@ func InstallWorker(cmd *cobra.Command, args []string) error {
 	imageTag, _ := cmd.Flags().GetString("image-tag")
 	istioRevision, _ := cmd.Flags().GetString("istio-revision")
 	clusterDomainFlag, _ := cmd.Flags().GetString("cluster-domain")
+	dataplaneMode, _ := cmd.Flags().GetString("dataplane-mode")
+	waypointName, _ := cmd.Flags().GetString("waypoint-name")
 
 	// Set the error prefix
 	cmd.SetErrPrefix("\nError:")
@@ -655,6 +675,8 @@ func InstallWorker(cmd *cobra.Command, args []string) error {
 				ImageTag      string
 				IstioRevision string
 				ClusterDomain string
+				DataplaneMode string
+				WaypointName  string
 			}{
 				Replicas:      replicas,
 				Namespace:     fmt.Sprintf("service-%d", i),
@@ -663,6 +685,8 @@ func InstallWorker(cmd *cobra.Command, args []string) error {
 				ImageTag:      imageTag,
 				IstioRevision: istioRevision,
 				ClusterDomain: clusterDomain,
+				DataplaneMode: dataplaneMode,
+				WaypointName:  waypointName,
 			})
 			if err != nil {
 				return err
