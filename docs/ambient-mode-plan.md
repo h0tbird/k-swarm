@@ -73,14 +73,23 @@ Gateway API + per-namespace waypoint".
 6. Deployment pod template:
    - Wrap the four `sidecar.istio.io/proxy*` annotations in
      `{{- if ne .DataplaneMode "ambient" }} … {{- end }}`.
-   - In the `template.metadata.labels` block, add
-     `{{- if eq .DataplaneMode "ambient" }}istio.io/use-waypoint: {{ .WaypointName }}{{- end }}`.
+   - **(corrected during validation)** The `istio.io/use-waypoint`
+     label belongs on the **`Service`**, not on the pod template — the
+     waypoint Gateway carries the default `istio.io/waypoint-for: service`,
+     so service-addressed traffic only transits the waypoint when the
+     Service (or namespace) is labeled. Add
+     `{{- if eq .DataplaneMode "ambient" }}istio.io/use-waypoint: {{ .WaypointName }}{{- end }}`
+     to the worker `Service` metadata labels.
 7. `DestinationRule worker`: wrap the entire document in
    `{{- if ne .DataplaneMode "ambient" }} … {{- end }}`.
 8. `PeerAuthentication worker`: wrap in `{{- if ne .DataplaneMode "ambient" }}`
    (ambient default is mTLS via ztunnel).
-9. `AuthorizationPolicy worker`: keep unchanged. Works through the waypoint
-   in ambient mode (waypoint enforces L7 rules).
+9. `AuthorizationPolicy worker`: **(corrected during validation)** in
+   ambient mode the policy must attach via `targetRefs: [{kind: Service,
+   group: "", name: worker}]` so the waypoint enforces it at L7. With
+   `selector` only, ztunnel enforces at L4 and rejects HTTP-rule policies
+   (resulting in `503`). Sidecar mode keeps the existing `selector`-based
+   form.
 10. Replace Istio `Gateway` + `VirtualService` documents with conditional
     branches:
     - Sidecar branch: existing Istio `Gateway` + `VirtualService` (unchanged).
@@ -102,10 +111,12 @@ pod annotations"; (3.b) "informer template: gate PeerAuthentication on
 sidecar + add waypoint Gateway".
 
 12. Namespace labels: same change as step 5.
-13. Deployment pod template: same changes as step 6 (drop sidecar annotations,
-    add `istio.io/use-waypoint` label conditionally).
+13. Deployment pod template: drop sidecar annotations as in step 6. The
+    `istio.io/use-waypoint` label goes on the `Service informer`, not on
+    the pod template (same correction as step 6).
 14. `PeerAuthentication informer`: same wrap as step 8.
-15. `AuthorizationPolicy informer`: keep unchanged.
+15. `AuthorizationPolicy informer`: same correction as step 9 — use
+    `targetRefs: [{kind: Service, name: informer}]` in ambient mode.
 16. Append the same waypoint `Gateway` document (ambient only) for namespace
     `informer`.
 
@@ -170,6 +181,27 @@ Validation commands:
 - Cleanup:
   `kubectl --context <ctx> delete ns informer service-1 service-2 --ignore-not-found`
   for each context.
+
+## Validation results (kind-pasta-1, kind-pasta-2)
+
+Performed against `kind-pasta-1` and `kind-pasta-2`, both with Istio ambient
+(istio-cni + ztunnel + waypoint controller) and Gateway API CRDs installed.
+
+- `bin/swarmctl manifest install informer --context 'kind-pasta-.*' --dataplane-mode ambient --image-tag main --yes`
+  and the equivalent `worker 1:2` invocation apply cleanly. `--image-tag main`
+  is required because the default `Version=0.0.0` would resolve to a
+  non-existent `ghcr.io/h0tbird/k-swarm:v0.0.0` image.
+- `kubectl get pods` in `informer`, `service-1`, `service-2` shows workload
+  pods at `1/1 Running` (no sidecar). Per-namespace `waypoint-*` pods are
+  also `1/1 Running`.
+- `kubectl get gateway` shows `worker` (ingress, class `istio`) and
+  `waypoint` (class `istio-waypoint`) with `PROGRAMMED=True`.
+- `istioctl ztunnel-config service` shows the `informer` and `worker`
+  Services with `WAYPOINT=waypoint` after the Service-label correction.
+- Worker logs show successful `polling service list` against
+  `http://informer.informer/services` and successful peer
+  `sending a request {"service": "worker.service-1:80" ...}` after the
+  `targetRefs` AuthorizationPolicy correction.
 
 ## Relevant files
 
