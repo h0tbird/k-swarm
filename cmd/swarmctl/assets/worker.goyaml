@@ -17,6 +17,9 @@ kind: Service
 metadata:
   labels:
     app: k-swarm
+    {{- if eq .DataplaneMode "ambient" }}
+    istio.io/use-waypoint: {{ .WaypointName }}
+    {{- end }}
   name: worker
   namespace: {{ .Namespace }}
 spec:
@@ -52,9 +55,6 @@ spec:
         app: worker
         version: v1
         k-swarm/worker: enabled
-        {{- if eq .DataplaneMode "ambient" }}
-        istio.io/use-waypoint: {{ .WaypointName }}
-        {{- end }}
     spec:
       containers:
       - args:
@@ -148,9 +148,16 @@ metadata:
   name: worker
   namespace: {{ .Namespace }}
 spec:
+  {{- if eq .DataplaneMode "ambient" }}
+  targetRefs:
+  - kind: Service
+    group: ""
+    name: worker
+  {{- else }}
   selector:
     matchLabels:
       k-swarm/worker: enabled
+  {{- end }}
   action: ALLOW
   rules:
   - to:

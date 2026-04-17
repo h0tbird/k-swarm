@@ -199,6 +199,10 @@ kind: Service
 metadata:
   name: informer
   namespace: informer
+  {{- if eq .DataplaneMode "ambient" }}
+  labels:
+    istio.io/use-waypoint: {{ .WaypointName }}
+  {{- end }}
 spec:
   ports:
   - name: http
@@ -232,9 +236,6 @@ spec:
         app: informer
         version: v1
         k-swarm/informer: enabled
-        {{- if eq .DataplaneMode "ambient" }}
-        istio.io/use-waypoint: {{ .WaypointName }}
-        {{- end }}
     spec:
       affinity:
         podAntiAffinity:
@@ -313,9 +314,16 @@ metadata:
   name: informer
   namespace: informer
 spec:
+  {{- if eq .DataplaneMode "ambient" }}
+  targetRefs:
+  - kind: Service
+    group: ""
+    name: informer
+  {{- else }}
   selector:
     matchLabels:
       k-swarm/informer: enabled
+  {{- end }}
   action: ALLOW
   rules:
   - to:
