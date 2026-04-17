@@ -67,9 +67,12 @@ annotations"; (2.b) "worker template: gate PeerAuthentication and
 DestinationRule on sidecar mode"; (2.c) "worker template: ambient ingress via
 Gateway API + per-namespace waypoint".
 
-5. Namespace labels: add an `else if eq .DataplaneMode "ambient"` branch that
-   emits `istio.io/dataplane-mode: ambient` (keep `istio-injection: enabled`
-   as the sidecar/default branch).
+5. Namespace labels: emit `istio.io/rev` and `istio.io/dataplane-mode`
+   independently so they can coexist (ambient on a revisioned control
+   plane). `istio-injection: enabled` is only emitted when there is no
+   revision **and** the mode is not ambient. The four valid combinations:
+   ambient (default rev), ambient + `istio.io/rev`, sidecar + `istio.io/rev`,
+   sidecar (default rev → `istio-injection: enabled`).
 6. Deployment pod template:
    - Wrap the four `sidecar.istio.io/proxy*` annotations in
      `{{- if ne .DataplaneMode "ambient" }} … {{- end }}`.

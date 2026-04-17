@@ -5,9 +5,10 @@ metadata:
   labels:
     {{- if .IstioRevision }}
     istio.io/rev: {{ .IstioRevision }}
-    {{- else if eq .DataplaneMode "ambient" }}
+    {{- end }}
+    {{- if eq .DataplaneMode "ambient" }}
     istio.io/dataplane-mode: ambient
-    {{- else }}
+    {{- else if not .IstioRevision }}
     istio-injection: enabled
     {{- end }}
   name: informer
