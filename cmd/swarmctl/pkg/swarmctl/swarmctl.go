@@ -183,6 +183,9 @@ func GenerateInformerExample() string {
 
   # Set informer replicas and Istio revision
   swarmctl m g i --replicas 3 --istio-revision 1-21-1
+
+  # Generate the informer manifests for Istio ambient mode
+  swarmctl m g i --dataplane-mode ambient
   `
 }
 
@@ -307,6 +310,9 @@ func GenerateWorkerExample() string {
 
   # Set worker replicas and Istio revision
   swarmctl m g w 1:1 --replicas 3 --istio-revision 1-21-1
+
+  # Generate the worker manifests for Istio ambient mode
+  swarmctl m g w 1:1 --dataplane-mode ambient
   `
 }
 
@@ -535,6 +541,9 @@ func InstallInformerExample() string {
 
   # Install the informer to all contexts that match a regex and set the Istio revision
   swarmctl i --context 'my-.*' --istio-revision 1-21-1
+
+  # Install the informer to all contexts that match a regex in Istio ambient mode
+  swarmctl i --context 'my-.*' --dataplane-mode ambient
   `
 }
 
@@ -733,6 +742,9 @@ func InstallWorkerExample() string {
 
   # Install the workers 1 to 1 to all contexts that match a regex and set the Istio revision
   swarmctl w 1:1 --context 'my-.*' --istio-revision 1-21-1
+
+  # Install the workers 1 to 1 to all contexts that match a regex in Istio ambient mode
+  swarmctl w 1:1 --context 'my-.*' --dataplane-mode ambient
   `
 }
 
