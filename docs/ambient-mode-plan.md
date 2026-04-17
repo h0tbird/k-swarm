@@ -2,7 +2,7 @@
 
 ## TL;DR
 
-Add a `--dataplane-mode {sidecar|ambient}` flag (default `sidecar`) and a
+Add a `--dataplane-mode {sidecar|ambient}` flag (default `ambient`) and a
 `--waypoint-name` flag to `swarmctl`. Conditionally render templates so that
 in ambient mode:
 
@@ -45,7 +45,7 @@ add this file, push, open draft PR.
 *Commits*: (1.a) "swarmctl: add --dataplane-mode and --waypoint-name flags";
 (1.b) "swarmctl: thread DataplaneMode/WaypointName into template data".
 
-1. Add `--dataplane-mode` (string, default `sidecar`, values `sidecar|ambient`)
+1. Add `--dataplane-mode` (string, default `ambient`, values `sidecar|ambient`)
    and `--waypoint-name` (string, default `waypoint`) as persistent flags on
    both `manifestGenerateCmd` and `manifestInstallCmd` in
    `cmd/swarmctl/cmd/cmd.go` `init()`.
@@ -246,6 +246,5 @@ Performed against `kind-pasta-1` and `kind-pasta-2`, both with Istio ambient
    Istio `Gateway` uses `tls.mode: SIMPLE` with `credentialName`. Gateway API
    equivalent is `Terminate` with `certificateRefs`. Recommendation: keep the
    cert-manager `Certificate` unchanged and reference the same secret.
-3. Should the `--dataplane-mode` default flip to `ambient` at some point?
-   Recommendation: keep `sidecar` default for now; revisit after the meshlab
-   PR `#28` lands and ambient is the primary deployment target.
+3. `--dataplane-mode` defaults to `ambient` (per user preference); pass
+   `--dataplane-mode sidecar` to opt back into the sidecar dataplane.

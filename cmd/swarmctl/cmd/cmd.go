@@ -88,7 +88,7 @@ func init() {
 	}
 
 	// --dataplane-mode flag
-	manifestGenerateCmd.PersistentFlags().String("dataplane-mode", "sidecar", "Istio dataplane mode: sidecar or ambient.")
+	manifestGenerateCmd.PersistentFlags().String("dataplane-mode", "ambient", "Istio dataplane mode: sidecar or ambient.")
 	if err := manifestGenerateCmd.RegisterFlagCompletionFunc("dataplane-mode", dataplaneModeCompletion); err != nil {
 		panic(err)
 	}
@@ -139,7 +139,7 @@ func init() {
 	}
 
 	// --dataplane-mode flag
-	manifestInstallCmd.PersistentFlags().String("dataplane-mode", "sidecar", "Istio dataplane mode: sidecar or ambient.")
+	manifestInstallCmd.PersistentFlags().String("dataplane-mode", "ambient", "Istio dataplane mode: sidecar or ambient.")
 	if err := manifestInstallCmd.RegisterFlagCompletionFunc("dataplane-mode", dataplaneModeCompletion); err != nil {
 		panic(err)
 	}
@@ -404,7 +404,7 @@ func clusterDomainIsValid() bool {
 
 // dataplaneModeCompletion
 func dataplaneModeCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-	return []string{"sidecar", "ambient"}, cobra.ShellCompDirectiveNoFileComp
+	return []string{"ambient", "sidecar"}, cobra.ShellCompDirectiveNoFileComp
 }
 
 // dataplaneModeIsValid
