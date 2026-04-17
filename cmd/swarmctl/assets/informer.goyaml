@@ -292,6 +292,7 @@ spec:
         runAsNonRoot: true
       serviceAccountName: controller-manager
       terminationGracePeriodSeconds: 10
+{{- if ne .DataplaneMode "ambient" }}
 ---
 apiVersion: security.istio.io/v1
 kind: PeerAuthentication
@@ -304,6 +305,7 @@ spec:
       k-swarm/informer: enabled
   mtls:
     mode: STRICT
+{{- end }}
 ---
 apiVersion: security.istio.io/v1
 kind: AuthorizationPolicy
@@ -320,3 +322,19 @@ spec:
     - operation:
         methods: ["GET"]
         paths: ["/services"]
+{{- if eq .DataplaneMode "ambient" }}
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: {{ .WaypointName }}
+  namespace: informer
+  labels:
+    istio.io/waypoint-for: service
+spec:
+  gatewayClassName: istio-waypoint
+  listeners:
+  - name: mesh
+    port: 15008
+    protocol: HBONE
+{{- end }}
