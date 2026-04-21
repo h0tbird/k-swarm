@@ -249,6 +249,20 @@ func Filter(regex string) ([]string, error) {
 }
 
 //-----------------------------------------------------------------------------
+// ShortName returns a short, human-friendly cluster name derived from a
+// kubeconfig context name. A leading "kind-" prefix is stripped so that
+// contexts like "kind-pasta-1" yield "pasta-1". An empty input returns
+// "local".
+//-----------------------------------------------------------------------------
+
+func ShortName(ctxName string) string {
+	if ctxName == "" {
+		return "local"
+	}
+	return strings.TrimPrefix(ctxName, "kind-")
+}
+
+//-----------------------------------------------------------------------------
 // GetClusterDomain reads the cluster domain from the CoreDNS ConfigMap.
 // Falls back to "cluster.local" if unable to read or parse.
 //-----------------------------------------------------------------------------

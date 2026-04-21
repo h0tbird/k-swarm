@@ -87,6 +87,15 @@ func init() {
 		panic(err)
 	}
 
+	// --cluster flag (required for generate; install derives it from the context name)
+	manifestGenerateCmd.PersistentFlags().String("cluster", "", "Short cluster name used in resource names (e.g. 'pasta-1', 'pizza-2'). Required for generate.")
+	if err := manifestGenerateCmd.RegisterFlagCompletionFunc("cluster", clusterCompletion); err != nil {
+		panic(err)
+	}
+	if err := manifestGenerateCmd.MarkPersistentFlagRequired("cluster"); err != nil {
+		panic(err)
+	}
+
 	// --dataplane-mode flag (required, no default)
 	manifestGenerateCmd.PersistentFlags().String("dataplane-mode", "", "Istio dataplane mode: sidecar or ambient (required).")
 	if err := manifestGenerateCmd.RegisterFlagCompletionFunc("dataplane-mode", dataplaneModeCompletion); err != nil {
@@ -405,6 +414,20 @@ func clusterDomainIsValid() bool {
 }
 
 //-----------------------------------------------------------------------------
+// cluster
+//-----------------------------------------------------------------------------
+
+// clusterCompletion
+func clusterCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	return []string{"pasta-1", "pizza-2"}, cobra.ShellCompDirectiveNoFileComp
+}
+
+// clusterIsValid
+func clusterIsValid(value string) bool {
+	return value != ""
+}
+
+//-----------------------------------------------------------------------------
 // dataplaneMode
 //-----------------------------------------------------------------------------
 
@@ -471,6 +494,13 @@ func validateFlags(cmd *cobra.Command, args []string) error {
 	if cmd.Flags().Changed("cluster-domain") {
 		if valid := clusterDomainIsValid(); !valid {
 			return errors.New("invalid cluster-domain")
+		}
+	}
+
+	if cmd.Flags().Changed("cluster") {
+		value, _ := cmd.Flags().GetString("cluster")
+		if !clusterIsValid(value) {
+			return errors.New("invalid cluster (must be non-empty)")
 		}
 	}
 
