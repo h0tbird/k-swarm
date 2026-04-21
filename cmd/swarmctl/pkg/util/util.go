@@ -11,7 +11,6 @@ import (
 	"bytes"
 	"embed"
 	"errors"
-	"fmt"
 	"html/template"
 	"os"
 	"path/filepath"
@@ -145,23 +144,6 @@ func ParseRange(arg string) (int, int, error) {
 
 	// Return
 	return start, end, nil
-}
-
-//-----------------------------------------------------------------------------
-// NamespaceName returns the per-index workload namespace name.
-//
-// The convention is:
-//
-//	<mode>-n<index>
-//
-// Examples:
-//
-//	NamespaceName("sidecar", 1) -> "sidecar-n1"
-//	NamespaceName("ambient", 3) -> "ambient-n3"
-//-----------------------------------------------------------------------------
-
-func NamespaceName(mode string, index int) string {
-	return fmt.Sprintf("%s-n%d", mode, index)
 }
 
 //-----------------------------------------------------------------------------

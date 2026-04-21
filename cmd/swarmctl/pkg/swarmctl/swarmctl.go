@@ -293,7 +293,7 @@ func GenerateWorker(cmd *cobra.Command, args []string) error {
 			IngressMode   string
 		}{
 			Replicas:      replicas,
-			Namespace:     util.NamespaceName(dataplaneMode, i),
+			Namespace:     fmt.Sprintf("%s-n%d", dataplaneMode, i),
 			NodeSelector:  nodeSelector,
 			Version:       cmd.Root().Version,
 			ImageTag:      imageTag,
@@ -379,7 +379,7 @@ func GenerateWorkerTelemetry(cmd *cobra.Command, args []string) error {
 			Namespace string
 		}{
 			OnOff:     args[0],
-			Namespace: util.NamespaceName(dataplaneMode, i),
+			Namespace: fmt.Sprintf("%s-n%d", dataplaneMode, i),
 		}); err != nil {
 			return err
 		}
@@ -725,7 +725,7 @@ func InstallWorker(cmd *cobra.Command, args []string) error {
 				IngressMode   string
 			}{
 				Replicas:      replicas,
-				Namespace:     util.NamespaceName(dataplaneMode, i),
+				Namespace:     fmt.Sprintf("%s-n%d", dataplaneMode, i),
 				NodeSelector:  nodeSelector,
 				Version:       cmd.Root().Version,
 				ImageTag:      imageTag,
@@ -847,7 +847,7 @@ func InstallWorkerTelemetry(cmd *cobra.Command, args []string) error {
 				Namespace string
 			}{
 				OnOff:     args[1],
-				Namespace: util.NamespaceName(dataplaneMode, i),
+				Namespace: fmt.Sprintf("%s-n%d", dataplaneMode, i),
 			})
 			if err != nil {
 				return err
