@@ -190,7 +190,7 @@ spec:
       replicator.v1.mittwald.de/replicate-to: 'istio-system'
   privateKey:
     rotationPolicy: Always
-{{- if ne .DataplaneMode "ambient" }}
+{{- if eq .IngressMode "shared" }}
 ---
 apiVersion: networking.istio.io/v1
 kind: Gateway
@@ -230,12 +230,12 @@ spec:
         port:
           number: 80
       weight: 100
-{{- else }}
+{{- else if eq .IngressMode "dedicated" }}
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
 metadata:
-  name: worker
+  name: worker-ingress
   namespace: {{ .Namespace }}
 spec:
   gatewayClassName: istio
@@ -260,13 +260,15 @@ metadata:
   namespace: {{ .Namespace }}
 spec:
   parentRefs:
-  - name: worker
+  - name: worker-ingress
   hostnames:
   - '{{ .Namespace }}.demo.lab'
   rules:
   - backendRefs:
     - name: worker
       port: 80
+{{- end }}
+{{- if eq .DataplaneMode "ambient" }}
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway

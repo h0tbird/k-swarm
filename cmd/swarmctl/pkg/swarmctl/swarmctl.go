@@ -135,6 +135,7 @@ func GenerateInformer(cmd *cobra.Command, args []string) error {
 	istioRevision, _ := cmd.Flags().GetString("istio-revision")
 	dataplaneMode, _ := cmd.Flags().GetString("dataplane-mode")
 	waypointName, _ := cmd.Flags().GetString("waypoint-name")
+	ingressMode, _ := cmd.Flags().GetString("ingress-mode")
 
 	// Set the error prefix
 	cmd.SetErrPrefix("\nError:")
@@ -154,6 +155,7 @@ func GenerateInformer(cmd *cobra.Command, args []string) error {
 		IstioRevision string
 		DataplaneMode string
 		WaypointName  string
+		IngressMode   string
 	}{
 		Replicas:      replicas,
 		NodeSelector:  nodeSelector,
@@ -162,6 +164,7 @@ func GenerateInformer(cmd *cobra.Command, args []string) error {
 		IstioRevision: istioRevision,
 		DataplaneMode: dataplaneMode,
 		WaypointName:  waypointName,
+		IngressMode:   ingressMode,
 	}); err != nil {
 		return err
 	}
@@ -186,6 +189,14 @@ func GenerateInformerExample() string {
 
   # Generate the informer manifests for Istio ambient mode
   swarmctl m g i --dataplane-mode ambient
+
+  # Expose the informer Service via the shared istio-system/istio-nsgw
+  # gateway (classic Istio Gateway+VirtualService selecting istio: nsgw).
+  swarmctl m g i --dataplane-mode ambient --ingress-mode shared
+
+  # Expose the informer Service via a dedicated Gateway API Gateway and
+  # HTTPRoute (spawns an informer-ingress-istio Pod in the informer namespace).
+  swarmctl m g i --dataplane-mode ambient --ingress-mode dedicated
   `
 }
 
@@ -244,6 +255,7 @@ func GenerateWorker(cmd *cobra.Command, args []string) error {
 	dataplaneMode, _ := cmd.Flags().GetString("dataplane-mode")
 	waypointName, _ := cmd.Flags().GetString("waypoint-name")
 	cluster, _ := cmd.Flags().GetString("cluster")
+	ingressMode, _ := cmd.Flags().GetString("ingress-mode")
 
 	// Default cluster domain for generate command (no live cluster)
 	if clusterDomain == "" {
@@ -279,6 +291,7 @@ func GenerateWorker(cmd *cobra.Command, args []string) error {
 			ClusterDomain string
 			DataplaneMode string
 			WaypointName  string
+			IngressMode   string
 		}{
 			Replicas:      replicas,
 			Namespace:     util.NamespaceName(dataplaneMode, cluster, i),
@@ -289,6 +302,7 @@ func GenerateWorker(cmd *cobra.Command, args []string) error {
 			ClusterDomain: clusterDomain,
 			DataplaneMode: dataplaneMode,
 			WaypointName:  waypointName,
+			IngressMode:   ingressMode,
 		}); err != nil {
 			return err
 		}
@@ -316,6 +330,13 @@ func GenerateWorkerExample() string {
   # Generate the worker manifests for Istio ambient mode
   # (namespace: ambient-pizza-2-n1)
   swarmctl m g w 1:1 --dataplane-mode ambient --cluster pizza-2
+
+  # Expose the worker Service via the shared istio-system/istio-nsgw gateway
+  # (classic Istio Gateway+VirtualService selecting istio: nsgw).
+  swarmctl m g w 1:1 --dataplane-mode sidecar --cluster pasta-1 --ingress-mode shared
+
+  # Expose the worker Service via a dedicated Gateway API Gateway+HTTPRoute.
+  swarmctl m g w 1:1 --dataplane-mode ambient --cluster pasta-1 --ingress-mode dedicated
   `
 }
 
@@ -457,6 +478,7 @@ func InstallInformer(cmd *cobra.Command, args []string) error {
 	istioRevision, _ := cmd.Flags().GetString("istio-revision")
 	dataplaneMode, _ := cmd.Flags().GetString("dataplane-mode")
 	waypointName, _ := cmd.Flags().GetString("waypoint-name")
+	ingressMode, _ := cmd.Flags().GetString("ingress-mode")
 
 	// Set the error prefix
 	cmd.SetErrPrefix("\nError:")
@@ -495,6 +517,7 @@ func InstallInformer(cmd *cobra.Command, args []string) error {
 			IstioRevision string
 			DataplaneMode string
 			WaypointName  string
+			IngressMode   string
 		}{
 			Replicas:      replicas,
 			NodeSelector:  nodeSelector,
@@ -503,6 +526,7 @@ func InstallInformer(cmd *cobra.Command, args []string) error {
 			IstioRevision: istioRevision,
 			DataplaneMode: dataplaneMode,
 			WaypointName:  waypointName,
+			IngressMode:   ingressMode,
 		})
 		if err != nil {
 			return err
@@ -551,6 +575,12 @@ func InstallInformerExample() string {
 
   # Install the informer to all contexts that match a regex in Istio ambient mode
   swarmctl i --context 'my-.*' --dataplane-mode ambient
+
+  # Expose the informer Service via the shared istio-system/istio-nsgw gateway.
+  swarmctl i --context 'kind-pasta-.*' --dataplane-mode ambient --ingress-mode shared
+
+  # Expose the informer Service via a dedicated Gateway API Gateway+HTTPRoute.
+  swarmctl i --context 'kind-pasta-.*' --dataplane-mode ambient --ingress-mode dedicated
   `
 }
 
@@ -636,6 +666,7 @@ func InstallWorker(cmd *cobra.Command, args []string) error {
 	clusterDomainFlag, _ := cmd.Flags().GetString("cluster-domain")
 	dataplaneMode, _ := cmd.Flags().GetString("dataplane-mode")
 	waypointName, _ := cmd.Flags().GetString("waypoint-name")
+	ingressMode, _ := cmd.Flags().GetString("ingress-mode")
 
 	// Set the error prefix
 	cmd.SetErrPrefix("\nError:")
@@ -696,6 +727,7 @@ func InstallWorker(cmd *cobra.Command, args []string) error {
 				ClusterDomain string
 				DataplaneMode string
 				WaypointName  string
+				IngressMode   string
 			}{
 				Replicas:      replicas,
 				Namespace:     util.NamespaceName(dataplaneMode, cluster, i),
@@ -706,6 +738,7 @@ func InstallWorker(cmd *cobra.Command, args []string) error {
 				ClusterDomain: clusterDomain,
 				DataplaneMode: dataplaneMode,
 				WaypointName:  waypointName,
+				IngressMode:   ingressMode,
 			})
 			if err != nil {
 				return err
@@ -757,6 +790,12 @@ func InstallWorkerExample() string {
 
   # Install the workers 1 to 1 to all contexts that match a regex in Istio ambient mode
   swarmctl w 1:1 --dataplane-mode ambient --context 'kind-pizza-.*'
+
+  # Expose the worker Service via the shared istio-system/istio-nsgw gateway.
+  swarmctl w 1:1 --dataplane-mode sidecar --context 'kind-pasta-.*' --ingress-mode shared
+
+  # Expose the worker Service via a dedicated Gateway API Gateway+HTTPRoute.
+  swarmctl w 1:1 --dataplane-mode ambient --context 'kind-pasta-.*' --ingress-mode dedicated
   `
 }
 
