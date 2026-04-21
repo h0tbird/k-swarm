@@ -111,6 +111,12 @@ func init() {
 		panic(err)
 	}
 
+	// --ingress-mode flag
+	manifestGenerateCmd.PersistentFlags().String("ingress-mode", "none", "Ingress mode: 'none', 'shared' (classic Istio Gateway/VirtualService selecting istio: nsgw) or 'dedicated' (per-service Gateway API Gateway/HTTPRoute).")
+	if err := manifestGenerateCmd.RegisterFlagCompletionFunc("ingress-mode", ingressModeCompletion); err != nil {
+		panic(err)
+	}
+
 	// --yes flag
 	manifestInstallCmd.PersistentFlags().Bool("yes", false, "Automatically confirm all prompts with 'yes'.")
 
@@ -162,6 +168,12 @@ func init() {
 	// --waypoint-name flag
 	manifestInstallCmd.PersistentFlags().String("waypoint-name", "waypoint", "Name of the per-namespace ambient waypoint Gateway.")
 	if err := manifestInstallCmd.RegisterFlagCompletionFunc("waypoint-name", waypointNameCompletion); err != nil {
+		panic(err)
+	}
+
+	// --ingress-mode flag
+	manifestInstallCmd.PersistentFlags().String("ingress-mode", "none", "Ingress mode: 'none', 'shared' (classic Istio Gateway/VirtualService selecting istio: nsgw) or 'dedicated' (per-service Gateway API Gateway/HTTPRoute).")
+	if err := manifestInstallCmd.RegisterFlagCompletionFunc("ingress-mode", ingressModeCompletion); err != nil {
 		panic(err)
 	}
 }
@@ -456,6 +468,24 @@ func waypointNameIsValid(value string) bool {
 }
 
 //-----------------------------------------------------------------------------
+// ingressMode
+//-----------------------------------------------------------------------------
+
+// ingressModeCompletion
+func ingressModeCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	return []string{"none", "shared", "dedicated"}, cobra.ShellCompDirectiveNoFileComp
+}
+
+// ingressModeIsValid
+func ingressModeIsValid(value string) bool {
+	switch value {
+	case "none", "shared", "dedicated":
+		return true
+	}
+	return false
+}
+
+//-----------------------------------------------------------------------------
 // validateFlags
 //-----------------------------------------------------------------------------
 
@@ -515,6 +545,13 @@ func validateFlags(cmd *cobra.Command, args []string) error {
 		value, _ := cmd.Flags().GetString("waypoint-name")
 		if !waypointNameIsValid(value) {
 			return errors.New("invalid waypoint-name")
+		}
+	}
+
+	if cmd.Flags().Changed("ingress-mode") {
+		value, _ := cmd.Flags().GetString("ingress-mode")
+		if !ingressModeIsValid(value) {
+			return errors.New("invalid ingress-mode (must be 'none', 'shared' or 'dedicated')")
 		}
 	}
 
