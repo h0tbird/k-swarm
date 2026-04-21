@@ -148,20 +148,20 @@ func ParseRange(arg string) (int, int, error) {
 }
 
 //-----------------------------------------------------------------------------
-// NamespaceName returns the per-cluster, per-index workload namespace name.
+// NamespaceName returns the per-index workload namespace name.
 //
 // The convention is:
 //
-//	<mode>-<cluster>-n<index>
+//	<mode>-n<index>
 //
 // Examples:
 //
-//	NamespaceName("sidecar", "pasta-1", 1) -> "sidecar-pasta-1-n1"
-//	NamespaceName("ambient", "pizza-2", 3) -> "ambient-pizza-2-n3"
+//	NamespaceName("sidecar", 1) -> "sidecar-n1"
+//	NamespaceName("ambient", 3) -> "ambient-n3"
 //-----------------------------------------------------------------------------
 
-func NamespaceName(mode, cluster string, index int) string {
-	return fmt.Sprintf("%s-%s-n%d", mode, cluster, index)
+func NamespaceName(mode string, index int) string {
+	return fmt.Sprintf("%s-n%d", mode, index)
 }
 
 //-----------------------------------------------------------------------------
