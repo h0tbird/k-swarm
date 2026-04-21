@@ -243,6 +243,7 @@ func GenerateWorker(cmd *cobra.Command, args []string) error {
 	clusterDomain, _ := cmd.Flags().GetString("cluster-domain")
 	dataplaneMode, _ := cmd.Flags().GetString("dataplane-mode")
 	waypointName, _ := cmd.Flags().GetString("waypoint-name")
+	cluster, _ := cmd.Flags().GetString("cluster")
 
 	// Default cluster domain for generate command (no live cluster)
 	if clusterDomain == "" {
@@ -280,7 +281,7 @@ func GenerateWorker(cmd *cobra.Command, args []string) error {
 			WaypointName  string
 		}{
 			Replicas:      replicas,
-			Namespace:     fmt.Sprintf("%s-%d", dataplaneMode, i),
+			Namespace:     util.NamespaceName(dataplaneMode, cluster, i),
 			NodeSelector:  nodeSelector,
 			Version:       cmd.Root().Version,
 			ImageTag:      imageTag,
@@ -300,19 +301,21 @@ func GenerateWorker(cmd *cobra.Command, args []string) error {
 func GenerateWorkerExample() string {
 	return `
   # Output the generated workers 1 to 1 manifests to stdout
-  swarmctl manifest generate worker 1:1
+  # (namespace: sidecar-pasta-1-n1)
+  swarmctl manifest generate worker 1:1 --dataplane-mode sidecar --cluster pasta-1
 
   # Same using command aliases
-  swarmctl m g w 1:1
+  swarmctl m g w 1:1 --dataplane-mode sidecar --cluster pasta-1
 
   # Set worker replicas and node selector
-  swarmctl m g w 1:1 --replicas 3 --node-selector '{key1: value1, key2: value2}'
+  swarmctl m g w 1:1 --dataplane-mode sidecar --cluster pasta-1 --replicas 3 --node-selector '{key1: value1, key2: value2}'
 
   # Set worker replicas and Istio revision
-  swarmctl m g w 1:1 --replicas 3 --istio-revision 1-21-1
+  swarmctl m g w 1:1 --dataplane-mode sidecar --cluster pasta-1 --replicas 3 --istio-revision 1-21-1
 
   # Generate the worker manifests for Istio ambient mode
-  swarmctl m g w 1:1 --dataplane-mode ambient
+  # (namespace: ambient-pizza-2-n1)
+  swarmctl m g w 1:1 --dataplane-mode ambient --cluster pizza-2
   `
 }
 
@@ -324,6 +327,7 @@ func GenerateWorkerTelemetry(cmd *cobra.Command, args []string) error {
 
 	// Get the flags
 	dataplaneMode, _ := cmd.Flags().GetString("dataplane-mode")
+	cluster, _ := cmd.Flags().GetString("cluster")
 
 	// Set the error prefix
 	cmd.SetErrPrefix("\nError:")
@@ -356,7 +360,7 @@ func GenerateWorkerTelemetry(cmd *cobra.Command, args []string) error {
 			Namespace string
 		}{
 			OnOff:     args[0],
-			Namespace: fmt.Sprintf("%s-%d", dataplaneMode, i),
+			Namespace: util.NamespaceName(dataplaneMode, cluster, i),
 		}); err != nil {
 			return err
 		}
@@ -660,6 +664,9 @@ func InstallWorker(cmd *cobra.Command, args []string) error {
 		// Print the context
 		fmt.Printf("\n%s\n\n", name)
 
+		// Derive cluster name from the context (e.g. kind-pasta-1 -> pasta-1)
+		cluster := k8sctx.ShortName(name)
+
 		// Determine cluster domain: flag override or auto-detect from CoreDNS
 		clusterDomain := clusterDomainFlag
 		if clusterDomain == "" {
@@ -691,7 +698,7 @@ func InstallWorker(cmd *cobra.Command, args []string) error {
 				WaypointName  string
 			}{
 				Replicas:      replicas,
-				Namespace:     fmt.Sprintf("%s-%d", dataplaneMode, i),
+				Namespace:     util.NamespaceName(dataplaneMode, cluster, i),
 				NodeSelector:  nodeSelector,
 				Version:       cmd.Root().Version,
 				ImageTag:      imageTag,
@@ -720,34 +727,36 @@ func InstallWorker(cmd *cobra.Command, args []string) error {
 func InstallWorkerExample() string {
 	return `
   # Install the workers 1 to 1 to the current context
-  swarmctl manifest install worker 1:1
+  # (namespaces follow <mode>-<cluster>-n<index>, e.g. sidecar-pasta-1-n1)
+  swarmctl manifest install worker 1:1 --dataplane-mode sidecar
 
   # Same using command aliases
-  swarmctl m i w 1:1
+  swarmctl m i w 1:1 --dataplane-mode sidecar
 
   # Same using a shoret command chain
-  swarmctl worker 1:1
+  swarmctl worker 1:1 --dataplane-mode sidecar
 
   # Same using a short command chain with aliases
-  swarmctl w 1:1
+  swarmctl w 1:1 --dataplane-mode sidecar
 
-  # Install the workers 1 to 1 to a specific context
-  swarmctl w 1:1 --context my-context
+  # Install the workers 1 to 1 to a specific context (cluster derived from the
+  # context name with any leading 'kind-' stripped, e.g. kind-pasta-1 -> pasta-1)
+  swarmctl w 1:1 --dataplane-mode sidecar --context kind-pasta-1
 
   # Install the workers 1 to 1 to all contexts that match a regex
-  swarmctl w 1:1 --context 'my-.*'
+  swarmctl w 1:1 --dataplane-mode sidecar --context 'kind-pasta-.*'
 
   # Install the workers 1 to 1 to all contexts that match a regex and set the replicas
-  swarmctl w 1:1 --context 'my-.*' --replicas 3
+  swarmctl w 1:1 --dataplane-mode sidecar --context 'kind-pasta-.*' --replicas 3
 
   # Install the workers 1 to 1 to all contexts that match a regex and set the node selector
-  swarmctl w 1:1 --context 'my-.*' --node-selector '{key1: value1, key2: value2}'
+  swarmctl w 1:1 --dataplane-mode sidecar --context 'kind-pasta-.*' --node-selector '{key1: value1, key2: value2}'
 
   # Install the workers 1 to 1 to all contexts that match a regex and set the Istio revision
-  swarmctl w 1:1 --context 'my-.*' --istio-revision 1-21-1
+  swarmctl w 1:1 --dataplane-mode sidecar --context 'kind-pasta-.*' --istio-revision 1-21-1
 
   # Install the workers 1 to 1 to all contexts that match a regex in Istio ambient mode
-  swarmctl w 1:1 --context 'my-.*' --dataplane-mode ambient
+  swarmctl w 1:1 --dataplane-mode ambient --context 'kind-pizza-.*'
   `
 }
 
@@ -787,6 +796,9 @@ func InstallWorkerTelemetry(cmd *cobra.Command, args []string) error {
 		// Print the context
 		fmt.Printf("\n%s\n\n", name)
 
+		// Derive cluster name from the context (e.g. kind-pasta-1 -> pasta-1)
+		cluster := k8sctx.ShortName(name)
+
 		// Loop through all CRDs
 		for _, doc := range util.SplitYAML(bytes.NewBuffer(crds)) {
 			if err := context.ApplyYaml(doc); err != nil {
@@ -805,7 +817,7 @@ func InstallWorkerTelemetry(cmd *cobra.Command, args []string) error {
 				Namespace string
 			}{
 				OnOff:     args[1],
-				Namespace: fmt.Sprintf("%s-%d", dataplaneMode, i),
+				Namespace: util.NamespaceName(dataplaneMode, cluster, i),
 			})
 			if err != nil {
 				return err
