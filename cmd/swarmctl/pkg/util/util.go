@@ -11,7 +11,6 @@ import (
 	"bytes"
 	"embed"
 	"errors"
-	"fmt"
 	"html/template"
 	"os"
 	"path/filepath"
@@ -145,23 +144,6 @@ func ParseRange(arg string) (int, int, error) {
 
 	// Return
 	return start, end, nil
-}
-
-//-----------------------------------------------------------------------------
-// NamespaceName returns the per-cluster, per-index workload namespace name.
-//
-// The convention is:
-//
-//	<mode>-<cluster>-n<index>
-//
-// Examples:
-//
-//	NamespaceName("sidecar", "pasta-1", 1) -> "sidecar-pasta-1-n1"
-//	NamespaceName("ambient", "pizza-2", 3) -> "ambient-pizza-2-n3"
-//-----------------------------------------------------------------------------
-
-func NamespaceName(mode, cluster string, index int) string {
-	return fmt.Sprintf("%s-%s-n%d", mode, cluster, index)
 }
 
 //-----------------------------------------------------------------------------
