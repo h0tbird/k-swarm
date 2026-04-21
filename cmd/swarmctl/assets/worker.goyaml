@@ -8,6 +8,9 @@ metadata:
     {{- end }}
     {{- if eq .DataplaneMode "ambient" }}
     istio.io/dataplane-mode: ambient
+    {{- if .IstioRevision }}
+    istio-injection: disabled
+    {{- end }}
     {{- else if not .IstioRevision }}
     istio-injection: enabled
     {{- end }}
