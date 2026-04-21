@@ -87,9 +87,12 @@ func init() {
 		panic(err)
 	}
 
-	// --dataplane-mode flag
-	manifestGenerateCmd.PersistentFlags().String("dataplane-mode", "ambient", "Istio dataplane mode: sidecar or ambient.")
+	// --dataplane-mode flag (required, no default)
+	manifestGenerateCmd.PersistentFlags().String("dataplane-mode", "", "Istio dataplane mode: sidecar or ambient (required).")
 	if err := manifestGenerateCmd.RegisterFlagCompletionFunc("dataplane-mode", dataplaneModeCompletion); err != nil {
+		panic(err)
+	}
+	if err := manifestGenerateCmd.MarkPersistentFlagRequired("dataplane-mode"); err != nil {
 		panic(err)
 	}
 
@@ -138,9 +141,12 @@ func init() {
 		panic(err)
 	}
 
-	// --dataplane-mode flag
-	manifestInstallCmd.PersistentFlags().String("dataplane-mode", "ambient", "Istio dataplane mode: sidecar or ambient.")
+	// --dataplane-mode flag (required, no default)
+	manifestInstallCmd.PersistentFlags().String("dataplane-mode", "", "Istio dataplane mode: sidecar or ambient (required).")
 	if err := manifestInstallCmd.RegisterFlagCompletionFunc("dataplane-mode", dataplaneModeCompletion); err != nil {
+		panic(err)
+	}
+	if err := manifestInstallCmd.MarkPersistentFlagRequired("dataplane-mode"); err != nil {
 		panic(err)
 	}
 
