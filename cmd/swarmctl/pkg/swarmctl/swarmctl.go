@@ -280,7 +280,7 @@ func GenerateWorker(cmd *cobra.Command, args []string) error {
 			WaypointName  string
 		}{
 			Replicas:      replicas,
-			Namespace:     fmt.Sprintf("service-%d", i),
+			Namespace:     fmt.Sprintf("%s-%d", dataplaneMode, i),
 			NodeSelector:  nodeSelector,
 			Version:       cmd.Root().Version,
 			ImageTag:      imageTag,
@@ -322,6 +322,9 @@ func GenerateWorkerExample() string {
 
 func GenerateWorkerTelemetry(cmd *cobra.Command, args []string) error {
 
+	// Get the flags
+	dataplaneMode, _ := cmd.Flags().GetString("dataplane-mode")
+
 	// Set the error prefix
 	cmd.SetErrPrefix("\nError:")
 
@@ -353,7 +356,7 @@ func GenerateWorkerTelemetry(cmd *cobra.Command, args []string) error {
 			Namespace string
 		}{
 			OnOff:     args[0],
-			Namespace: fmt.Sprintf("service-%d", i),
+			Namespace: fmt.Sprintf("%s-%d", dataplaneMode, i),
 		}); err != nil {
 			return err
 		}
@@ -688,7 +691,7 @@ func InstallWorker(cmd *cobra.Command, args []string) error {
 				WaypointName  string
 			}{
 				Replicas:      replicas,
-				Namespace:     fmt.Sprintf("service-%d", i),
+				Namespace:     fmt.Sprintf("%s-%d", dataplaneMode, i),
 				NodeSelector:  nodeSelector,
 				Version:       cmd.Root().Version,
 				ImageTag:      imageTag,
@@ -754,6 +757,9 @@ func InstallWorkerExample() string {
 
 func InstallWorkerTelemetry(cmd *cobra.Command, args []string) error {
 
+	// Get the flags
+	dataplaneMode, _ := cmd.Flags().GetString("dataplane-mode")
+
 	// Set the error prefix
 	cmd.SetErrPrefix("\nError:")
 
@@ -799,7 +805,7 @@ func InstallWorkerTelemetry(cmd *cobra.Command, args []string) error {
 				Namespace string
 			}{
 				OnOff:     args[1],
-				Namespace: fmt.Sprintf("service-%d", i),
+				Namespace: fmt.Sprintf("%s-%d", dataplaneMode, i),
 			})
 			if err != nil {
 				return err
