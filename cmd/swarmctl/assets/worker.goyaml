@@ -235,7 +235,7 @@ spec:
 apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
 metadata:
-  name: worker
+  name: worker-ingress
   namespace: {{ .Namespace }}
 spec:
   gatewayClassName: istio
@@ -260,7 +260,7 @@ metadata:
   namespace: {{ .Namespace }}
 spec:
   parentRefs:
-  - name: worker
+  - name: worker-ingress
   hostnames:
   - '{{ .Namespace }}.demo.lab'
   rules:
