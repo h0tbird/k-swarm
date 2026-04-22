@@ -280,7 +280,7 @@ metadata:
   name: worker
   namespace: {{ .Namespace }}
 spec:
-  host: worker.{{ .Namespace }}.svc.{{ .ClusterDomain }}
+  host: worker
   trafficPolicy:
     outlierDetection:
       consecutive5xxErrors: 1
