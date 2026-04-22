@@ -14,16 +14,13 @@ import (
 	"regexp"
 	"runtime/trace"
 	"strings"
-	"time"
 
 	// Community
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/runtime/serializer/yaml"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/rest"
@@ -319,49 +316,3 @@ func parseClusterDomainFromCorefile(corefile string) string {
 	return domain
 }
 
-//-----------------------------------------------------------------------------
-// PatchServiceLabel waits for a Service to exist in the given namespace and
-// then server-side applies a single label on it. Useful for labeling Services
-// that are reconciled by another controller (e.g. Istio-managed waypoint
-// Services derived from a Gateway), where the label cannot be set via the
-// owning resource because it is not propagated.
-//-----------------------------------------------------------------------------
-
-func (c *Context) PatchServiceLabel(ctx context.Context, namespace, name, key, value string) error {
-
-	// Start a trace region
-	defer trace.StartRegion(ctx, "PatchServiceLabel").End()
-
-	// GVR for core Services
-	gvr := schema.GroupVersionResource{Group: "", Version: "v1", Resource: "services"}
-	svcs := c.DynCli.Resource(gvr).Namespace(namespace)
-
-	// Wait for the Service to exist (created asynchronously by another
-	// controller). Bounded poll so we never block forever.
-	if err := wait.PollUntilContextTimeout(ctx, 2*time.Second, 60*time.Second, true, func(ctx context.Context) (bool, error) {
-		_, err := svcs.Get(ctx, name, metav1.GetOptions{})
-		if err == nil {
-			return true, nil
-		}
-		if apierrors.IsNotFound(err) {
-			return false, nil
-		}
-		return false, err
-	}); err != nil {
-		return fmt.Errorf("waiting for Service %s/%s: %w", namespace, name, err)
-	}
-
-	// Server-side apply only the label we own. A distinct FieldManager keeps
-	// us from conflicting with the controller that owns the rest of the spec.
-	patch := fmt.Sprintf(`{"apiVersion":"v1","kind":"Service","metadata":{"name":%q,"namespace":%q,"labels":{%q:%q}}}`,
-		name, namespace, key, value)
-	if _, err := svcs.Patch(ctx, name, types.ApplyPatchType, []byte(patch), metav1.PatchOptions{
-		FieldManager: "swarmctl-multicluster",
-		Force:        ptr.To(true),
-	}); err != nil {
-		return fmt.Errorf("patching Service %s/%s label %s=%s: %w", namespace, name, key, value, err)
-	}
-	fmt.Printf("  - Service/%s labeled %s=%s\n", name, key, value)
-
-	return nil
-}

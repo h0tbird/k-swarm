@@ -306,11 +306,15 @@ metadata:
   namespace: {{ .Namespace }}
   labels:
     istio.io/waypoint-for: service
-    {{- if .MultiCluster }}
-    istio.io/global: "true"
-    {{- end }}
 spec:
   gatewayClassName: istio-waypoint
+  {{- if .MultiCluster }}
+  infrastructure:
+    # Propagated by Istio onto the generated waypoint Service so that
+    # other clusters discover it as a global service.
+    labels:
+      istio.io/global: "true"
+  {{- end }}
   listeners:
   - name: mesh
     port: 15008

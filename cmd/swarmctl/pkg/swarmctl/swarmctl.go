@@ -758,16 +758,6 @@ func InstallWorker(cmd *cobra.Command, args []string) error {
 					fmt.Printf("\nError: %s\n", err)
 				}
 			}
-
-			// In multi-cluster ambient mode, the waypoint Service is created
-			// by the Istio mesh-controller from the waypoint Gateway. Labels
-			// on the Gateway do not propagate to the Service, so patch it
-			// directly so that other clusters discover it as a global service.
-			if multiCluster && dataplaneMode == "ambient" {
-				if err := context.PatchServiceLabel(cmd.Context(), namespace, waypointName, "istio.io/global", "true"); err != nil {
-					fmt.Printf("\nError: %s\n", err)
-				}
-			}
 		}
 	}
 
