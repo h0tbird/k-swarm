@@ -108,6 +108,12 @@ func init() {
 		panic(err)
 	}
 
+	// --multi-cluster flag (ambient-only)
+	manifestGenerateCmd.PersistentFlags().Bool("multi-cluster", false, "Enable cross-cluster failover for ambient mode: labels the worker and waypoint Services with istio.io/global=true and emits a DestinationRule with locality failover by topology.istio.io/cluster.")
+	if err := manifestGenerateCmd.RegisterFlagCompletionFunc("multi-cluster", multiClusterCompletion); err != nil {
+		panic(err)
+	}
+
 	// --yes flag
 	manifestInstallCmd.PersistentFlags().Bool("yes", false, "Automatically confirm all prompts with 'yes'.")
 
@@ -165,6 +171,12 @@ func init() {
 	// --ingress-mode flag
 	manifestInstallCmd.PersistentFlags().String("ingress-mode", "none", "Ingress mode: 'none', 'shared' (classic Istio Gateway/VirtualService selecting istio: nsgw) or 'dedicated' (per-service Gateway API Gateway/HTTPRoute).")
 	if err := manifestInstallCmd.RegisterFlagCompletionFunc("ingress-mode", ingressModeCompletion); err != nil {
+		panic(err)
+	}
+
+	// --multi-cluster flag (ambient-only)
+	manifestInstallCmd.PersistentFlags().Bool("multi-cluster", false, "Enable cross-cluster failover for ambient mode: labels the worker and waypoint Services with istio.io/global=true and emits a DestinationRule with locality failover by topology.istio.io/cluster.")
+	if err := manifestInstallCmd.RegisterFlagCompletionFunc("multi-cluster", multiClusterCompletion); err != nil {
 		panic(err)
 	}
 }
@@ -463,6 +475,15 @@ func ingressModeIsValid(value string) bool {
 }
 
 //-----------------------------------------------------------------------------
+// multiCluster
+//-----------------------------------------------------------------------------
+
+// multiClusterCompletion
+func multiClusterCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	return []string{"true", "false"}, cobra.ShellCompDirectiveNoFileComp
+}
+
+//-----------------------------------------------------------------------------
 // validateFlags
 //-----------------------------------------------------------------------------
 
@@ -522,6 +543,15 @@ func validateFlags(cmd *cobra.Command, args []string) error {
 		value, _ := cmd.Flags().GetString("ingress-mode")
 		if !ingressModeIsValid(value) {
 			return errors.New("invalid ingress-mode (must be 'none', 'shared' or 'dedicated')")
+		}
+	}
+
+	// --multi-cluster requires --dataplane-mode=ambient
+	if cmd.Flags().Changed("multi-cluster") {
+		multiCluster, _ := cmd.Flags().GetBool("multi-cluster")
+		dataplaneMode, _ := cmd.Flags().GetString("dataplane-mode")
+		if multiCluster && dataplaneMode != "ambient" {
+			return errors.New("--multi-cluster requires --dataplane-mode=ambient")
 		}
 	}
 

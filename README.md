@@ -28,6 +28,13 @@ Enable telemetry for `service-1` on all `kind` clusters:
 swarmctl w t --context 'kind-*' 1:1 on
 ```
 
+Enable cross-cluster failover for ambient-mode workers (labels the worker
+and waypoint Services with `istio.io/global=true` and emits a
+`DestinationRule` with locality failover by `topology.istio.io/cluster`):
+```
+swarmctl w --context 'kind-*' 1:1 --dataplane-mode ambient --multi-cluster
+```
+
 ## Developing
 
 Download all the `Makefile` tooling to `./bin/`:

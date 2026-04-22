@@ -255,6 +255,7 @@ func GenerateWorker(cmd *cobra.Command, args []string) error {
 	dataplaneMode, _ := cmd.Flags().GetString("dataplane-mode")
 	waypointName, _ := cmd.Flags().GetString("waypoint-name")
 	ingressMode, _ := cmd.Flags().GetString("ingress-mode")
+	multiCluster, _ := cmd.Flags().GetBool("multi-cluster")
 
 	// Default cluster domain for generate command (no live cluster)
 	if clusterDomain == "" {
@@ -291,6 +292,7 @@ func GenerateWorker(cmd *cobra.Command, args []string) error {
 			DataplaneMode string
 			WaypointName  string
 			IngressMode   string
+			MultiCluster  bool
 		}{
 			Replicas:      replicas,
 			Namespace:     fmt.Sprintf("%s-n%d", dataplaneMode, i),
@@ -302,6 +304,7 @@ func GenerateWorker(cmd *cobra.Command, args []string) error {
 			DataplaneMode: dataplaneMode,
 			WaypointName:  waypointName,
 			IngressMode:   ingressMode,
+			MultiCluster:  multiCluster,
 		}); err != nil {
 			return err
 		}
@@ -336,6 +339,11 @@ func GenerateWorkerExample() string {
 
   # Expose the worker Service via a dedicated Gateway API Gateway+HTTPRoute.
   swarmctl m g w 1:1 --dataplane-mode ambient --ingress-mode dedicated
+
+  # Enable cross-cluster failover for ambient-mode workers: labels the worker
+  # and waypoint Services with istio.io/global=true and emits a DestinationRule
+  # with locality failover by topology.istio.io/cluster (ambient-only).
+  swarmctl m g w 1:1 --dataplane-mode ambient --multi-cluster
   `
 }
 
@@ -665,6 +673,7 @@ func InstallWorker(cmd *cobra.Command, args []string) error {
 	dataplaneMode, _ := cmd.Flags().GetString("dataplane-mode")
 	waypointName, _ := cmd.Flags().GetString("waypoint-name")
 	ingressMode, _ := cmd.Flags().GetString("ingress-mode")
+	multiCluster, _ := cmd.Flags().GetBool("multi-cluster")
 
 	// Set the error prefix
 	cmd.SetErrPrefix("\nError:")
@@ -711,6 +720,8 @@ func InstallWorker(cmd *cobra.Command, args []string) error {
 
 			fmt.Printf("\n")
 
+			namespace := fmt.Sprintf("%s-n%d", dataplaneMode, i)
+
 			// Render the template
 			docs, err := util.RenderTemplate(tmpl, struct {
 				Replicas      int
@@ -723,9 +734,10 @@ func InstallWorker(cmd *cobra.Command, args []string) error {
 				DataplaneMode string
 				WaypointName  string
 				IngressMode   string
+				MultiCluster  bool
 			}{
 				Replicas:      replicas,
-				Namespace:     fmt.Sprintf("%s-n%d", dataplaneMode, i),
+				Namespace:     namespace,
 				NodeSelector:  nodeSelector,
 				Version:       cmd.Root().Version,
 				ImageTag:      imageTag,
@@ -734,6 +746,7 @@ func InstallWorker(cmd *cobra.Command, args []string) error {
 				DataplaneMode: dataplaneMode,
 				WaypointName:  waypointName,
 				IngressMode:   ingressMode,
+				MultiCluster:  multiCluster,
 			})
 			if err != nil {
 				return err
@@ -742,6 +755,16 @@ func InstallWorker(cmd *cobra.Command, args []string) error {
 			// Loop through all yaml documents
 			for _, doc := range docs {
 				if err := context.ApplyYaml(doc); err != nil {
+					fmt.Printf("\nError: %s\n", err)
+				}
+			}
+
+			// In multi-cluster ambient mode, the waypoint Service is created
+			// by the Istio mesh-controller from the waypoint Gateway. Labels
+			// on the Gateway do not propagate to the Service, so patch it
+			// directly so that other clusters discover it as a global service.
+			if multiCluster && dataplaneMode == "ambient" {
+				if err := context.PatchServiceLabel(cmd.Context(), namespace, waypointName, "istio.io/global", "true"); err != nil {
 					fmt.Printf("\nError: %s\n", err)
 				}
 			}
@@ -790,6 +813,11 @@ func InstallWorkerExample() string {
 
   # Expose the worker Service via a dedicated Gateway API Gateway+HTTPRoute.
   swarmctl w 1:1 --dataplane-mode ambient --context 'kind-pasta-.*' --ingress-mode dedicated
+
+  # Enable cross-cluster failover for ambient-mode workers: labels the worker
+  # and waypoint Services with istio.io/global=true and emits a DestinationRule
+  # with locality failover by topology.istio.io/cluster (ambient-only).
+  swarmctl w 1:1 --dataplane-mode ambient --context 'kind-pasta-.*' --multi-cluster
   `
 }
 
