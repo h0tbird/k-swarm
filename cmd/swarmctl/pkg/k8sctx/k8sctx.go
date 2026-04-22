@@ -315,4 +315,3 @@ func parseClusterDomainFromCorefile(corefile string) string {
 
 	return domain
 }
-
