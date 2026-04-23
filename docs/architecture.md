@@ -39,36 +39,27 @@ selected by command-line flags:
 flowchart LR
     Operator[Human or CI]
     SC[swarmctl CLI]
-
-    subgraph Cluster[Kubernetes cluster]
-        direction TB
-        subgraph NSInformer[namespace informer]
-            Inf[Deployment informer]
-        end
-        subgraph NSWorker1[namespace sidecar-n1]
-            W1[Deployment worker]
-        end
-        subgraph NSWorker2[namespace sidecar-n2]
-            W2[Deployment worker]
-        end
-        subgraph NSWorkerN[namespace sidecar-nN]
-            WN[Deployment worker]
-        end
-    end
+    Inf[informer Deployment]
+    W1[worker Deployment in sidecar-n1]
+    W2[worker Deployment in sidecar-n2]
+    WN[worker Deployment in sidecar-nN]
 
     Operator --> SC
-    SC -->|server-side apply| Cluster
+    SC -->|server-side apply| Inf
+    SC -->|server-side apply| W1
+    SC -->|server-side apply| W2
+    SC -->|server-side apply| WN
 
-    W1 -->|GET /services| Inf
-    W2 -->|GET /services| Inf
-    WN -->|GET /services| Inf
+    W1 -->|poll services| Inf
+    W2 -->|poll services| Inf
+    WN -->|poll services| Inf
 
-    W1 -->|GET /data| W2
-    W2 -->|GET /data| W1
-    W2 -->|GET /data| WN
-    WN -->|GET /data| W2
-    W1 -->|GET /data| WN
-    WN -->|GET /data| W1
+    W1 -->|fetch data| W2
+    W2 -->|fetch data| W1
+    W2 -->|fetch data| WN
+    WN -->|fetch data| W2
+    W1 -->|fetch data| WN
+    WN -->|fetch data| W1
 ```
 
 ## 3. The `swarmctl` CLI
@@ -172,14 +163,18 @@ They are stitched together by an unbuffered `chan []string`:
 
 ```mermaid
 flowchart LR
-    subgraph InformerPod[Informer Pod]
-        direction LR
-        K[Kubernetes API core/v1 Services] -->|watch app=k-swarm| R[ServiceReconciler.Reconcile]
-        R -->|host.ns:port| C[commChan]
-        C --> G[Informer runnable, cached serviceList]
-        G -->|JSON| H[GET /services]
-    end
-    Worker[worker pods] -->|HTTP| H
+    K[Kubernetes API core v1 Services]
+    R[ServiceReconciler Reconcile]
+    C[commChan]
+    G[Informer runnable cached serviceList]
+    H[GET services endpoint]
+    Worker[worker pods]
+
+    K -->|watch app=k-swarm| R
+    R -->|host ns port| C
+    C --> G
+    G -->|JSON| H
+    Worker -->|HTTP| H
 ```
 
 Notable details:
