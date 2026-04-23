@@ -134,6 +134,12 @@ func initFlags(fs *pflag.FlagSet) *common.FlagPack {
 		2*time.Second,
 		"The interval at which the worker sends requests.")
 
+	fs.BoolVar(
+		&flags.WorkerLogResponses,
+		"worker-log-responses",
+		false,
+		"If set, log the raw JSON response bodies received from the informer's /services endpoint and from peer workers' /data endpoint.")
+
 	return flags
 }
 

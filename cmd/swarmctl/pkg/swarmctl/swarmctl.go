@@ -256,6 +256,7 @@ func GenerateWorker(cmd *cobra.Command, args []string) error {
 	waypointName, _ := cmd.Flags().GetString("waypoint-name")
 	ingressMode, _ := cmd.Flags().GetString("ingress-mode")
 	multiCluster, _ := cmd.Flags().GetBool("multi-cluster")
+	logResponses, _ := cmd.Flags().GetBool("worker-log-responses")
 
 	// Default cluster domain for generate command (no live cluster)
 	if clusterDomain == "" {
@@ -293,6 +294,7 @@ func GenerateWorker(cmd *cobra.Command, args []string) error {
 			WaypointName  string
 			IngressMode   string
 			MultiCluster  bool
+			LogResponses  bool
 		}{
 			Replicas:      replicas,
 			Namespace:     fmt.Sprintf("%s-n%d", dataplaneMode, i),
@@ -305,6 +307,7 @@ func GenerateWorker(cmd *cobra.Command, args []string) error {
 			WaypointName:  waypointName,
 			IngressMode:   ingressMode,
 			MultiCluster:  multiCluster,
+			LogResponses:  logResponses,
 		}); err != nil {
 			return err
 		}
@@ -674,6 +677,7 @@ func InstallWorker(cmd *cobra.Command, args []string) error {
 	waypointName, _ := cmd.Flags().GetString("waypoint-name")
 	ingressMode, _ := cmd.Flags().GetString("ingress-mode")
 	multiCluster, _ := cmd.Flags().GetBool("multi-cluster")
+	logResponses, _ := cmd.Flags().GetBool("worker-log-responses")
 
 	// Set the error prefix
 	cmd.SetErrPrefix("\nError:")
@@ -735,6 +739,7 @@ func InstallWorker(cmd *cobra.Command, args []string) error {
 				WaypointName  string
 				IngressMode   string
 				MultiCluster  bool
+				LogResponses  bool
 			}{
 				Replicas:      replicas,
 				Namespace:     namespace,
@@ -747,6 +752,7 @@ func InstallWorker(cmd *cobra.Command, args []string) error {
 				WaypointName:  waypointName,
 				IngressMode:   ingressMode,
 				MultiCluster:  multiCluster,
+				LogResponses:  logResponses,
 			})
 			if err != nil {
 				return err

@@ -26,4 +26,5 @@ type FlagPack struct {
 	InformerPollInterval  time.Duration
 	WorkerRequestInterval time.Duration
 	InformerURL           string
+	WorkerLogResponses    bool
 }
