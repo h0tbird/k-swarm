@@ -114,9 +114,9 @@ func init() {
 		panic(err)
 	}
 
-	// --worker-log-responses flag (worker-only)
-	manifestGenerateCmd.PersistentFlags().Bool("worker-log-responses", false, "If set, the worker logs the raw JSON response bodies received from the informer's /services endpoint and from peer workers' /data endpoint.")
-	if err := manifestGenerateCmd.RegisterFlagCompletionFunc("worker-log-responses", workerLogResponsesCompletion); err != nil {
+	// --log-responses flag (worker-only)
+	manifestGenerateCmd.PersistentFlags().Bool("log-responses", false, "If set, the worker logs the raw JSON response bodies received from the informer's /services endpoint and from peer workers' /data endpoint.")
+	if err := manifestGenerateCmd.RegisterFlagCompletionFunc("log-responses", logResponsesCompletion); err != nil {
 		panic(err)
 	}
 
@@ -186,9 +186,9 @@ func init() {
 		panic(err)
 	}
 
-	// --worker-log-responses flag (worker-only)
-	manifestInstallCmd.PersistentFlags().Bool("worker-log-responses", false, "If set, the worker logs the raw JSON response bodies received from the informer's /services endpoint and from peer workers' /data endpoint.")
-	if err := manifestInstallCmd.RegisterFlagCompletionFunc("worker-log-responses", workerLogResponsesCompletion); err != nil {
+	// --log-responses flag (worker-only)
+	manifestInstallCmd.PersistentFlags().Bool("log-responses", false, "If set, the worker logs the raw JSON response bodies received from the informer's /services endpoint and from peer workers' /data endpoint.")
+	if err := manifestInstallCmd.RegisterFlagCompletionFunc("log-responses", logResponsesCompletion); err != nil {
 		panic(err)
 	}
 }
@@ -496,11 +496,11 @@ func multiClusterCompletion(cmd *cobra.Command, args []string, toComplete string
 }
 
 //-----------------------------------------------------------------------------
-// workerLogResponses
+// logResponsesCompletion
 //-----------------------------------------------------------------------------
 
-// workerLogResponsesCompletion
-func workerLogResponsesCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+// logResponsesCompletion
+func logResponsesCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 	return []string{"true", "false"}, cobra.ShellCompDirectiveNoFileComp
 }
 
