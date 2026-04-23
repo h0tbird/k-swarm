@@ -32,34 +32,34 @@ The design optimizes for two things:
 The `manager` binary is a single image that can run in **two distinct roles**
 selected by command-line flags:
 
-- `--enable-informer` — runs the **informer** (one per cluster)
-- `--enable-worker`  — runs the **worker**   (many per cluster, one Deployment per namespace)
+- `--enable-informer` — runs the **informer** (one Deployment per cluster)
+- `--enable-worker`  — runs the **worker**   (many Deployments per cluster)
 
 ```mermaid
 flowchart LR
-    Operator[Human / CI]
+    Operator["Human / CI"]
     subgraph Local["Local workstation"]
-        SC[swarmctl CLI]
+        SC["swarmctl CLI"]
     end
 
     subgraph Cluster["Kubernetes cluster"]
         direction TB
         subgraph NSInformer["namespace: informer"]
-            Inf[Deployment: informer<br/>manager --enable-informer]
+            Inf["Deployment: informer<br/>manager --enable-informer"]
         end
         subgraph NSWorker1["namespace: sidecar-n1"]
-            W1[Deployment: worker<br/>manager --enable-worker]
+            W1["Deployment: worker<br/>manager --enable-worker"]
         end
         subgraph NSWorker2["namespace: sidecar-n2"]
-            W2[Deployment: worker]
+            W2["Deployment: worker"]
         end
         subgraph NSWorkerN["namespace: sidecar-nN"]
-            WN[Deployment: worker]
+            WN["Deployment: worker"]
         end
     end
 
     Operator --> SC
-    SC -- "server-side apply<br/>(via kube API)" --> Cluster
+    SC -- "server-side apply (via kube API)" --> Cluster
 
     W1 -- "GET /services" --> Inf
     W2 -- "GET /services" --> Inf
@@ -120,15 +120,15 @@ sequenceDiagram
     actor User
     participant SC as swarmctl
     participant KC as kubeconfig
-    participant API as kube-apiserver(s)
+    participant API as kube-apiserver
 
     User->>SC: swarmctl w --context 'kind-*' 1:5 --replicas 2 --dataplane-mode sidecar
     SC->>KC: enumerate contexts, filter by regex
     SC-->>User: list matched contexts, prompt y/N
     User-->>SC: y
     loop for each context
-        SC->>SC: render worker.goyaml for i in 1..5<br/>(namespace: sidecar-nN)
-        SC->>API: server-side apply manifests<br/>(dynamic client)
+        SC->>SC: render worker.goyaml for i in 1..5 (namespace sidecar-nN)
+        SC->>API: server-side apply manifests (dynamic client)
     end
 ```
 
@@ -143,11 +143,11 @@ five Deployments / Services across five namespaces.
 
 ```mermaid
 flowchart TD
-    M[main] --> F[initFlags]
-    F --> D{flags}
-    D -- EnableInformer --> I[informer.Start]
-    D -- EnableWorker  --> W[worker.Start]
-    I -.-> Wait[wg.Wait]
+    M["main"] --> F["initFlags"]
+    F --> D{"flags"}
+    D -- EnableInformer --> I["informer.Start"]
+    D -- EnableWorker --> W["worker.Start"]
+    I -.-> Wait["wg.Wait"]
     W -.-> Wait
 ```
 
@@ -171,14 +171,14 @@ They are stitched together by an unbuffered `chan []string`:
 
 ```mermaid
 flowchart LR
-    subgraph Informer Pod
+    subgraph InformerPod["Informer Pod"]
         direction LR
-        K[Kubernetes API<br/>core/v1 Services] -->|watch label app=k-swarm| R[ServiceReconciler.Reconcile]
-        R -->|"<host>.<ns>:<port>"| C{{commChan}}
-        C --> G[Informer runnable<br/>cached serviceList]
-        G -->|JSON| H[/GET /services/]
+        K["Kubernetes API<br/>core/v1 Services"] -->|"watch label app=k-swarm"| R["ServiceReconciler.Reconcile"]
+        R -->|"host.ns:port"| C{{"commChan"}}
+        C --> G["Informer runnable<br/>cached serviceList"]
+        G -->|"JSON"| H["GET /services"]
     end
-    Worker[worker pods] -->|HTTP| H
+    Worker["worker pods"] -->|"HTTP"| H
 ```
 
 Notable details:
@@ -210,22 +210,22 @@ A worker pod is **simultaneously a client and a server**:
 ```mermaid
 sequenceDiagram
     autonumber
-    participant W as Worker pod (client side)
-    participant I as Informer (/services)
-    participant P1 as Peer worker 1 (/data)
-    participant P2 as Peer worker 2 (/data)
+    participant W as Worker pod, client side
+    participant I as Informer /services
+    participant P1 as Peer worker 1 /data
+    participant P2 as Peer worker 2 /data
 
-    loop every --informer-poll-interval (default 10s)
+    loop every informer-poll-interval, default 10s
         W->>I: GET /services
-        I-->>W: { "services": ["worker.sidecar-n1:80", ...] }
+        I-->>W: services list as JSON
     end
 
     loop forever, over current serviceList
         W->>P1: GET /data
-        P1-->>W: 200 { clusterName, podName, ... }
-        Note over W: sleep --worker-request-interval (default 2s)
+        P1-->>W: 200 with clusterName, podName, ...
+        Note over W: sleep worker-request-interval, default 2s
         W->>P2: GET /data
-        P2-->>W: 200 { ... }
+        P2-->>W: 200 with pod metadata
     end
 ```
 
@@ -252,17 +252,17 @@ sequenceDiagram
     actor Op as Operator
     participant SC as swarmctl
     participant API as kube-apiserver
-    participant CTRL as ServiceReconciler<br/>(in informer pod)
-    participant SRV as Informer HTTP<br/>(in informer pod)
+    participant CTRL as ServiceReconciler in informer pod
+    participant SRV as Informer HTTP in informer pod
     participant W as Worker pods
 
-    Op->>SC: swarmctl i --context 'kind-dev' --replicas 1 --dataplane-mode sidecar
-    SC->>API: SSA: Namespace, RBAC, Deployment, Service (informer)
-    API-->>CTRL: pod starts; manager + runnable boot
-    Op->>SC: swarmctl w --context 'kind-dev' 1:3 --dataplane-mode sidecar
-    SC->>API: SSA: Namespace + Deployment + Service<br/>(sidecar-n1, sidecar-n2, sidecar-n3)
-    API-->>CTRL: Service add events (label app=k-swarm)
-    CTRL->>SRV: commChan <- ["worker.sidecar-n1:80", ...]
+    Op->>SC: swarmctl i --context kind-dev --replicas 1 --dataplane-mode sidecar
+    SC->>API: SSA Namespace, RBAC, Deployment, Service for informer
+    API-->>CTRL: pod starts, manager and runnable boot
+    Op->>SC: swarmctl w --context kind-dev 1:3 --dataplane-mode sidecar
+    SC->>API: SSA Namespace plus Deployment and Service for sidecar-n1..n3
+    API-->>CTRL: Service add events with label app=k-swarm
+    CTRL->>SRV: commChan receives new service list
     W->>SRV: GET /services
     SRV-->>W: peer list
     W->>W: fan out GET /data to peers
