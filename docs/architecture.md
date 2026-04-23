@@ -2,8 +2,7 @@
 
 This document is the entry point for new contributors who need to understand how
 `k-swarm` is structured and how its pieces fit together. It complements the
-top-level [README.md](../README.md) (which focuses on usage) and the in-progress
-[ambient-mode-plan.md](./ambient-mode-plan.md).
+top-level [README.md](../README.md) (which focuses on usage).
 
 ## 1. What problem does k-swarm solve?
 
