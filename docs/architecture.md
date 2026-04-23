@@ -37,12 +37,24 @@ selected by command-line flags:
 
 ```mermaid
 flowchart LR
-    Operator[Human or CI]
+    Operator([Human or CI])
     SC[swarmctl CLI]
-    Inf[informer Deployment]
-    W1[worker Deployment in sidecar-n1]
-    W2[worker Deployment in sidecar-n2]
-    WN[worker Deployment in sidecar-nN]
+
+    subgraph Cluster[Kubernetes cluster]
+        direction TB
+        subgraph NSI[namespace informer]
+            Inf[informer Deployment]
+        end
+        subgraph NS1[namespace sidecar-n1]
+            W1[worker Deployment]
+        end
+        subgraph NS2[namespace sidecar-n2]
+            W2[worker Deployment]
+        end
+        subgraph NSN[namespace sidecar-nN]
+            WN[worker Deployment]
+        end
+    end
 
     Operator --> SC
     SC -->|server-side apply| Inf
@@ -50,16 +62,23 @@ flowchart LR
     SC -->|server-side apply| W2
     SC -->|server-side apply| WN
 
-    W1 -->|poll services| Inf
-    W2 -->|poll services| Inf
-    WN -->|poll services| Inf
+    W1 -.->|poll services| Inf
+    W2 -.->|poll services| Inf
+    WN -.->|poll services| Inf
 
-    W1 -->|fetch data| W2
-    W2 -->|fetch data| W1
-    W2 -->|fetch data| WN
-    WN -->|fetch data| W2
-    W1 -->|fetch data| WN
-    WN -->|fetch data| W1
+    W1 ==>|fetch data| W2
+    W2 ==>|fetch data| W1
+    W2 ==>|fetch data| WN
+    WN ==>|fetch data| W2
+    W1 ==>|fetch data| WN
+    WN ==>|fetch data| W1
+
+    classDef informer fill:#dbeafe,stroke:#1d4ed8,color:#1e3a8a;
+    classDef worker fill:#dcfce7,stroke:#15803d,color:#14532d;
+    classDef tool fill:#fef3c7,stroke:#b45309,color:#78350f;
+    class Inf informer;
+    class W1,W2,WN worker;
+    class SC tool;
 ```
 
 ## 3. The `swarmctl` CLI
@@ -135,12 +154,15 @@ five Deployments / Services across five namespaces.
 
 ```mermaid
 flowchart TD
-    M[main] --> F[initFlags]
+    M([main]) --> F[initFlags]
     F --> D{flags}
     D -->|EnableInformer| I[informer.Start]
     D -->|EnableWorker| W[worker.Start]
     I -.-> Wait[wg.Wait]
     W -.-> Wait
+
+    classDef role fill:#dbeafe,stroke:#1d4ed8,color:#1e3a8a;
+    class I,W role;
 ```
 
 The two roles do not share state; they are simply gated by independent
@@ -163,18 +185,28 @@ They are stitched together by an unbuffered `chan []string`:
 
 ```mermaid
 flowchart LR
-    K[Kubernetes API core v1 Services]
-    R[ServiceReconciler Reconcile]
-    C[commChan]
-    G[Informer runnable cached serviceList]
-    H[GET services endpoint]
-    Worker[worker pods]
+    subgraph InformerPod[Informer pod]
+        direction LR
+        K[(Kubernetes API)]
+        R[ServiceReconciler]
+        C{{commChan}}
+        G[Informer runnable]
+        H[/services HTTP endpoint/]
 
-    K -->|watch app=k-swarm| R
-    R -->|host ns port| C
-    C --> G
-    G -->|JSON| H
-    Worker -->|HTTP| H
+        K -->|watch app=k-swarm| R
+        R -->|host ns port| C
+        C --> G
+        G --> H
+    end
+
+    Worker[worker pods] -->|HTTP poll| H
+
+    classDef ctrl fill:#dbeafe,stroke:#1d4ed8,color:#1e3a8a;
+    classDef http fill:#fef3c7,stroke:#b45309,color:#78350f;
+    classDef worker fill:#dcfce7,stroke:#15803d,color:#14532d;
+    class R,G ctrl;
+    class H http;
+    class Worker worker;
 ```
 
 Notable details:
