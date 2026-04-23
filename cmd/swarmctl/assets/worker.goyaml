@@ -72,6 +72,9 @@ spec:
         - --informer-url=http://informer.informer
         - --informer-poll-interval=60s
         - --worker-request-interval=2s
+        {{- if .LogResponses }}
+        - --worker-log-responses
+        {{- end }}
         command:
         - /manager
         env:

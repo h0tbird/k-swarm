@@ -114,6 +114,12 @@ func init() {
 		panic(err)
 	}
 
+	// --worker-log-responses flag (worker-only)
+	manifestGenerateCmd.PersistentFlags().Bool("worker-log-responses", false, "If set, the worker logs the raw JSON response bodies received from the informer's /services endpoint and from peer workers' /data endpoint.")
+	if err := manifestGenerateCmd.RegisterFlagCompletionFunc("worker-log-responses", workerLogResponsesCompletion); err != nil {
+		panic(err)
+	}
+
 	// --yes flag
 	manifestInstallCmd.PersistentFlags().Bool("yes", false, "Automatically confirm all prompts with 'yes'.")
 
@@ -177,6 +183,12 @@ func init() {
 	// --multi-cluster flag (ambient-only)
 	manifestInstallCmd.PersistentFlags().Bool("multi-cluster", false, "Enable cross-cluster failover for ambient mode: labels the worker and waypoint Services with istio.io/global=true and emits a DestinationRule with locality failover by topology.istio.io/cluster.")
 	if err := manifestInstallCmd.RegisterFlagCompletionFunc("multi-cluster", multiClusterCompletion); err != nil {
+		panic(err)
+	}
+
+	// --worker-log-responses flag (worker-only)
+	manifestInstallCmd.PersistentFlags().Bool("worker-log-responses", false, "If set, the worker logs the raw JSON response bodies received from the informer's /services endpoint and from peer workers' /data endpoint.")
+	if err := manifestInstallCmd.RegisterFlagCompletionFunc("worker-log-responses", workerLogResponsesCompletion); err != nil {
 		panic(err)
 	}
 }
@@ -480,6 +492,15 @@ func ingressModeIsValid(value string) bool {
 
 // multiClusterCompletion
 func multiClusterCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	return []string{"true", "false"}, cobra.ShellCompDirectiveNoFileComp
+}
+
+//-----------------------------------------------------------------------------
+// workerLogResponses
+//-----------------------------------------------------------------------------
+
+// workerLogResponsesCompletion
+func workerLogResponsesCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 	return []string{"true", "false"}, cobra.ShellCompDirectiveNoFileComp
 }
 
