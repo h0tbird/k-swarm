@@ -143,7 +143,7 @@ func client(ctx context.Context, flags *common.FlagPack) {
 				var dst peerInfo
 				if err := json.Unmarshal(body, &dst); err != nil {
 					// Fallback: log the raw body if it isn't the expected shape.
-					log.Info("",
+					log.Info(
 						"service", service,
 						"http", httpInfo{Status: resp.StatusCode},
 						"duration_ms", durationMs,
@@ -151,7 +151,7 @@ func client(ctx context.Context, flags *common.FlagPack) {
 					)
 					continue
 				}
-				log.Info("",
+				log.Info(
 					"dst", dst,
 					"http", httpInfo{Status: resp.StatusCode},
 					"duration_ms", durationMs,
