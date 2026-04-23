@@ -57,6 +57,16 @@ func init() {
 	// manifestDumpCmd flags
 	manifestDumpCmd.Flags().Bool("stdout", false, "Output to stdout")
 
+	//-------------------------
+	// manifest generate flags
+	//-------------------------
+
+	// --context flag
+	manifestGenerateCmd.PersistentFlags().String("context", "", "regex to match the context name.")
+	if err := manifestGenerateCmd.RegisterFlagCompletionFunc("context", contextCompletion); err != nil {
+		panic(err)
+	}
+
 	// --replicas flag
 	manifestGenerateCmd.PersistentFlags().Int("replicas", 1, "Number of replicas to deploy.")
 	if err := manifestGenerateCmd.RegisterFlagCompletionFunc("replicas", replicasCompletion); err != nil {
@@ -120,15 +130,9 @@ func init() {
 		panic(err)
 	}
 
-	// --context flag (worker-only on generate; required so we can derive
-	// the per-cluster CLUSTER_NAME from the matched context name).
-	manifestGenerateWorkerCmd.Flags().String("context", "", "regex to match the context name.")
-	if err := manifestGenerateWorkerCmd.RegisterFlagCompletionFunc("context", contextCompletion); err != nil {
-		panic(err)
-	}
-	if err := manifestGenerateWorkerCmd.MarkFlagRequired("context"); err != nil {
-		panic(err)
-	}
+	//------------------------
+	// manifest install flags
+	//------------------------
 
 	// --yes flag
 	manifestInstallCmd.PersistentFlags().Bool("yes", false, "Automatically confirm all prompts with 'yes'.")
