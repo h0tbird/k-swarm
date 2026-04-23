@@ -94,7 +94,6 @@ func getData(c *gin.Context) {
 func localPeer() peerInfo {
 	return peerInfo{
 		Cluster:   os.Getenv("CLUSTER_NAME"),
-		Network:   os.Getenv("NETWORK"),
 		Node:      os.Getenv("NODE_NAME"),
 		Namespace: os.Getenv("POD_NAMESPACE"),
 		Pod:       os.Getenv("POD_NAME"),
@@ -144,7 +143,7 @@ func client(ctx context.Context, flags *common.FlagPack) {
 				var dst peerInfo
 				if err := json.Unmarshal(body, &dst); err != nil {
 					// Fallback: log the raw body if it isn't the expected shape.
-					log.Info("hop",
+					log.Info("",
 						"service", service,
 						"http", httpInfo{Status: resp.StatusCode},
 						"duration_ms", durationMs,
@@ -152,7 +151,7 @@ func client(ctx context.Context, flags *common.FlagPack) {
 					)
 					continue
 				}
-				log.Info("hop",
+				log.Info("",
 					"dst", dst,
 					"http", httpInfo{Status: resp.StatusCode},
 					"duration_ms", durationMs,
@@ -169,7 +168,6 @@ func client(ctx context.Context, flags *common.FlagPack) {
 
 type peerInfo struct {
 	Cluster   string `json:"cluster"`
-	Network   string `json:"network,omitempty"`
 	Node      string `json:"node"`
 	Namespace string `json:"namespace"`
 	Pod       string `json:"pod"`
