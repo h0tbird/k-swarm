@@ -114,6 +114,7 @@ func client(ctx context.Context, flags *common.FlagPack) {
 	// Get the service list from the informer
 	go pollServiceList(ctx, flags, &serviceList)
 
+	// Loop over the service list and make requests to /data
 	for {
 		select {
 		case <-ctx.Done():
