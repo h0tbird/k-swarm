@@ -83,13 +83,23 @@ func server(flags *common.FlagPack) {
 //-----------------------------------------------------------------------------
 
 func getData(c *gin.Context) {
-	c.JSON(200, peerInfo{
-		ClusterName:  os.Getenv("CLUSTER_NAME"),
-		NodeName:     os.Getenv("NODE_NAME"),
-		PodName:      os.Getenv("POD_NAME"),
-		PodNamespace: os.Getenv("POD_NAMESPACE"),
-		PodIP:        os.Getenv("POD_IP"),
-	})
+	c.JSON(200, localPeer())
+}
+
+//-----------------------------------------------------------------------------
+// localPeer returns the identity of this pod, populated from the downward API
+// env vars wired up by the worker manifest.
+//-----------------------------------------------------------------------------
+
+func localPeer() peerInfo {
+	return peerInfo{
+		Cluster:   os.Getenv("CLUSTER_NAME"),
+		Network:   os.Getenv("NETWORK"),
+		Node:      os.Getenv("NODE_NAME"),
+		Namespace: os.Getenv("POD_NAMESPACE"),
+		Pod:       os.Getenv("POD_NAME"),
+		IP:        os.Getenv("POD_IP"),
+	}
 }
 
 //-----------------------------------------------------------------------------
@@ -100,13 +110,7 @@ func client(ctx context.Context, flags *common.FlagPack) {
 
 	// Bind the worker's own identity to the logger so every line is
 	// self-describing as "src -> dst" when tailing logs from many pods.
-	log := log.WithValues("src", peerInfo{
-		ClusterName:  os.Getenv("CLUSTER_NAME"),
-		NodeName:     os.Getenv("NODE_NAME"),
-		PodName:      os.Getenv("POD_NAME"),
-		PodNamespace: os.Getenv("POD_NAMESPACE"),
-		PodIP:        os.Getenv("POD_IP"),
-	})
+	log := log.WithValues("src", localPeer())
 
 	// Get the service list from the informer
 	go pollServiceList(ctx, flags, &serviceList)
@@ -122,47 +126,63 @@ func client(ctx context.Context, flags *common.FlagPack) {
 				start := time.Now()
 				resp, err := http.Get(fmt.Sprintf("http://%s/data", service))
 				if err != nil {
-					log.Error(err, "request failed", "dst", service)
+					log.Error(err, "request failed", "service", service)
 					continue
 				}
-				ms := time.Since(start).Milliseconds()
-				if flags.WorkerLogResponses {
-					body, err := io.ReadAll(resp.Body)
-					if err != nil {
-						log.Error(err, "failed to read response body", "dst", service)
-					} else {
-						var peer peerInfo
-						if err := json.Unmarshal(body, &peer); err != nil {
-							// Fallback: log the raw body if it isn't the expected shape.
-							log.Info("hop", "dst", service, "status", resp.StatusCode, "ms", ms, "body", string(body))
-						} else {
-							log.Info("hop", "dst", service, "status", resp.StatusCode, "ms", ms, "peer", peer)
-						}
-					}
-				} else {
-					_, _ = io.Copy(io.Discard, resp.Body)
-					log.Info("hop", "dst", service, "status", resp.StatusCode, "ms", ms)
+				durationMs := time.Since(start).Milliseconds()
+				body, readErr := io.ReadAll(resp.Body)
+				if cerr := resp.Body.Close(); cerr != nil {
+					log.Error(cerr, "failed to close response body", "service", service)
 				}
-				if err := resp.Body.Close(); err != nil {
-					log.Error(err, "failed to close response body", "dst", service)
+				if readErr != nil {
+					log.Error(readErr, "failed to read response body", "service", service)
+					continue
 				}
+				if !flags.WorkerLogResponses {
+					continue
+				}
+				var dst peerInfo
+				if err := json.Unmarshal(body, &dst); err != nil {
+					// Fallback: log the raw body if it isn't the expected shape.
+					log.Info("hop",
+						"service", service,
+						"http", httpInfo{Status: resp.StatusCode},
+						"duration_ms", durationMs,
+						"body", string(body),
+					)
+					continue
+				}
+				log.Info("hop",
+					"dst", dst,
+					"http", httpInfo{Status: resp.StatusCode},
+					"duration_ms", durationMs,
+				)
 			}
 		}
 	}
 }
 
 //-----------------------------------------------------------------------------
-// peerInfo is the identity of a worker pod, both for the local "src" logger
-// binding and for decoding the JSON body returned by /data on the remote end.
-// Short JSON tags keep log lines compact when tailing with `kubectl logs`.
+// peerInfo is the identity of a worker pod, used for the "src" logger
+// binding, the "dst" log field, and the JSON body returned by /data.
 //-----------------------------------------------------------------------------
 
 type peerInfo struct {
-	ClusterName  string `json:"cluster"`
-	NodeName     string `json:"node"`
-	PodName      string `json:"pod"`
-	PodNamespace string `json:"ns"`
-	PodIP        string `json:"ip"`
+	Cluster   string `json:"cluster"`
+	Network   string `json:"network,omitempty"`
+	Node      string `json:"node"`
+	Namespace string `json:"namespace"`
+	Pod       string `json:"pod"`
+	IP        string `json:"ip"`
+}
+
+//-----------------------------------------------------------------------------
+// httpInfo groups HTTP-level fields under a single nested object in the log
+// line, leaving room for future additions (method, path, ...).
+//-----------------------------------------------------------------------------
+
+type httpInfo struct {
+	Status int `json:"status"`
 }
 
 //-----------------------------------------------------------------------------
