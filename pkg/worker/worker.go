@@ -83,13 +83,22 @@ func server(flags *common.FlagPack) {
 //-----------------------------------------------------------------------------
 
 func getData(c *gin.Context) {
-	c.JSON(200, gin.H{
-		"clusterName":  os.Getenv("CLUSTER_NAME"),
-		"podName":      os.Getenv("POD_NAME"),
-		"podNamespace": os.Getenv("POD_NAMESPACE"),
-		"podIP":        os.Getenv("POD_IP"),
-		"nodeName":     os.Getenv("NODE_NAME"),
-	})
+	c.JSON(200, localPeer())
+}
+
+//-----------------------------------------------------------------------------
+// localPeer returns the identity of this pod, populated from the downward API
+// env vars wired up by the worker manifest.
+//-----------------------------------------------------------------------------
+
+func localPeer() peerInfo {
+	return peerInfo{
+		Cluster:   os.Getenv("CLUSTER_NAME"),
+		Node:      os.Getenv("NODE_NAME"),
+		Namespace: os.Getenv("POD_NAMESPACE"),
+		Pod:       os.Getenv("POD_NAME"),
+		IP:        os.Getenv("POD_IP"),
+	}
 }
 
 //-----------------------------------------------------------------------------
@@ -98,9 +107,14 @@ func getData(c *gin.Context) {
 
 func client(ctx context.Context, flags *common.FlagPack) {
 
+	// Bind the worker's own identity to the logger so every line is
+	// self-describing as "src -> dst" when tailing logs from many pods.
+	log := log.WithValues("src", localPeer())
+
 	// Get the service list from the informer
 	go pollServiceList(ctx, flags, &serviceList)
 
+	// Loop over the service list and make requests to /data
 	for {
 		select {
 		case <-ctx.Done():
@@ -109,28 +123,65 @@ func client(ctx context.Context, flags *common.FlagPack) {
 		default:
 			for _, service := range serviceList {
 				time.Sleep(flags.WorkerRequestInterval)
-				log.Info("sending a request", "service", service)
+				start := time.Now()
 				resp, err := http.Get(fmt.Sprintf("http://%s/data", service))
 				if err != nil {
-					log.Error(err, "failed to send request", "service", service)
+					log.Error(err, "request failed", "service", service)
 					continue
 				}
-				if flags.WorkerLogResponses {
-					body, err := io.ReadAll(resp.Body)
-					if err != nil {
-						log.Error(err, "failed to read response body", "service", service)
-					} else {
-						log.Info("response received", "service", service, "body", string(body))
-					}
-				} else {
-					_, _ = io.Copy(io.Discard, resp.Body)
+				durationMs := time.Since(start).Milliseconds()
+				body, readErr := io.ReadAll(resp.Body)
+				if cerr := resp.Body.Close(); cerr != nil {
+					log.Error(cerr, "failed to close response body", "service", service)
 				}
-				if err := resp.Body.Close(); err != nil {
-					log.Error(err, "failed to close response body", "service", service)
+				if readErr != nil {
+					log.Error(readErr, "failed to read response body", "service", service)
+					continue
 				}
+				if !flags.WorkerLogResponses {
+					continue
+				}
+				var dst peerInfo
+				if err := json.Unmarshal(body, &dst); err != nil {
+					// Fallback: log the raw body if it isn't the expected shape.
+					log.Info(
+						"service", service,
+						"http", httpInfo{Status: resp.StatusCode},
+						"duration_ms", durationMs,
+						"body", string(body),
+					)
+					continue
+				}
+				log.Info(
+					"dst", dst,
+					"http", httpInfo{Status: resp.StatusCode},
+					"duration_ms", durationMs,
+				)
 			}
 		}
 	}
+}
+
+//-----------------------------------------------------------------------------
+// peerInfo is the identity of a worker pod, used for the "src" logger
+// binding, the "dst" log field, and the JSON body returned by /data.
+//-----------------------------------------------------------------------------
+
+type peerInfo struct {
+	Cluster   string `json:"cluster"`
+	Node      string `json:"node"`
+	Namespace string `json:"namespace"`
+	Pod       string `json:"pod"`
+	IP        string `json:"ip"`
+}
+
+//-----------------------------------------------------------------------------
+// httpInfo groups HTTP-level fields under a single nested object in the log
+// line, leaving room for future additions (method, path, ...).
+//-----------------------------------------------------------------------------
+
+type httpInfo struct {
+	Status int `json:"status"`
 }
 
 //-----------------------------------------------------------------------------
