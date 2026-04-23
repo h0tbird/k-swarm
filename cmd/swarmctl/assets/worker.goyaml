@@ -23,6 +23,9 @@ metadata:
     app: k-swarm
     {{- if eq .DataplaneMode "ambient" }}
     istio.io/use-waypoint: {{ .WaypointName }}
+    {{- if .MultiCluster }}
+    istio.io/global: "true"
+    {{- end }}
     {{- end }}
   name: worker
   namespace: {{ .Namespace }}
@@ -152,7 +155,12 @@ metadata:
   name: worker
   namespace: {{ .Namespace }}
 spec:
-  {{- if eq .DataplaneMode "ambient" }}
+  {{- if and (eq .DataplaneMode "ambient") .MultiCluster }}
+  targetRefs:
+  - kind: Gateway
+    group: gateway.networking.k8s.io
+    name: {{ .WaypointName }}
+  {{- else if eq .DataplaneMode "ambient" }}
   targetRefs:
   - kind: Service
     group: ""
@@ -269,6 +277,27 @@ spec:
       port: 80
 {{- end }}
 {{- if eq .DataplaneMode "ambient" }}
+{{- if .MultiCluster }}
+---
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: worker
+  namespace: {{ .Namespace }}
+spec:
+  host: worker
+  trafficPolicy:
+    outlierDetection:
+      consecutive5xxErrors: 1
+      interval: 1s
+      baseEjectionTime: 1m
+    loadBalancer:
+      simple: ROUND_ROBIN
+      localityLbSetting:
+        enabled: false # Disable locality load balancing to force failover
+        failoverPriority:
+          - topology.istio.io/cluster
+{{- end }}
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
@@ -279,6 +308,13 @@ metadata:
     istio.io/waypoint-for: service
 spec:
   gatewayClassName: istio-waypoint
+  {{- if .MultiCluster }}
+  infrastructure:
+    # Propagated by Istio onto the generated waypoint Service so that
+    # other clusters discover it as a global service.
+    labels:
+      istio.io/global: "true"
+  {{- end }}
   listeners:
   - name: mesh
     port: 15008
