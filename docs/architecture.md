@@ -37,37 +37,38 @@ selected by command-line flags:
 
 ```mermaid
 flowchart LR
-    Operator["Human / CI"]
-    subgraph Local["Local workstation"]
-        SC["swarmctl CLI"]
-    end
+    Operator[Human or CI]
+    SC[swarmctl CLI]
 
-    subgraph Cluster["Kubernetes cluster"]
+    subgraph Cluster[Kubernetes cluster]
         direction TB
-        subgraph NSInformer["namespace: informer"]
-            Inf["Deployment: informer<br/>manager --enable-informer"]
+        subgraph NSInformer[namespace informer]
+            Inf[Deployment informer]
         end
-        subgraph NSWorker1["namespace: sidecar-n1"]
-            W1["Deployment: worker<br/>manager --enable-worker"]
+        subgraph NSWorker1[namespace sidecar-n1]
+            W1[Deployment worker]
         end
-        subgraph NSWorker2["namespace: sidecar-n2"]
-            W2["Deployment: worker"]
+        subgraph NSWorker2[namespace sidecar-n2]
+            W2[Deployment worker]
         end
-        subgraph NSWorkerN["namespace: sidecar-nN"]
-            WN["Deployment: worker"]
+        subgraph NSWorkerN[namespace sidecar-nN]
+            WN[Deployment worker]
         end
     end
 
     Operator --> SC
-    SC -- "server-side apply (via kube API)" --> Cluster
+    SC -->|server-side apply| Cluster
 
-    W1 -- "GET /services" --> Inf
-    W2 -- "GET /services" --> Inf
-    WN -- "GET /services" --> Inf
+    W1 -->|GET /services| Inf
+    W2 -->|GET /services| Inf
+    WN -->|GET /services| Inf
 
-    W1 <-- "GET /data" --> W2
-    W2 <-- "GET /data" --> WN
-    W1 <-- "GET /data" --> WN
+    W1 -->|GET /data| W2
+    W2 -->|GET /data| W1
+    W2 -->|GET /data| WN
+    WN -->|GET /data| W2
+    W1 -->|GET /data| WN
+    WN -->|GET /data| W1
 ```
 
 ## 3. The `swarmctl` CLI
@@ -143,11 +144,11 @@ five Deployments / Services across five namespaces.
 
 ```mermaid
 flowchart TD
-    M["main"] --> F["initFlags"]
-    F --> D{"flags"}
-    D -- EnableInformer --> I["informer.Start"]
-    D -- EnableWorker --> W["worker.Start"]
-    I -.-> Wait["wg.Wait"]
+    M[main] --> F[initFlags]
+    F --> D{flags}
+    D -->|EnableInformer| I[informer.Start]
+    D -->|EnableWorker| W[worker.Start]
+    I -.-> Wait[wg.Wait]
     W -.-> Wait
 ```
 
@@ -171,14 +172,14 @@ They are stitched together by an unbuffered `chan []string`:
 
 ```mermaid
 flowchart LR
-    subgraph InformerPod["Informer Pod"]
+    subgraph InformerPod[Informer Pod]
         direction LR
-        K["Kubernetes API<br/>core/v1 Services"] -->|"watch label app=k-swarm"| R["ServiceReconciler.Reconcile"]
-        R -->|"host.ns:port"| C{{"commChan"}}
-        C --> G["Informer runnable<br/>cached serviceList"]
-        G -->|"JSON"| H["GET /services"]
+        K[Kubernetes API core/v1 Services] -->|watch app=k-swarm| R[ServiceReconciler.Reconcile]
+        R -->|host.ns:port| C[commChan]
+        C --> G[Informer runnable, cached serviceList]
+        G -->|JSON| H[GET /services]
     end
-    Worker["worker pods"] -->|"HTTP"| H
+    Worker[worker pods] -->|HTTP| H
 ```
 
 Notable details:
