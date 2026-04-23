@@ -54,7 +54,11 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&profiling.MemProfileFile, "mem-profile-file", "mem.prof", "file for memory profiling output")
 	rootCmd.PersistentFlags().StringVar(&profiling.TracingFile, "tracing-file", "trace.out", "file for tracing output")
 
-	// manifestDumpCmd flags
+	//---------------------
+	// manifest dump flags
+	//---------------------
+
+	// --stdout flag
 	manifestDumpCmd.Flags().Bool("stdout", false, "Output to stdout")
 
 	//-------------------------
@@ -509,6 +513,11 @@ func multiClusterCompletion(cmd *cobra.Command, args []string, toComplete string
 	return []string{"true", "false"}, cobra.ShellCompDirectiveNoFileComp
 }
 
+// multiClusterIsValid
+func multiClusterIsValid(value string) bool {
+	return value == "true" || value == "false"
+}
+
 //-----------------------------------------------------------------------------
 // logResponsesCompletion
 //-----------------------------------------------------------------------------
@@ -516,6 +525,11 @@ func multiClusterCompletion(cmd *cobra.Command, args []string, toComplete string
 // logResponsesCompletion
 func logResponsesCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 	return []string{"true", "false"}, cobra.ShellCompDirectiveNoFileComp
+}
+
+// logResponsesIsValid
+func logResponsesIsValid(value string) bool {
+	return value == "true" || value == "false"
 }
 
 //-----------------------------------------------------------------------------
