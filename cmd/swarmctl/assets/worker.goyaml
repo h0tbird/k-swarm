@@ -79,7 +79,7 @@ spec:
         - /manager
         env:
         - name: CLUSTER_NAME
-          value: kind-dev
+          value: {{ .ClusterName }}
         - name: POD_NAME
           valueFrom:
             fieldRef:
