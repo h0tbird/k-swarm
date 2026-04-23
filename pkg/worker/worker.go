@@ -110,10 +110,23 @@ func client(ctx context.Context, flags *common.FlagPack) {
 			for _, service := range serviceList {
 				time.Sleep(flags.WorkerRequestInterval)
 				log.Info("sending a request", "service", service)
-				_, err := http.Get(fmt.Sprintf("http://%s/data", service))
+				resp, err := http.Get(fmt.Sprintf("http://%s/data", service))
 				if err != nil {
 					log.Error(err, "failed to send request", "service", service)
 					continue
+				}
+				if flags.WorkerLogResponses {
+					body, err := io.ReadAll(resp.Body)
+					if err != nil {
+						log.Error(err, "failed to read response body", "service", service)
+					} else {
+						log.Info("response received", "service", service, "body", string(body))
+					}
+				} else {
+					_, _ = io.Copy(io.Discard, resp.Body)
+				}
+				if err := resp.Body.Close(); err != nil {
+					log.Error(err, "failed to close response body", "service", service)
 				}
 			}
 		}
@@ -135,7 +148,7 @@ func pollServiceList(ctx context.Context, flags *common.FlagPack, serviceList *[
 		select {
 		case <-ticker.C:
 			log.Info("polling service list", "url", flags.InformerURL+"/services")
-			newServices, err := fetchServices(flags.InformerURL + "/services")
+			newServices, err := fetchServices(flags.InformerURL+"/services", flags.WorkerLogResponses)
 			if err != nil {
 				log.Error(err, "failed to fetch services")
 				continue
@@ -152,7 +165,7 @@ func pollServiceList(ctx context.Context, flags *common.FlagPack, serviceList *[
 // fetchServices fetches the services from the informer
 //-----------------------------------------------------------------------------
 
-func fetchServices(url string) ([]string, error) {
+func fetchServices(url string, logBody bool) ([]string, error) {
 
 	// Get the services
 	resp, err := http.Get(url)
@@ -176,6 +189,11 @@ func fetchServices(url string) ([]string, error) {
 	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
+	}
+
+	// Optionally log the raw response body
+	if logBody {
+		log.Info("services response", "url", url, "body", string(bodyBytes))
 	}
 
 	// Unmarshal the body
