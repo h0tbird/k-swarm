@@ -192,6 +192,9 @@ func init() {
 	// --yes flag
 	manifestInstallCmd.PersistentFlags().Bool("yes", false, "Automatically confirm all prompts with 'yes'.")
 
+	// --dry-run flag
+	manifestInstallCmd.PersistentFlags().Bool("dry-run", false, "Render manifests to stdout without applying them or contacting the cluster.")
+
 	// --multi-cluster flag
 	manifestInstallCmd.PersistentFlags().Bool("multi-cluster", false, "Enable cross-cluster failover for ambient mode: labels the worker and waypoint Services with istio.io/global=true and emits a DestinationRule with locality failover by topology.istio.io/cluster.")
 

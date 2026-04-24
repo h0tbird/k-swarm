@@ -443,6 +443,7 @@ func Install(cmd *cobra.Command, args []string) error {
 	// Get the flags
 	ctxRegex, _ := cmd.Flags().GetString("context")
 	assumeYes, _ := cmd.Flags().GetBool("yes")
+	dryRun, _ := cmd.Flags().GetBool("dry-run")
 
 	// Run the root PersistentPreRunE
 	if err := cmd.Root().PersistentPreRunE(cmd, args); err != nil {
@@ -453,6 +454,15 @@ func Install(cmd *cobra.Command, args []string) error {
 	matches, err := k8sctx.Filter(ctxRegex)
 	if err != nil {
 		return err
+	}
+
+	// In dry-run, skip client init and confirmation.
+	// Use nil entries so loops still run.
+	if dryRun {
+		for _, match := range matches {
+			Contexts[match] = nil
+		}
+		return nil
 	}
 
 	// Print
@@ -512,6 +522,7 @@ func InstallInformer(cmd *cobra.Command, args []string) error {
 	dataplaneMode, _ := cmd.Flags().GetString("dataplane-mode")
 	waypointName, _ := cmd.Flags().GetString("waypoint-name")
 	ingressMode, _ := cmd.Flags().GetString("ingress-mode")
+	dryRun, _ := cmd.Flags().GetBool("dry-run")
 
 	// Set the error prefix
 	cmd.SetErrPrefix("\nError:")
@@ -525,8 +536,10 @@ func InstallInformer(cmd *cobra.Command, args []string) error {
 	// Loop through all contexts
 	for name, context := range Contexts {
 
-		// Print the context
-		fmt.Printf("\n%s\n", name)
+		// Print the context (skipped in dry-run mode to keep stdout pure YAML)
+		if !dryRun {
+			fmt.Printf("\n%s\n", name)
+		}
 
 		// Render the template
 		docs, err := util.RenderTemplate(tmpl, struct {
@@ -554,6 +567,12 @@ func InstallInformer(cmd *cobra.Command, args []string) error {
 
 		// Loop through all yaml documents
 		for _, doc := range docs {
+			if dryRun {
+				if _, err := fmt.Fprintf(cmd.OutOrStdout(), "---\n%s\n", strings.TrimSpace(doc)); err != nil {
+					return err
+				}
+				continue
+			}
 			if err := context.ApplyYaml(doc); err != nil {
 				fmt.Printf("\nError: %s\n", err)
 			}
@@ -601,6 +620,9 @@ func InstallInformerExample() string {
 
   # Expose the informer Service via a dedicated Gateway API Gateway+HTTPRoute.
   swarmctl i --context 'kind-pasta-.*' --dataplane-mode ambient --ingress-mode dedicated
+
+  # Render the informer manifests to stdout without applying them or contacting the cluster.
+  swarmctl i --dry-run | kubectl diff -f -
   `
 }
 
@@ -609,6 +631,9 @@ func InstallInformerExample() string {
 //-----------------------------------------------------------------------------
 
 func InstallInformerTelemetry(cmd *cobra.Command, args []string) error {
+
+	// Get the flags
+	dryRun, _ := cmd.Flags().GetBool("dry-run")
 
 	// Set the error prefix
 	cmd.SetErrPrefix("\nError:")
@@ -622,8 +647,10 @@ func InstallInformerTelemetry(cmd *cobra.Command, args []string) error {
 	// Loop through all contexts
 	for name, context := range Contexts {
 
-		// Print the context
-		fmt.Printf("\n%s\n", name)
+		// Print the context (skipped in dry-run mode to keep stdout pure YAML)
+		if !dryRun {
+			fmt.Printf("\n%s\n", name)
+		}
 
 		// Render the template
 		docs, err := util.RenderTemplate(tmpl, struct {
@@ -639,6 +666,12 @@ func InstallInformerTelemetry(cmd *cobra.Command, args []string) error {
 
 		// Loop through all yaml documents
 		for _, doc := range docs {
+			if dryRun {
+				if _, err := fmt.Fprintf(cmd.OutOrStdout(), "---\n%s\n", strings.TrimSpace(doc)); err != nil {
+					return err
+				}
+				continue
+			}
 			if err := context.ApplyYaml(doc); err != nil {
 				fmt.Printf("\nError: %s\n", err)
 			}
@@ -676,6 +709,7 @@ func InstallWorker(cmd *cobra.Command, args []string) error {
 	ingressMode, _ := cmd.Flags().GetString("ingress-mode")
 	multiCluster, _ := cmd.Flags().GetBool("multi-cluster")
 	logResponses, _ := cmd.Flags().GetBool("log-responses")
+	dryRun, _ := cmd.Flags().GetBool("dry-run")
 
 	// Set the error prefix
 	cmd.SetErrPrefix("\nError:")
@@ -695,23 +729,32 @@ func InstallWorker(cmd *cobra.Command, args []string) error {
 	// Loop through all contexts
 	for name, context := range Contexts {
 
-		// Print the context
-		fmt.Printf("\n%s\n", name)
+		// Print the context (skipped in dry-run mode to keep stdout pure YAML)
+		if !dryRun {
+			fmt.Printf("\n%s\n", name)
+		}
 
-		// Determine cluster domain: flag override or auto-detect from CoreDNS
+		// Determine cluster domain: flag override or auto-detect from CoreDNS.
+		// In dry-run mode there is no live client, so default to cluster.local.
 		clusterDomain := clusterDomainFlag
 		if clusterDomain == "" {
-			clusterDomain = context.GetClusterDomain(cmd.Context())
+			if dryRun {
+				clusterDomain = "cluster.local"
+			} else {
+				clusterDomain = context.GetClusterDomain(cmd.Context())
+			}
 		}
 
 		// Derive cluster name by stripping the kind- prefix (no-op for
 		// non-kind contexts).
-		clusterName := strings.TrimPrefix(context.Name, "kind-")
+		clusterName := strings.TrimPrefix(name, "kind-")
 
 		// Loop trough all services
 		for i := start; i <= end; i++ {
 
-			fmt.Printf("\n")
+			if !dryRun {
+				fmt.Printf("\n")
+			}
 
 			namespace := fmt.Sprintf("%s-n%d", dataplaneMode, i)
 
@@ -751,6 +794,12 @@ func InstallWorker(cmd *cobra.Command, args []string) error {
 
 			// Loop through all yaml documents
 			for _, doc := range docs {
+				if dryRun {
+					if _, err := fmt.Fprintf(cmd.OutOrStdout(), "---\n%s\n", strings.TrimSpace(doc)); err != nil {
+						return err
+					}
+					continue
+				}
 				if err := context.ApplyYaml(doc); err != nil {
 					fmt.Printf("\nError: %s\n", err)
 				}
@@ -805,6 +854,9 @@ func InstallWorkerExample() string {
   # and waypoint Services with istio.io/global=true and emits a DestinationRule
   # with locality failover by topology.istio.io/cluster (ambient-only).
   swarmctl w 1:1 --dataplane-mode ambient --context 'kind-pasta-.*' --multi-cluster
+
+  # Render the worker manifests to stdout without applying them or contacting the cluster.
+  swarmctl w 1:1 --dataplane-mode ambient --dry-run | kubectl diff -f -
   `
 }
 
@@ -816,6 +868,7 @@ func InstallWorkerTelemetry(cmd *cobra.Command, args []string) error {
 
 	// Get the flags
 	dataplaneMode, _ := cmd.Flags().GetString("dataplane-mode")
+	dryRun, _ := cmd.Flags().GetBool("dry-run")
 
 	// Set the error prefix
 	cmd.SetErrPrefix("\nError:")
@@ -835,13 +888,17 @@ func InstallWorkerTelemetry(cmd *cobra.Command, args []string) error {
 	// Loop through all contexts
 	for name, context := range Contexts {
 
-		// Print the context
-		fmt.Printf("\n%s\n", name)
+		// Print the context (skipped in dry-run mode to keep stdout pure YAML)
+		if !dryRun {
+			fmt.Printf("\n%s\n", name)
+		}
 
 		// Loop trough all services
 		for i := start; i <= end; i++ {
 
-			fmt.Printf("\n")
+			if !dryRun {
+				fmt.Printf("\n")
+			}
 
 			// Render the template
 			docs, err := util.RenderTemplate(tmpl, struct {
@@ -857,6 +914,12 @@ func InstallWorkerTelemetry(cmd *cobra.Command, args []string) error {
 
 			// Loop through all yaml documents
 			for _, doc := range docs {
+				if dryRun {
+					if _, err := fmt.Fprintf(cmd.OutOrStdout(), "---\n%s\n", strings.TrimSpace(doc)); err != nil {
+						return err
+					}
+					continue
+				}
 				if err := context.ApplyYaml(doc); err != nil {
 					fmt.Printf("\nError: %s\n", err)
 				}
