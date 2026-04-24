@@ -526,7 +526,7 @@ func InstallInformer(cmd *cobra.Command, args []string) error {
 	for name, context := range Contexts {
 
 		// Print the context
-		fmt.Printf("\n%s\n\n", name)
+		fmt.Printf("\n%s\n", name)
 
 		// Render the template
 		docs, err := util.RenderTemplate(tmpl, struct {
@@ -623,7 +623,7 @@ func InstallInformerTelemetry(cmd *cobra.Command, args []string) error {
 	for name, context := range Contexts {
 
 		// Print the context
-		fmt.Printf("\n%s\n\n", name)
+		fmt.Printf("\n%s\n", name)
 
 		// Render the template
 		docs, err := util.RenderTemplate(tmpl, struct {
@@ -696,7 +696,7 @@ func InstallWorker(cmd *cobra.Command, args []string) error {
 	for name, context := range Contexts {
 
 		// Print the context
-		fmt.Printf("\n%s\n\n", name)
+		fmt.Printf("\n%s\n", name)
 
 		// Determine cluster domain: flag override or auto-detect from CoreDNS
 		clusterDomain := clusterDomainFlag
@@ -836,7 +836,7 @@ func InstallWorkerTelemetry(cmd *cobra.Command, args []string) error {
 	for name, context := range Contexts {
 
 		// Print the context
-		fmt.Printf("\n%s\n\n", name)
+		fmt.Printf("\n%s\n", name)
 
 		// Loop trough all services
 		for i := start; i <= end; i++ {
