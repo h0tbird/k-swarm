@@ -1,0 +1,273 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    {{- if .IstioRevision }}
+    istio.io/rev: {{ .IstioRevision }}
+    {{- end }}
+    istio.io/dataplane-mode: ambient
+    {{- if .IstioRevision }}
+    istio-injection: disabled
+    {{- end }}
+  name: {{ .Namespace }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: k-swarm
+    istio.io/use-waypoint: {{ .WaypointName }}
+    {{- if .MultiCluster }}
+    istio.io/global: "true"
+    {{- end }}
+  name: worker
+  namespace: {{ .Namespace }}
+spec:
+  ports:
+  - name: http
+    port: 80
+    protocol: TCP
+    targetPort: worker
+  selector:
+    k-swarm/worker: enabled
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: worker
+  namespace: {{ .Namespace }}
+spec:
+  replicas: {{ .Replicas }}
+  selector:
+    matchLabels:
+      k-swarm/worker: enabled
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: manager
+      labels:
+        app: worker
+        version: v1
+        k-swarm/worker: enabled
+    spec:
+      containers:
+      - args:
+        - --leader-elect=false
+        - --enable-informer=false
+        - --enable-worker=true
+        - --worker-bind-address=:8082
+        - --informer-url=http://informer.informer
+        - --informer-poll-interval=60s
+        - --worker-request-interval=2s
+        {{- if .LogResponses }}
+        - --worker-log-responses
+        {{- end }}
+        command:
+        - /manager
+        env:
+        - name: CLUSTER_NAME
+          value: {{ .ClusterName }}
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        image: ghcr.io/h0tbird/k-swarm:{{ if .ImageTag }}{{ .ImageTag }}{{ else }}v{{ .Version }}{{ end }}
+        {{- if .ImageTag}}
+        imagePullPolicy: Always
+        {{- end}}
+        name: manager
+        ports:
+        - containerPort: 8082
+          name: worker
+          protocol: TCP
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+      {{- if .NodeSelector}}
+      nodeSelector: {{.NodeSelector}}
+      {{- end}}
+      securityContext:
+        runAsNonRoot: true
+      serviceAccountName: default
+      terminationGracePeriodSeconds: 10
+---
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: worker
+  namespace: {{ .Namespace }}
+spec:
+  {{- if .MultiCluster }}
+  targetRefs:
+  - kind: Gateway
+    group: gateway.networking.k8s.io
+    name: {{ .WaypointName }}
+  {{- else }}
+  targetRefs:
+  - kind: Service
+    group: ""
+    name: worker
+  {{- end }}
+  action: ALLOW
+  rules:
+  - to:
+    - operation:
+        methods: ["GET"]
+        paths: ["/data"]
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: worker
+  namespace: {{ .Namespace }}
+spec:
+  duration: 24h0m0s
+  renewBefore: 12h0m0s
+  secretName: worker-{{ .Namespace }}
+  dnsNames:
+  - '{{ .Namespace }}.demo.lab'
+  issuerRef:
+    group: cert-manager.io
+    kind: ClusterIssuer
+    name: ingress-ca
+  revisionHistoryLimit: 2
+  secretTemplate:
+    annotations:
+      replicator.v1.mittwald.de/replicate-to: 'istio-system'
+  privateKey:
+    rotationPolicy: Always
+{{- if eq .IngressMode "shared" }}
+---
+apiVersion: networking.istio.io/v1
+kind: Gateway
+metadata:
+  name: worker
+  namespace: {{ .Namespace }}
+spec:
+  selector:
+    istio: nsgw
+  servers:
+  - hosts:
+    - '{{ .Namespace }}.demo.lab'
+    port:
+      name: https
+      number: 443
+      protocol: HTTPS
+    tls:
+      mode: SIMPLE
+      credentialName: worker-{{ .Namespace }}
+---
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: worker
+  namespace: {{ .Namespace }}
+spec:
+  gateways:
+  - worker
+  hosts:
+  - '{{ .Namespace }}.demo.lab'
+  http:
+  - match:
+    - port: 443
+    route:
+    - destination:
+        host: 'worker.{{ .Namespace }}.svc.{{ .ClusterDomain }}'
+        port:
+          number: 80
+      weight: 100
+{{- else if eq .IngressMode "dedicated" }}
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: worker-ingress
+  namespace: {{ .Namespace }}
+spec:
+  gatewayClassName: istio
+  listeners:
+  - name: https
+    hostname: '{{ .Namespace }}.demo.lab'
+    port: 443
+    protocol: HTTPS
+    tls:
+      mode: Terminate
+      certificateRefs:
+      - kind: Secret
+        name: worker-{{ .Namespace }}
+    allowedRoutes:
+      namespaces:
+        from: Same
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: worker
+  namespace: {{ .Namespace }}
+spec:
+  parentRefs:
+  - name: worker-ingress
+  hostnames:
+  - '{{ .Namespace }}.demo.lab'
+  rules:
+  - backendRefs:
+    - name: worker
+      port: 80
+{{- end }}
+{{- if .MultiCluster }}
+---
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: worker
+  namespace: {{ .Namespace }}
+spec:
+  host: worker
+  trafficPolicy:
+    outlierDetection:
+      consecutive5xxErrors: 1
+      interval: 1s
+      baseEjectionTime: 1m
+    loadBalancer:
+      simple: ROUND_ROBIN
+      localityLbSetting:
+        enabled: false # Disable locality load balancing to force failover
+        failoverPriority:
+          - topology.istio.io/cluster
+{{- end }}
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: {{ .WaypointName }}
+  namespace: {{ .Namespace }}
+  labels:
+    istio.io/waypoint-for: service
+spec:
+  gatewayClassName: istio-waypoint
+  {{- if .MultiCluster }}
+  infrastructure:
+    # Propagated by Istio onto the generated waypoint Service so that
+    # other clusters discover it as a global service.
+    labels:
+      istio.io/global: "true"
+  {{- end }}
+  listeners:
+  - name: mesh
+    port: 15008
+    protocol: HBONE

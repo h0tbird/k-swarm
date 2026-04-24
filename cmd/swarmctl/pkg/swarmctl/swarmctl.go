@@ -8,11 +8,9 @@ import (
 
 	// Stdlib
 	"bufio"
-	"bytes"
 	"embed"
 	"errors"
 	"fmt"
-	"io"
 	"os"
 	"strings"
 
@@ -55,54 +53,42 @@ func Root(cmd *cobra.Command, args []string) error {
 }
 
 //-----------------------------------------------------------------------------
-// Dump writes the informer and/or worker template to ~/.swarmctl
+// Dump writes every embedded asset template to ~/.swarmctl
 //-----------------------------------------------------------------------------
 
 func Dump(cmd *cobra.Command, args []string) error {
 
-	// Get the flags
-	stdout, _ := cmd.Flags().GetBool("stdout")
-
 	// Set the error prefix
 	cmd.SetErrPrefix("\nError:")
 
-	// No args? Default to both
-	if len(args) == 0 {
-		args = []string{"informer", "worker"}
-	}
-
 	// Create ~/.swarmctl
-	if !stdout {
-		if err := os.MkdirAll(util.SwarmDir, 0755); err != nil {
-			return fmt.Errorf("error creating ~/.swarmctl: %w", err)
-		}
+	if err := os.MkdirAll(util.SwarmDir, 0755); err != nil {
+		return fmt.Errorf("error creating ~/.swarmctl: %w", err)
 	}
 
-	// Loop through the components
-	for _, component := range args {
+	// List every file under the embedded assets/ directory.
+	entries, err := Assets.ReadDir("assets")
+	if err != nil {
+		return fmt.Errorf("error reading embedded assets directory: %w", err)
+	}
 
-		// Open the file from the embedded file system
-		fileData, err := Assets.ReadFile(fmt.Sprintf("assets/%s.goyaml", component))
-		if err != nil {
-			return fmt.Errorf("error reading file from embedded FS: %w", err)
-		}
-
-		// Write the content to stdout
-		if stdout {
-			_, err = io.Copy(os.Stdout, bytes.NewReader(fileData))
-			if err != nil {
-				return fmt.Errorf("error writing file data to stdout: %w", err)
-			}
+	// Write each file to ~/.swarmctl/<name>.
+	for _, entry := range entries {
+		if entry.IsDir() {
 			continue
 		}
+		name := entry.Name()
 
-		// Write the contents to ~/.swarmctl/<component>.goyaml
-		if err := os.WriteFile(util.SwarmDir+"/"+component+".goyaml", fileData, 0644); err != nil {
-			return fmt.Errorf("error writing file data to ~/.swarmctl/%s.goyaml: %w", component, err)
+		fileData, err := Assets.ReadFile("assets/" + name)
+		if err != nil {
+			return fmt.Errorf("error reading %s from embedded FS: %w", name, err)
 		}
 
-		// Print the success message
-		cmd.Printf("Successfully wrote ~/.swarmctl/%s.goyaml\n", component)
+		if err := os.WriteFile(util.SwarmDir+"/"+name, fileData, 0644); err != nil {
+			return fmt.Errorf("error writing ~/.swarmctl/%s: %w", name, err)
+		}
+
+		cmd.Printf("Successfully wrote ~/.swarmctl/%s\n", name)
 	}
 
 	return nil
@@ -110,14 +96,11 @@ func Dump(cmd *cobra.Command, args []string) error {
 
 func DumpExample() string {
 	return `
-  # Dump the informer and worker templates to ~/.swarmctl
+  # Dump every embedded template to ~/.swarmctl
   swarmctl dump
 
-  # Dump only the informer template to ~/.swarmctl
-  swarmctl d informer
-
-  # Dump the informer and worker templates to stdout
-  swarmctl d --stdout
+  # Same using the command alias
+  swarmctl d
   `
 }
 
@@ -214,8 +197,8 @@ func InstallInformer(cmd *cobra.Command, args []string) error {
 	// Set the error prefix
 	cmd.SetErrPrefix("\nError:")
 
-	// Parse the template
-	tmpl, err := util.ParseTemplate(Assets, "informer")
+	// Parse the mode-specific template
+	tmpl, err := util.ParseTemplate(Assets, "informer-"+dataplaneMode)
 	if err != nil {
 		return err
 	}
@@ -401,8 +384,8 @@ func InstallWorker(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	// Parse the template
-	tmpl, err := util.ParseTemplate(Assets, "worker")
+	// Parse the mode-specific template
+	tmpl, err := util.ParseTemplate(Assets, "worker-"+dataplaneMode)
 	if err != nil {
 		return err
 	}

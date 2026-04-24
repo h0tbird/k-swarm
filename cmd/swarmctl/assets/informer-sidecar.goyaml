@@ -5,13 +5,7 @@ metadata:
   labels:
     {{- if .IstioRevision }}
     istio.io/rev: {{ .IstioRevision }}
-    {{- end }}
-    {{- if eq .DataplaneMode "ambient" }}
-    istio.io/dataplane-mode: ambient
-    {{- if .IstioRevision }}
-    istio-injection: disabled
-    {{- end }}
-    {{- else if not .IstioRevision }}
+    {{- else }}
     istio-injection: enabled
     {{- end }}
   name: informer
@@ -203,10 +197,6 @@ kind: Service
 metadata:
   name: informer
   namespace: informer
-  {{- if eq .DataplaneMode "ambient" }}
-  labels:
-    istio.io/use-waypoint: {{ .WaypointName }}
-  {{- end }}
 spec:
   ports:
   - name: http
@@ -230,12 +220,10 @@ spec:
     metadata:
       annotations:
         kubectl.kubernetes.io/default-container: manager
-        {{- if ne .DataplaneMode "ambient" }}
         sidecar.istio.io/proxyCPU: 50m
         sidecar.istio.io/proxyCPULimit: 500m
         sidecar.istio.io/proxyMemory: 64Mi
         sidecar.istio.io/proxyMemoryLimit: 512Mi
-        {{- end }}
       labels:
         app: informer
         version: v1
@@ -297,7 +285,6 @@ spec:
         runAsNonRoot: true
       serviceAccountName: controller-manager
       terminationGracePeriodSeconds: 10
-{{- if ne .DataplaneMode "ambient" }}
 ---
 apiVersion: security.istio.io/v1
 kind: PeerAuthentication
@@ -310,7 +297,6 @@ spec:
       k-swarm/informer: enabled
   mtls:
     mode: STRICT
-{{- end }}
 ---
 apiVersion: security.istio.io/v1
 kind: AuthorizationPolicy
@@ -318,38 +304,15 @@ metadata:
   name: informer
   namespace: informer
 spec:
-  {{- if eq .DataplaneMode "ambient" }}
-  targetRefs:
-  - kind: Service
-    group: ""
-    name: informer
-  {{- else }}
   selector:
     matchLabels:
       k-swarm/informer: enabled
-  {{- end }}
   action: ALLOW
   rules:
   - to:
     - operation:
         methods: ["GET"]
         paths: ["/services"]
-{{- if eq .DataplaneMode "ambient" }}
----
-apiVersion: gateway.networking.k8s.io/v1
-kind: Gateway
-metadata:
-  name: {{ .WaypointName }}
-  namespace: informer
-  labels:
-    istio.io/waypoint-for: service
-spec:
-  gatewayClassName: istio-waypoint
-  listeners:
-  - name: mesh
-    port: 15008
-    protocol: HBONE
-{{- end }}
 {{- if eq .IngressMode "shared" }}
 ---
 apiVersion: networking.istio.io/v1
