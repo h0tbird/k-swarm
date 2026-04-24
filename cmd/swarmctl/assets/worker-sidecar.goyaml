@@ -5,13 +5,7 @@ metadata:
   labels:
     {{- if .IstioRevision }}
     istio.io/rev: {{ .IstioRevision }}
-    {{- end }}
-    {{- if eq .DataplaneMode "ambient" }}
-    istio.io/dataplane-mode: ambient
-    {{- if .IstioRevision }}
-    istio-injection: disabled
-    {{- end }}
-    {{- else if not .IstioRevision }}
+    {{- else }}
     istio-injection: enabled
     {{- end }}
   name: {{ .Namespace }}
@@ -21,12 +15,6 @@ kind: Service
 metadata:
   labels:
     app: k-swarm
-    {{- if eq .DataplaneMode "ambient" }}
-    istio.io/use-waypoint: {{ .WaypointName }}
-    {{- if .MultiCluster }}
-    istio.io/global: "true"
-    {{- end }}
-    {{- end }}
   name: worker
   namespace: {{ .Namespace }}
 spec:
@@ -52,12 +40,10 @@ spec:
     metadata:
       annotations:
         kubectl.kubernetes.io/default-container: manager
-        {{- if ne .DataplaneMode "ambient" }}
         sidecar.istio.io/proxyCPU: 50m
         sidecar.istio.io/proxyCPULimit: 500m
         sidecar.istio.io/proxyMemory: 64Mi
         sidecar.istio.io/proxyMemoryLimit: 512Mi
-        {{- end }}
       labels:
         app: worker
         version: v1
@@ -117,7 +103,6 @@ spec:
         runAsNonRoot: true
       serviceAccountName: default
       terminationGracePeriodSeconds: 10
-{{- if ne .DataplaneMode "ambient" }}
 ---
 apiVersion: networking.istio.io/v1
 kind: DestinationRule
@@ -150,7 +135,6 @@ spec:
       k-swarm/worker: enabled
   mtls:
     mode: STRICT
-{{- end }}
 ---
 apiVersion: security.istio.io/v1
 kind: AuthorizationPolicy
@@ -158,21 +142,9 @@ metadata:
   name: worker
   namespace: {{ .Namespace }}
 spec:
-  {{- if and (eq .DataplaneMode "ambient") .MultiCluster }}
-  targetRefs:
-  - kind: Gateway
-    group: gateway.networking.k8s.io
-    name: {{ .WaypointName }}
-  {{- else if eq .DataplaneMode "ambient" }}
-  targetRefs:
-  - kind: Service
-    group: ""
-    name: worker
-  {{- else }}
   selector:
     matchLabels:
       k-swarm/worker: enabled
-  {{- end }}
   action: ALLOW
   rules:
   - to:
@@ -278,48 +250,4 @@ spec:
   - backendRefs:
     - name: worker
       port: 80
-{{- end }}
-{{- if eq .DataplaneMode "ambient" }}
-{{- if .MultiCluster }}
----
-apiVersion: networking.istio.io/v1
-kind: DestinationRule
-metadata:
-  name: worker
-  namespace: {{ .Namespace }}
-spec:
-  host: worker
-  trafficPolicy:
-    outlierDetection:
-      consecutive5xxErrors: 1
-      interval: 1s
-      baseEjectionTime: 1m
-    loadBalancer:
-      simple: ROUND_ROBIN
-      localityLbSetting:
-        enabled: false # Disable locality load balancing to force failover
-        failoverPriority:
-          - topology.istio.io/cluster
-{{- end }}
----
-apiVersion: gateway.networking.k8s.io/v1
-kind: Gateway
-metadata:
-  name: {{ .WaypointName }}
-  namespace: {{ .Namespace }}
-  labels:
-    istio.io/waypoint-for: service
-spec:
-  gatewayClassName: istio-waypoint
-  {{- if .MultiCluster }}
-  infrastructure:
-    # Propagated by Istio onto the generated waypoint Service so that
-    # other clusters discover it as a global service.
-    labels:
-      istio.io/global: "true"
-  {{- end }}
-  listeners:
-  - name: mesh
-    port: 15008
-    protocol: HBONE
 {{- end }}

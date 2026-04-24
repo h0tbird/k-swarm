@@ -97,7 +97,10 @@ Key packages:
   per-kubeconfig-context wrapper holding a REST config plus discovery and
   dynamic clients (used for SSA).
 - [cmd/swarmctl/assets/](../cmd/swarmctl/assets/) — embedded `*.goyaml`
-  templates: `informer.goyaml`, `worker.goyaml` and `telemetry.goyaml`.
+  templates: `informer-sidecar.goyaml`, `informer-ambient.goyaml`,
+  `worker-sidecar.goyaml`, `worker-ambient.goyaml` and `telemetry.goyaml`.
+  The informer/worker templates are split per `--dataplane-mode` so each
+  file contains only the manifests relevant to one Istio dataplane mode.
 - [cmd/swarmctl/pkg/profiling/](../cmd/swarmctl/pkg/profiling/) — opt-in CPU,
   memory and trace profiling toggled by global `--cpu-profile`,
   `--mem-profile` and `--tracing` flags.
@@ -152,7 +155,7 @@ sequenceDiagram
     SC-->>User: list matched contexts, prompt y/N
     User-->>SC: y
     loop for each context
-        SC->>SC: render worker.goyaml for i in 1..5 (namespace sidecar-nN)
+        SC->>SC: render worker-sidecar.goyaml for i in 1..5 (namespace sidecar-nN)
         SC->>API: server-side apply manifests (dynamic client)
     end
 ```
@@ -162,7 +165,7 @@ renders the worker template into namespace `<dataplane-mode>-n<i>` (e.g.
 `sidecar-n1`, `ambient-n3`). This is how a single `swarmctl w 1:5` produces
 five Deployments / Services across five namespaces.
 
-The rendered `worker.goyaml` is more than just a Deployment + Service. Per
+The rendered `worker-<mode>.goyaml` is more than just a Deployment + Service. Per
 namespace it can emit, depending on flags:
 
 - Always: `Namespace`, worker `Service`, worker `Deployment`,

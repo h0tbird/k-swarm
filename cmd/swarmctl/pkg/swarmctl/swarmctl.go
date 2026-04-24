@@ -78,31 +78,35 @@ func Dump(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	// Loop through the components
+	// Loop through the components and emit a per-mode variant for each.
 	for _, component := range args {
+		for _, mode := range []string{"sidecar", "ambient"} {
 
-		// Open the file from the embedded file system
-		fileData, err := Assets.ReadFile(fmt.Sprintf("assets/%s.goyaml", component))
-		if err != nil {
-			return fmt.Errorf("error reading file from embedded FS: %w", err)
-		}
+			name := component + "-" + mode
 
-		// Write the content to stdout
-		if stdout {
-			_, err = io.Copy(os.Stdout, bytes.NewReader(fileData))
+			// Open the file from the embedded file system
+			fileData, err := Assets.ReadFile(fmt.Sprintf("assets/%s.goyaml", name))
 			if err != nil {
-				return fmt.Errorf("error writing file data to stdout: %w", err)
+				return fmt.Errorf("error reading file from embedded FS: %w", err)
 			}
-			continue
-		}
 
-		// Write the contents to ~/.swarmctl/<component>.goyaml
-		if err := os.WriteFile(util.SwarmDir+"/"+component+".goyaml", fileData, 0644); err != nil {
-			return fmt.Errorf("error writing file data to ~/.swarmctl/%s.goyaml: %w", component, err)
-		}
+			// Write the content to stdout
+			if stdout {
+				_, err = io.Copy(os.Stdout, bytes.NewReader(fileData))
+				if err != nil {
+					return fmt.Errorf("error writing file data to stdout: %w", err)
+				}
+				continue
+			}
 
-		// Print the success message
-		cmd.Printf("Successfully wrote ~/.swarmctl/%s.goyaml\n", component)
+			// Write the contents to ~/.swarmctl/<component>-<mode>.goyaml
+			if err := os.WriteFile(util.SwarmDir+"/"+name+".goyaml", fileData, 0644); err != nil {
+				return fmt.Errorf("error writing file data to ~/.swarmctl/%s.goyaml: %w", name, err)
+			}
+
+			// Print the success message
+			cmd.Printf("Successfully wrote ~/.swarmctl/%s.goyaml\n", name)
+		}
 	}
 
 	return nil
@@ -214,8 +218,8 @@ func InstallInformer(cmd *cobra.Command, args []string) error {
 	// Set the error prefix
 	cmd.SetErrPrefix("\nError:")
 
-	// Parse the template
-	tmpl, err := util.ParseTemplate(Assets, "informer")
+	// Parse the mode-specific template
+	tmpl, err := util.ParseTemplate(Assets, "informer-"+dataplaneMode)
 	if err != nil {
 		return err
 	}
@@ -401,8 +405,8 @@ func InstallWorker(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	// Parse the template
-	tmpl, err := util.ParseTemplate(Assets, "worker")
+	// Parse the mode-specific template
+	tmpl, err := util.ParseTemplate(Assets, "worker-"+dataplaneMode)
 	if err != nil {
 		return err
 	}
