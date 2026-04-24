@@ -14,6 +14,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -247,6 +248,7 @@ func GenerateInformerTelemetryExample() string {
 func GenerateWorker(cmd *cobra.Command, args []string) error {
 
 	// Get the flags
+	ctxRegex, _ := cmd.Flags().GetString("context")
 	replicas, _ := cmd.Flags().GetInt("replicas")
 	nodeSelector, _ := cmd.Flags().GetString("node-selector")
 	imageTag, _ := cmd.Flags().GetString("image-tag")
@@ -272,44 +274,62 @@ func GenerateWorker(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	// Resolve the kube-context regex to a sorted list of matched names. We
+	// only need the names here (no live client) to derive ClusterName.
+	matches, err := k8sctx.Filter(ctxRegex)
+	if err != nil {
+		return err
+	}
+	sort.Strings(matches)
+
 	// Parse the template
 	tmpl, err := util.ParseTemplate(Assets, "worker")
 	if err != nil {
 		return err
 	}
 
-	// Loop from start to end
-	for i := start; i <= end; i++ {
+	// Loop over each matched context
+	for _, ctxName := range matches {
 
-		// Render the template
-		if err := tmpl.Execute(cmd.OutOrStdout(), struct {
-			Replicas      int
-			Namespace     string
-			NodeSelector  string
-			Version       string
-			ImageTag      string
-			IstioRevision string
-			ClusterDomain string
-			DataplaneMode string
-			WaypointName  string
-			IngressMode   string
-			MultiCluster  bool
-			LogResponses  bool
-		}{
-			Replicas:      replicas,
-			Namespace:     fmt.Sprintf("%s-n%d", dataplaneMode, i),
-			NodeSelector:  nodeSelector,
-			Version:       cmd.Root().Version,
-			ImageTag:      imageTag,
-			IstioRevision: istioRevision,
-			ClusterDomain: clusterDomain,
-			DataplaneMode: dataplaneMode,
-			WaypointName:  waypointName,
-			IngressMode:   ingressMode,
-			MultiCluster:  multiCluster,
-			LogResponses:  logResponses,
-		}); err != nil {
-			return err
+		// Derive cluster name by stripping the kind- prefix (no-op for
+		// non-kind contexts).
+		clusterName := strings.TrimPrefix(ctxName, "kind-")
+
+		// Loop from start to end
+		for i := start; i <= end; i++ {
+
+			// Render the template
+			if err := tmpl.Execute(cmd.OutOrStdout(), struct {
+				Replicas      int
+				Namespace     string
+				NodeSelector  string
+				Version       string
+				ImageTag      string
+				IstioRevision string
+				ClusterDomain string
+				ClusterName   string
+				DataplaneMode string
+				WaypointName  string
+				IngressMode   string
+				MultiCluster  bool
+				LogResponses  bool
+			}{
+				Replicas:      replicas,
+				Namespace:     fmt.Sprintf("%s-n%d", dataplaneMode, i),
+				NodeSelector:  nodeSelector,
+				Version:       cmd.Root().Version,
+				ImageTag:      imageTag,
+				IstioRevision: istioRevision,
+				ClusterDomain: clusterDomain,
+				ClusterName:   clusterName,
+				DataplaneMode: dataplaneMode,
+				WaypointName:  waypointName,
+				IngressMode:   ingressMode,
+				MultiCluster:  multiCluster,
+				LogResponses:  logResponses,
+			}); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -320,33 +340,37 @@ func GenerateWorker(cmd *cobra.Command, args []string) error {
 func GenerateWorkerExample() string {
 	return `
   # Output the generated workers 1 to 1 manifests to stdout
-  # (namespace: sidecar-n1)
-  swarmctl manifest generate worker 1:1 --dataplane-mode sidecar
+  # (namespace: sidecar-n1, CLUSTER_NAME derived from --context).
+  swarmctl manifest generate worker 1:1 --dataplane-mode sidecar --context kind-dev
 
   # Same using command aliases
-  swarmctl m g w 1:1 --dataplane-mode sidecar
+  swarmctl m g w 1:1 --dataplane-mode sidecar --context kind-dev
+
+  # Render manifests for every matching context (one rendered set per context,
+  # each with its own CLUSTER_NAME stripped of the kind- prefix).
+  swarmctl m g w 1:1 --dataplane-mode ambient --context 'kind-pasta-.*'
 
   # Set worker replicas and node selector
-  swarmctl m g w 1:1 --dataplane-mode sidecar --replicas 3 --node-selector '{key1: value1, key2: value2}'
+  swarmctl m g w 1:1 --dataplane-mode sidecar --context kind-dev --replicas 3 --node-selector '{key1: value1, key2: value2}'
 
   # Set worker replicas and Istio revision
-  swarmctl m g w 1:1 --dataplane-mode sidecar --replicas 3 --istio-revision 1-21-1
+  swarmctl m g w 1:1 --dataplane-mode sidecar --context kind-dev --replicas 3 --istio-revision 1-21-1
 
   # Generate the worker manifests for Istio ambient mode
   # (namespace: ambient-n1)
-  swarmctl m g w 1:1 --dataplane-mode ambient
+  swarmctl m g w 1:1 --dataplane-mode ambient --context kind-dev
 
   # Expose the worker Service via the shared istio-system/istio-nsgw gateway
   # (classic Istio Gateway+VirtualService selecting istio: nsgw).
-  swarmctl m g w 1:1 --dataplane-mode sidecar --ingress-mode shared
+  swarmctl m g w 1:1 --dataplane-mode sidecar --context kind-dev --ingress-mode shared
 
   # Expose the worker Service via a dedicated Gateway API Gateway+HTTPRoute.
-  swarmctl m g w 1:1 --dataplane-mode ambient --ingress-mode dedicated
+  swarmctl m g w 1:1 --dataplane-mode ambient --context kind-dev --ingress-mode dedicated
 
   # Enable cross-cluster failover for ambient-mode workers: labels the worker
   # and waypoint Services with istio.io/global=true and emits a DestinationRule
   # with locality failover by topology.istio.io/cluster (ambient-only).
-  swarmctl m g w 1:1 --dataplane-mode ambient --multi-cluster
+  swarmctl m g w 1:1 --dataplane-mode ambient --context kind-dev --multi-cluster
   `
 }
 
@@ -712,6 +736,10 @@ func InstallWorker(cmd *cobra.Command, args []string) error {
 			clusterDomain = context.GetClusterDomain(cmd.Context())
 		}
 
+		// Derive cluster name by stripping the kind- prefix (no-op for
+		// non-kind contexts).
+		clusterName := strings.TrimPrefix(context.Name, "kind-")
+
 		// Loop through all CRDs
 		for _, doc := range util.SplitYAML(bytes.NewBuffer(crds)) {
 			if err := context.ApplyYaml(doc); err != nil {
@@ -735,6 +763,7 @@ func InstallWorker(cmd *cobra.Command, args []string) error {
 				ImageTag      string
 				IstioRevision string
 				ClusterDomain string
+				ClusterName   string
 				DataplaneMode string
 				WaypointName  string
 				IngressMode   string
@@ -748,6 +777,7 @@ func InstallWorker(cmd *cobra.Command, args []string) error {
 				ImageTag:      imageTag,
 				IstioRevision: istioRevision,
 				ClusterDomain: clusterDomain,
+				ClusterName:   clusterName,
 				DataplaneMode: dataplaneMode,
 				WaypointName:  waypointName,
 				IngressMode:   ingressMode,

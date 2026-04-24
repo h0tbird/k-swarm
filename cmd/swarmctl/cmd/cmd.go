@@ -54,8 +54,22 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&profiling.MemProfileFile, "mem-profile-file", "mem.prof", "file for memory profiling output")
 	rootCmd.PersistentFlags().StringVar(&profiling.TracingFile, "tracing-file", "trace.out", "file for tracing output")
 
-	// manifestDumpCmd flags
+	//---------------------
+	// manifest dump flags
+	//---------------------
+
+	// --stdout flag
 	manifestDumpCmd.Flags().Bool("stdout", false, "Output to stdout")
+
+	//-------------------------
+	// manifest generate flags
+	//-------------------------
+
+	// --context flag
+	manifestGenerateCmd.PersistentFlags().String("context", "", "regex to match the context name.")
+	if err := manifestGenerateCmd.RegisterFlagCompletionFunc("context", contextCompletion); err != nil {
+		panic(err)
+	}
 
 	// --replicas flag
 	manifestGenerateCmd.PersistentFlags().Int("replicas", 1, "Number of replicas to deploy.")
@@ -87,7 +101,7 @@ func init() {
 		panic(err)
 	}
 
-	// --dataplane-mode flag (required, no default)
+	// --dataplane-mode flag
 	manifestGenerateCmd.PersistentFlags().String("dataplane-mode", "", "Istio dataplane mode: sidecar or ambient (required).")
 	if err := manifestGenerateCmd.RegisterFlagCompletionFunc("dataplane-mode", dataplaneModeCompletion); err != nil {
 		panic(err)
@@ -108,20 +122,15 @@ func init() {
 		panic(err)
 	}
 
-	// --multi-cluster flag (ambient-only)
+	// --multi-cluster flag
 	manifestGenerateCmd.PersistentFlags().Bool("multi-cluster", false, "Enable cross-cluster failover for ambient mode: labels the worker and waypoint Services with istio.io/global=true and emits a DestinationRule with locality failover by topology.istio.io/cluster.")
-	if err := manifestGenerateCmd.RegisterFlagCompletionFunc("multi-cluster", multiClusterCompletion); err != nil {
-		panic(err)
-	}
 
-	// --log-responses flag (worker-only)
+	// --log-responses flag
 	manifestGenerateCmd.PersistentFlags().Bool("log-responses", false, "If set, the worker logs the raw JSON response bodies received from the informer's /services endpoint and from peer workers' /data endpoint.")
-	if err := manifestGenerateCmd.RegisterFlagCompletionFunc("log-responses", logResponsesCompletion); err != nil {
-		panic(err)
-	}
 
-	// --yes flag
-	manifestInstallCmd.PersistentFlags().Bool("yes", false, "Automatically confirm all prompts with 'yes'.")
+	//------------------------
+	// manifest install flags
+	//------------------------
 
 	// --context flag
 	manifestInstallCmd.PersistentFlags().String("context", "", "regex to match the context name.")
@@ -159,7 +168,7 @@ func init() {
 		panic(err)
 	}
 
-	// --dataplane-mode flag (required, no default)
+	// --dataplane-mode flag
 	manifestInstallCmd.PersistentFlags().String("dataplane-mode", "", "Istio dataplane mode: sidecar or ambient (required).")
 	if err := manifestInstallCmd.RegisterFlagCompletionFunc("dataplane-mode", dataplaneModeCompletion); err != nil {
 		panic(err)
@@ -180,17 +189,14 @@ func init() {
 		panic(err)
 	}
 
-	// --multi-cluster flag (ambient-only)
-	manifestInstallCmd.PersistentFlags().Bool("multi-cluster", false, "Enable cross-cluster failover for ambient mode: labels the worker and waypoint Services with istio.io/global=true and emits a DestinationRule with locality failover by topology.istio.io/cluster.")
-	if err := manifestInstallCmd.RegisterFlagCompletionFunc("multi-cluster", multiClusterCompletion); err != nil {
-		panic(err)
-	}
+	// --yes flag
+	manifestInstallCmd.PersistentFlags().Bool("yes", false, "Automatically confirm all prompts with 'yes'.")
 
-	// --log-responses flag (worker-only)
+	// --multi-cluster flag
+	manifestInstallCmd.PersistentFlags().Bool("multi-cluster", false, "Enable cross-cluster failover for ambient mode: labels the worker and waypoint Services with istio.io/global=true and emits a DestinationRule with locality failover by topology.istio.io/cluster.")
+
+	// --log-responses flag
 	manifestInstallCmd.PersistentFlags().Bool("log-responses", false, "If set, the worker logs the raw JSON response bodies received from the informer's /services endpoint and from peer workers' /data endpoint.")
-	if err := manifestInstallCmd.RegisterFlagCompletionFunc("log-responses", logResponsesCompletion); err != nil {
-		panic(err)
-	}
 }
 
 //-----------------------------------------------------------------------------
@@ -487,61 +493,43 @@ func ingressModeIsValid(value string) bool {
 }
 
 //-----------------------------------------------------------------------------
-// multiCluster
-//-----------------------------------------------------------------------------
-
-// multiClusterCompletion
-func multiClusterCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-	return []string{"true", "false"}, cobra.ShellCompDirectiveNoFileComp
-}
-
-//-----------------------------------------------------------------------------
-// logResponsesCompletion
-//-----------------------------------------------------------------------------
-
-// logResponsesCompletion
-func logResponsesCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-	return []string{"true", "false"}, cobra.ShellCompDirectiveNoFileComp
-}
-
-//-----------------------------------------------------------------------------
 // validateFlags
 //-----------------------------------------------------------------------------
 
 func validateFlags(cmd *cobra.Command, args []string) error {
 
 	if cmd.Flags().Changed("context") {
-		if valid := contextIsValid(); !valid {
+		if !contextIsValid() {
 			return errors.New("invalid context")
 		}
 	}
 
 	if cmd.Flags().Changed("replicas") {
-		if valid := replicasIsValid(); !valid {
+		if !replicasIsValid() {
 			return errors.New("invalid replicas")
 		}
 	}
 
 	if cmd.Flags().Changed("node-selector") {
-		if valid := nodeSelectorIsValid(); !valid {
+		if !nodeSelectorIsValid() {
 			return errors.New("invalid node-selector")
 		}
 	}
 
 	if cmd.Flags().Changed("image-tag") {
-		if valid := imageTagIsValid(); !valid {
+		if !imageTagIsValid() {
 			return errors.New("invalid image-tag")
 		}
 	}
 
 	if cmd.Flags().Changed("istio-revision") {
-		if valid := istioRevisionIsValid(); !valid {
+		if !istioRevisionIsValid() {
 			return errors.New("invalid istio-revision")
 		}
 	}
 
 	if cmd.Flags().Changed("cluster-domain") {
-		if valid := clusterDomainIsValid(); !valid {
+		if !clusterDomainIsValid() {
 			return errors.New("invalid cluster-domain")
 		}
 	}
@@ -564,15 +552,6 @@ func validateFlags(cmd *cobra.Command, args []string) error {
 		value, _ := cmd.Flags().GetString("ingress-mode")
 		if !ingressModeIsValid(value) {
 			return errors.New("invalid ingress-mode (must be 'none', 'shared' or 'dedicated')")
-		}
-	}
-
-	// --multi-cluster requires --dataplane-mode=ambient
-	if cmd.Flags().Changed("multi-cluster") {
-		multiCluster, _ := cmd.Flags().GetBool("multi-cluster")
-		dataplaneMode, _ := cmd.Flags().GetString("dataplane-mode")
-		if multiCluster && dataplaneMode != "ambient" {
-			return errors.New("--multi-cluster requires --dataplane-mode=ambient")
 		}
 	}
 
