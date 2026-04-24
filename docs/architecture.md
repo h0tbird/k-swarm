@@ -91,7 +91,7 @@ Key packages:
 - [cmd/swarmctl/cmd/cmd.go](../cmd/swarmctl/cmd/cmd.go) — wires the Cobra
   command tree and flags.
 - [cmd/swarmctl/pkg/swarmctl/swarmctl.go](../cmd/swarmctl/pkg/swarmctl/swarmctl.go) —
-  `Generate*` and `Install*` handlers; renders templates and drives the apply
+  `Install*` handlers; renders templates and drives the apply
   loop.
 - [cmd/swarmctl/pkg/k8sctx/k8sctx.go](../cmd/swarmctl/pkg/k8sctx/k8sctx.go) —
   per-kubeconfig-context wrapper holding a REST config plus discovery and
@@ -105,12 +105,7 @@ Key packages:
 swarmctl
 ├── manifest (m)
 │   ├── dump (d)                          # write embedded templates to ~/.swarmctl
-│   ├── generate (g)                      # render to stdout
-│   │   ├── informer (i)
-│   │   │   └── telemetry (t) on|off
-│   │   └── worker (w) <start:end>
-│   │       └── telemetry (t) on|off
-│   └── install (i)                       # render + server-side apply
+│   └── install (i)                       # render + server-side apply (use --dry-run to render to stdout)
 │       ├── informer (i)
 │       │   └── telemetry (t) on|off
 │       └── worker (w) <start:end>
@@ -298,7 +293,7 @@ sequenceDiagram
 
 - **Add a CLI flag / template knob** → start in
   [cmd/swarmctl/cmd/cmd.go](../cmd/swarmctl/cmd/cmd.go) (register the flag),
-  then plumb it through the `Generate*` handler in
+  then plumb it through the `Install*` handler in
   [cmd/swarmctl/pkg/swarmctl/swarmctl.go](../cmd/swarmctl/pkg/swarmctl/swarmctl.go),
   and finally consume it in the matching template under
   [cmd/swarmctl/assets/](../cmd/swarmctl/assets/).
