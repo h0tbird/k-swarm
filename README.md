@@ -42,14 +42,6 @@ Download all the `Makefile` tooling to `./bin/`:
 make tooling
 ```
 
-Upgrade the telemetry CRD:
-```
-make kind-create
-istioctl --context kind-dev install --set profile=demo -y
-k --context kind-dev get crd telemetries.telemetry.istio.io -o yaml > cmd/swarmctl/assets/crds.yaml
-make kind-delete
-```
-
 Bring up a local dev environment:
 ```
 make tilt-up
