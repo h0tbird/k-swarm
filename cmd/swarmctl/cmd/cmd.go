@@ -32,8 +32,7 @@ var version = "0.0.0"
 func init() {
 
 	// Add commands
-	rootCmd.AddCommand(dumpCmd, informerCmd, workerCmd)
-	informerCmd.AddCommand(informerTelemetryCmd)
+	rootCmd.AddCommand(dumpCmd, workerCmd)
 	workerCmd.AddCommand(workerTelemetryCmd)
 
 	// Profiling flags
@@ -44,14 +43,14 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&profiling.MemProfileFile, "mem-profile-file", "mem.prof", "file for memory profiling output")
 	rootCmd.PersistentFlags().StringVar(&profiling.TracingFile, "tracing-file", "trace.out", "file for tracing output")
 
-	//---------------------------
-	// informer and worker flags
-	//---------------------------
+	//----------------
+	// worker flags
+	//----------------
 
-	// Registered separately on informerCmd and workerCmd so they don't leak
-	// into `swarmctl --help` or `swarmctl dump --help`. Telemetry subcommands
-	// inherit them via their parent.
-	for _, c := range []*cobra.Command{informerCmd, workerCmd} {
+	// Registered separately on workerCmd so they don't leak
+	// into `swarmctl --help` or `swarmctl dump --help`. Telemetry subcommand
+	// inherits them via its parent.
+	for _, c := range []*cobra.Command{workerCmd} {
 
 		// --context flag
 		c.PersistentFlags().String("context", "", "regex to match the context name.")
@@ -120,7 +119,7 @@ func init() {
 		c.PersistentFlags().Bool("multi-cluster", false, "Enable cross-cluster failover for ambient mode: labels the peer and waypoint Services with istio.io/global=true and emits a DestinationRule with locality failover by topology.istio.io/cluster.")
 
 		// --log-responses flag
-		c.PersistentFlags().Bool("log-responses", false, "If set, the worker logs the raw JSON response bodies received from the informer's /services endpoint and from peer pods' /data endpoint.")
+		c.PersistentFlags().Bool("log-responses", false, "If set, the worker logs the raw JSON response bodies received from peer pods' /data endpoint.")
 	}
 }
 
@@ -152,30 +151,6 @@ var dumpCmd = &cobra.Command{
 	Aliases:      []string{"d"},
 	Args:         cobra.NoArgs,
 	RunE:         swarmctl.Dump,
-}
-
-var informerCmd = &cobra.Command{
-	Use:               "informer",
-	Short:             "Installs the informer's manifests.",
-	SilenceUsage:      true,
-	Example:           swarmctl.InstallInformerExample(),
-	Aliases:           []string{"i"},
-	Args:              cobra.ExactArgs(0),
-	PersistentPreRunE: swarmctl.Install,
-	PreRunE:           validateFlags,
-	RunE:              swarmctl.InstallInformer,
-}
-
-var informerTelemetryCmd = &cobra.Command{
-	Use:          "telemetry (on|off)",
-	Short:        "Installs the informer's telemetry manifests.",
-	SilenceUsage: true,
-	Example:      swarmctl.InstallInformerTelemetryExample(),
-	Aliases:      []string{"t"},
-	Args:         cobra.ExactArgs(1),
-	ValidArgs:    []string{"on", "off"},
-	PreRunE:      validateFlags,
-	RunE:         swarmctl.InstallInformerTelemetry,
 }
 
 var workerCmd = &cobra.Command{

@@ -26,6 +26,30 @@ spec:
   selector:
     k-swarm/peer: enabled
 ---
+# Headless Service whose A records list every peer pod IP. Used by
+# memberlist as the bootstrap DNS for joining the gossip ring.
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: k-swarm
+  name: peers
+  namespace: {{ .Namespace }}
+spec:
+  clusterIP: None
+  publishNotReadyAddresses: true
+  selector:
+    k-swarm/peer: enabled
+  ports:
+  - name: gossip-tcp
+    port: 7946
+    protocol: TCP
+    targetPort: gossip-tcp
+  - name: gossip-udp
+    port: 7946
+    protocol: UDP
+    targetPort: gossip-udp
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -44,6 +68,10 @@ spec:
         sidecar.istio.io/proxyCPULimit: 500m
         sidecar.istio.io/proxyMemory: 64Mi
         sidecar.istio.io/proxyMemoryLimit: 512Mi
+        # Memberlist gossip uses raw TCP+UDP on 7946 between pod IPs;
+        # exclude it from sidecar interception so it bypasses mTLS.
+        traffic.sidecar.istio.io/excludeInboundPorts: "7946"
+        traffic.sidecar.istio.io/excludeOutboundPorts: "7946"
       labels:
         app: peer
         version: v1
@@ -52,11 +80,11 @@ spec:
       containers:
       - args:
         - --leader-elect=false
-        - --enable-informer=false
         - --enable-worker=true
         - --worker-bind-address=:8082
-        - --informer-url=http://informer.informer
-        - --informer-poll-interval=60s
+        - --service-name=peer
+        - --memberlist-bind-address=:7946
+        - --memberlist-join-dns=peers.{{ .Namespace }}.svc.{{ .ClusterDomain }}
         - --worker-request-interval=2s
         {{- if .LogResponses }}
         - --worker-log-responses
@@ -91,6 +119,12 @@ spec:
         - containerPort: 8082
           name: peer
           protocol: TCP
+        - containerPort: 7946
+          name: gossip-tcp
+          protocol: TCP
+        - containerPort: 7946
+          name: gossip-udp
+          protocol: UDP
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
