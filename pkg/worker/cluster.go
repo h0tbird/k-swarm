@@ -15,8 +15,8 @@ import (
 	"time"
 
 	// Community
-	"github.com/hashicorp/memberlist"
 	"github.com/go-logr/logr"
+	"github.com/hashicorp/memberlist"
 )
 
 //-----------------------------------------------------------------------------
