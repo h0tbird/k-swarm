@@ -101,7 +101,7 @@ func init() {
 		panic(err)
 	}
 
-	// --dataplane-mode flag (required, no default)
+	// --dataplane-mode flag
 	manifestGenerateCmd.PersistentFlags().String("dataplane-mode", "", "Istio dataplane mode: sidecar or ambient (required).")
 	if err := manifestGenerateCmd.RegisterFlagCompletionFunc("dataplane-mode", dataplaneModeCompletion); err != nil {
 		panic(err)
@@ -122,17 +122,11 @@ func init() {
 		panic(err)
 	}
 
-	// --multi-cluster flag (ambient-only)
+	// --multi-cluster flag
 	manifestGenerateCmd.PersistentFlags().Bool("multi-cluster", false, "Enable cross-cluster failover for ambient mode: labels the worker and waypoint Services with istio.io/global=true and emits a DestinationRule with locality failover by topology.istio.io/cluster.")
-	if err := manifestGenerateCmd.RegisterFlagCompletionFunc("multi-cluster", multiClusterCompletion); err != nil {
-		panic(err)
-	}
 
-	// --log-responses flag (worker-only)
+	// --log-responses flag
 	manifestGenerateCmd.PersistentFlags().Bool("log-responses", false, "If set, the worker logs the raw JSON response bodies received from the informer's /services endpoint and from peer workers' /data endpoint.")
-	if err := manifestGenerateCmd.RegisterFlagCompletionFunc("log-responses", logResponsesCompletion); err != nil {
-		panic(err)
-	}
 
 	//------------------------
 	// manifest install flags
@@ -177,7 +171,7 @@ func init() {
 		panic(err)
 	}
 
-	// --dataplane-mode flag (required, no default)
+	// --dataplane-mode flag
 	manifestInstallCmd.PersistentFlags().String("dataplane-mode", "", "Istio dataplane mode: sidecar or ambient (required).")
 	if err := manifestInstallCmd.RegisterFlagCompletionFunc("dataplane-mode", dataplaneModeCompletion); err != nil {
 		panic(err)
@@ -198,17 +192,11 @@ func init() {
 		panic(err)
 	}
 
-	// --multi-cluster flag (ambient-only)
+	// --multi-cluster flag
 	manifestInstallCmd.PersistentFlags().Bool("multi-cluster", false, "Enable cross-cluster failover for ambient mode: labels the worker and waypoint Services with istio.io/global=true and emits a DestinationRule with locality failover by topology.istio.io/cluster.")
-	if err := manifestInstallCmd.RegisterFlagCompletionFunc("multi-cluster", multiClusterCompletion); err != nil {
-		panic(err)
-	}
 
-	// --log-responses flag (worker-only)
+	// --log-responses flag
 	manifestInstallCmd.PersistentFlags().Bool("log-responses", false, "If set, the worker logs the raw JSON response bodies received from the informer's /services endpoint and from peer workers' /data endpoint.")
-	if err := manifestInstallCmd.RegisterFlagCompletionFunc("log-responses", logResponsesCompletion); err != nil {
-		panic(err)
-	}
 }
 
 //-----------------------------------------------------------------------------
@@ -502,24 +490,6 @@ func ingressModeIsValid(value string) bool {
 		return true
 	}
 	return false
-}
-
-//-----------------------------------------------------------------------------
-// multiCluster
-//-----------------------------------------------------------------------------
-
-// multiClusterCompletion
-func multiClusterCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-	return []string{"true", "false"}, cobra.ShellCompDirectiveNoFileComp
-}
-
-//-----------------------------------------------------------------------------
-// logResponsesCompletion
-//-----------------------------------------------------------------------------
-
-// logResponsesCompletion
-func logResponsesCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-	return []string{"true", "false"}, cobra.ShellCompDirectiveNoFileComp
 }
 
 //-----------------------------------------------------------------------------
