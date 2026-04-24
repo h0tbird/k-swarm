@@ -111,13 +111,13 @@ func Dump(cmd *cobra.Command, args []string) error {
 func DumpExample() string {
 	return `
   # Dump the informer and worker templates to ~/.swarmctl
-  swarmctl manifest dump
+  swarmctl dump
 
   # Dump only the informer template to ~/.swarmctl
-  swarmctl m d informer
+  swarmctl d informer
 
   # Dump the informer and worker templates to stdout
-  swarmctl m d --stdout
+  swarmctl d --stdout
   `
 }
 
@@ -273,15 +273,9 @@ func InstallInformer(cmd *cobra.Command, args []string) error {
 func InstallInformerExample() string {
 	return `
   # Install the informer to the current context
-  swarmctl manifest install informer
-
-  # Same using command aliases
-  swarmctl m i i
-
-  # Same using a shoret command chain
   swarmctl informer
 
-  # Same using a short command chain with aliases
+  # Same using the command alias
   swarmctl i
 
   # Install the informer to a specific context
@@ -502,15 +496,9 @@ func InstallWorkerExample() string {
 	return `
   # Install the workers 1 to 1 to the current context
   # (namespaces follow <mode>-n<index>, e.g. sidecar-n1)
-  swarmctl manifest install worker 1:1 --dataplane-mode sidecar
-
-  # Same using command aliases
-  swarmctl m i w 1:1 --dataplane-mode sidecar
-
-  # Same using a shoret command chain
   swarmctl worker 1:1 --dataplane-mode sidecar
 
-  # Same using a short command chain with aliases
+  # Same using the command alias
   swarmctl w 1:1 --dataplane-mode sidecar
 
   # Install the workers 1 to 1 to a specific context
