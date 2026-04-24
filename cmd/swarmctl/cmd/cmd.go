@@ -117,10 +117,10 @@ func init() {
 		c.PersistentFlags().Bool("dry-run", false, "Render manifests to stdout without applying them or contacting the cluster.")
 
 		// --multi-cluster flag
-		c.PersistentFlags().Bool("multi-cluster", false, "Enable cross-cluster failover for ambient mode: labels the worker and waypoint Services with istio.io/global=true and emits a DestinationRule with locality failover by topology.istio.io/cluster.")
+		c.PersistentFlags().Bool("multi-cluster", false, "Enable cross-cluster failover for ambient mode: labels the peer and waypoint Services with istio.io/global=true and emits a DestinationRule with locality failover by topology.istio.io/cluster.")
 
 		// --log-responses flag
-		c.PersistentFlags().Bool("log-responses", false, "If set, the worker logs the raw JSON response bodies received from the informer's /services endpoint and from peer workers' /data endpoint.")
+		c.PersistentFlags().Bool("log-responses", false, "If set, the worker logs the raw JSON response bodies received from the informer's /services endpoint and from peer pods' /data endpoint.")
 	}
 }
 
@@ -181,6 +181,7 @@ var informerTelemetryCmd = &cobra.Command{
 var workerCmd = &cobra.Command{
 	Use:               "worker <start:end>",
 	Short:             "Installs the worker's manifests.",
+	Long:              "Installs the worker's manifests. Each invocation renders a Deployment named 'peer' (and matching Service) into namespace <dataplane-mode>-n<i> for every i in <start:end>; pods carry the label k-swarm/peer=enabled.",
 	SilenceUsage:      true,
 	Example:           swarmctl.InstallWorkerExample(),
 	Aliases:           []string{"w"},

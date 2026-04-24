@@ -45,13 +45,13 @@ flowchart LR
             Inf[informer Deployment]
         end
         subgraph NS1[namespace sidecar-n1]
-            W1[worker Deployment]
+            W1[peer Deployment]
         end
         subgraph NS2[namespace sidecar-n2]
-            W2[worker Deployment]
+            W2[peer Deployment]
         end
         subgraph NSN[namespace sidecar-nN]
-            WN[worker Deployment]
+            WN[peer Deployment]
         end
     end
 
@@ -135,7 +135,7 @@ Key persistent flags shared by `informer` and `worker` (and inherited by their
 | `--node-selector` | _empty_ | Inline YAML node selector for the Deployment pod spec. |
 | `--waypoint-name` | `waypoint` | Name of the per-namespace ambient waypoint Gateway. |
 | `--ingress-mode` | `none` | `none`, `shared` (Istio `Gateway`/`VirtualService` selecting `istio: nsgw`) or `dedicated` (per-namespace Gateway API `Gateway`/`HTTPRoute`). |
-| `--multi-cluster` | `false` | Ambient-only: labels worker and waypoint Services with `istio.io/global=true` and emits a `DestinationRule` with locality failover by `topology.istio.io/cluster`. |
+| `--multi-cluster` | `false` | Ambient-only: labels peer and waypoint Services with `istio.io/global=true` and emits a `DestinationRule` with locality failover by `topology.istio.io/cluster`. |
 | `--log-responses` | `false` | Renders the worker manifest with `--worker-log-responses`, causing each pod to log raw JSON bodies received from the informer and peers. |
 | `--dry-run` | `false` | Render YAML to stdout; skip cluster discovery and apply. |
 | `--yes` | `false` | Skip the confirmation prompt before applying. |
@@ -168,16 +168,16 @@ five Deployments / Services across five namespaces.
 The rendered `worker-<mode>.goyaml` is more than just a Deployment + Service. Per
 namespace it can emit, depending on flags:
 
-- Always: `Namespace`, worker `Service`, worker `Deployment`,
+- Always: `Namespace`, peer `Service`, peer `Deployment`,
   `AuthorizationPolicy` allowing `GET /data`, and a cert-manager `Certificate`
   (replicated to `istio-system` for ingress TLS).
 - Sidecar mode (`--dataplane-mode sidecar`): a `DestinationRule` with locality
   load balancing and outlier detection plus a `STRICT` mTLS
   `PeerAuthentication`.
 - Ambient mode (`--dataplane-mode ambient`): a per-namespace waypoint
-  `Gateway` (`gatewayClassName: istio-waypoint`); the worker Service is
+  `Gateway` (`gatewayClassName: istio-waypoint`); the peer Service is
   labeled `istio.io/use-waypoint`.
-- Ambient + `--multi-cluster`: worker and waypoint Services are labeled
+- Ambient + `--multi-cluster`: peer and waypoint Services are labeled
   `istio.io/global=true` and an extra `DestinationRule` with locality
   failover by `topology.istio.io/cluster` is emitted.
 - `--ingress-mode shared`: an Istio `Gateway`/`VirtualService` pair selecting
@@ -263,7 +263,9 @@ Notable details:
 
 Source: [pkg/worker/worker.go](../pkg/worker/worker.go).
 
-A worker pod is **simultaneously a client and a server**:
+The `worker` is the in-pod process; its Deployment and Service are rendered
+under the name `peer` in each `<dataplane-mode>-n<i>` namespace. A worker pod
+is **simultaneously a client and a server**:
 
 - **Server** (`server`): a Gin handler at `GET /data` that returns a small JSON
   blob describing the pod (`CLUSTER_NAME`, `POD_NAME`, `POD_NAMESPACE`,

@@ -41,7 +41,7 @@ Expose service `1` via a per-namespace Gateway API `Gateway`/`HTTPRoute`:
 swarmctl w --context 'kind-*' 1:1 --dataplane-mode ambient --ingress-mode dedicated
 ```
 
-Enable cross-cluster failover for ambient-mode workers (labels the worker
+Enable cross-cluster failover for ambient-mode workers (labels the peer
 and waypoint Services with `istio.io/global=true` and emits a
 `DestinationRule` with locality failover by `topology.istio.io/cluster`):
 ```
