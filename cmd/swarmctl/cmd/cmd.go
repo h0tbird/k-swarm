@@ -513,11 +513,6 @@ func multiClusterCompletion(cmd *cobra.Command, args []string, toComplete string
 	return []string{"true", "false"}, cobra.ShellCompDirectiveNoFileComp
 }
 
-// multiClusterIsValid
-func multiClusterIsValid(value string) bool {
-	return value == "true" || value == "false"
-}
-
 //-----------------------------------------------------------------------------
 // logResponsesCompletion
 //-----------------------------------------------------------------------------
@@ -527,11 +522,6 @@ func logResponsesCompletion(cmd *cobra.Command, args []string, toComplete string
 	return []string{"true", "false"}, cobra.ShellCompDirectiveNoFileComp
 }
 
-// logResponsesIsValid
-func logResponsesIsValid(value string) bool {
-	return value == "true" || value == "false"
-}
-
 //-----------------------------------------------------------------------------
 // validateFlags
 //-----------------------------------------------------------------------------
@@ -539,37 +529,37 @@ func logResponsesIsValid(value string) bool {
 func validateFlags(cmd *cobra.Command, args []string) error {
 
 	if cmd.Flags().Changed("context") {
-		if valid := contextIsValid(); !valid {
+		if !contextIsValid() {
 			return errors.New("invalid context")
 		}
 	}
 
 	if cmd.Flags().Changed("replicas") {
-		if valid := replicasIsValid(); !valid {
+		if !replicasIsValid() {
 			return errors.New("invalid replicas")
 		}
 	}
 
 	if cmd.Flags().Changed("node-selector") {
-		if valid := nodeSelectorIsValid(); !valid {
+		if !nodeSelectorIsValid() {
 			return errors.New("invalid node-selector")
 		}
 	}
 
 	if cmd.Flags().Changed("image-tag") {
-		if valid := imageTagIsValid(); !valid {
+		if !imageTagIsValid() {
 			return errors.New("invalid image-tag")
 		}
 	}
 
 	if cmd.Flags().Changed("istio-revision") {
-		if valid := istioRevisionIsValid(); !valid {
+		if !istioRevisionIsValid() {
 			return errors.New("invalid istio-revision")
 		}
 	}
 
 	if cmd.Flags().Changed("cluster-domain") {
-		if valid := clusterDomainIsValid(); !valid {
+		if !clusterDomainIsValid() {
 			return errors.New("invalid cluster-domain")
 		}
 	}
