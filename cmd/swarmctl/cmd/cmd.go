@@ -31,9 +31,6 @@ var version = "0.0.0"
 
 func init() {
 
-	// Command grouping
-	rootCmd.AddGroup(&cobra.Group{ID: "install", Title: "Install subcommands:"})
-
 	// Add commands
 	rootCmd.AddCommand(dumpCmd, informerCmd, workerCmd)
 	informerCmd.AddCommand(informerTelemetryCmd)
@@ -168,7 +165,6 @@ var dumpCmd = &cobra.Command{
 var informerCmd = &cobra.Command{
 	Use:               "informer",
 	Short:             "Installs the informer's manifests.",
-	GroupID:           "install",
 	SilenceUsage:      true,
 	Example:           swarmctl.InstallInformerExample(),
 	Aliases:           []string{"i"},
@@ -193,7 +189,6 @@ var informerTelemetryCmd = &cobra.Command{
 var workerCmd = &cobra.Command{
 	Use:               "worker <start:end>",
 	Short:             "Installs the worker's manifests.",
-	GroupID:           "install",
 	SilenceUsage:      true,
 	Example:           swarmctl.InstallWorkerExample(),
 	Aliases:           []string{"w"},
