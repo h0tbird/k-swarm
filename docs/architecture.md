@@ -98,23 +98,44 @@ Key packages:
   dynamic clients (used for SSA).
 - [cmd/swarmctl/assets/](../cmd/swarmctl/assets/) — embedded `*.goyaml`
   templates: `informer.goyaml`, `worker.goyaml` and `telemetry.goyaml`.
+- [cmd/swarmctl/pkg/profiling/](../cmd/swarmctl/pkg/profiling/) — opt-in CPU,
+  memory and trace profiling toggled by global `--cpu-profile`,
+  `--mem-profile` and `--tracing` flags.
 
 ### Command tree
 
 ```
 swarmctl
-├── manifest (m)
-│   ├── dump (d)                          # write embedded templates to ~/.swarmctl
-│   └── install (i)                       # render + server-side apply (use --dry-run to render to stdout)
-│       ├── informer (i)
-│       │   └── telemetry (t) on|off
-│       └── worker (w) <start:end>
-│           └── telemetry (t) on|off
+├── dump (d) [informer] [worker]          # write embedded templates to ~/.swarmctl (or stdout with --stdout)
+├── informer (i)                          # render + server-side apply the informer
+│   └── telemetry (t) on|off              # toggle informer telemetry overlay
+└── worker (w) <start:end>                # render + server-side apply N workers
+    └── telemetry (t) <start:end> on|off  # toggle worker telemetry overlay
 ```
 
-`install` accepts `--context '<regex>'`; matching kubeconfig contexts are
-discovered, the user is prompted (unless `--yes`), and the rendered manifests
-are server-side applied to **every** matching cluster.
+Both `informer` and `worker` accept `--context '<regex>'`; matching kubeconfig
+contexts are discovered, the user is prompted (unless `--yes`), and the
+rendered manifests are server-side applied to **every** matching cluster. Pass
+`--dry-run` to render manifests to stdout without contacting any cluster.
+
+Key persistent flags shared by `informer` and `worker` (and inherited by their
+`telemetry` subcommands):
+
+| Flag | Default | Purpose |
+| ---- | ------- | ------- |
+| `--dataplane-mode` | _(required)_ | `sidecar` or `ambient`. Drives namespace labels, sidecar/waypoint wiring, and which Istio resources are emitted. |
+| `--context` | _empty_ | Regex matched against kubeconfig context names. Empty matches none. |
+| `--replicas` | `1` | Replica count per Deployment. |
+| `--image-tag` | _empty_ | Override the manager image tag (defaults to the swarmctl version). |
+| `--istio-revision` | _empty_ | Sets `istio.io/rev` on the namespace and disables default injection when in sidecar mode. |
+| `--cluster-domain` | _auto_ | Cluster DNS suffix; auto-detected from CoreDNS, falls back to `cluster.local` in `--dry-run`. |
+| `--node-selector` | _empty_ | Inline YAML node selector for the Deployment pod spec. |
+| `--waypoint-name` | `waypoint` | Name of the per-namespace ambient waypoint Gateway. |
+| `--ingress-mode` | `none` | `none`, `shared` (Istio `Gateway`/`VirtualService` selecting `istio: nsgw`) or `dedicated` (per-namespace Gateway API `Gateway`/`HTTPRoute`). |
+| `--multi-cluster` | `false` | Ambient-only: labels worker and waypoint Services with `istio.io/global=true` and emits a `DestinationRule` with locality failover by `topology.istio.io/cluster`. |
+| `--log-responses` | `false` | Renders the worker manifest with `--worker-log-responses`, causing each pod to log raw JSON bodies received from the informer and peers. |
+| `--dry-run` | `false` | Render YAML to stdout; skip cluster discovery and apply. |
+| `--yes` | `false` | Skip the confirmation prompt before applying. |
 
 ### Typical flow
 
@@ -140,6 +161,26 @@ The `worker` subcommand takes a numeric range (`<start:end>`); for each `i` it
 renders the worker template into namespace `<dataplane-mode>-n<i>` (e.g.
 `sidecar-n1`, `ambient-n3`). This is how a single `swarmctl w 1:5` produces
 five Deployments / Services across five namespaces.
+
+The rendered `worker.goyaml` is more than just a Deployment + Service. Per
+namespace it can emit, depending on flags:
+
+- Always: `Namespace`, worker `Service`, worker `Deployment`,
+  `AuthorizationPolicy` allowing `GET /data`, and a cert-manager `Certificate`
+  (replicated to `istio-system` for ingress TLS).
+- Sidecar mode (`--dataplane-mode sidecar`): a `DestinationRule` with locality
+  load balancing and outlier detection plus a `STRICT` mTLS
+  `PeerAuthentication`.
+- Ambient mode (`--dataplane-mode ambient`): a per-namespace waypoint
+  `Gateway` (`gatewayClassName: istio-waypoint`); the worker Service is
+  labeled `istio.io/use-waypoint`.
+- Ambient + `--multi-cluster`: worker and waypoint Services are labeled
+  `istio.io/global=true` and an extra `DestinationRule` with locality
+  failover by `topology.istio.io/cluster` is emitted.
+- `--ingress-mode shared`: an Istio `Gateway`/`VirtualService` pair selecting
+  the shared `istio: nsgw` workload.
+- `--ingress-mode dedicated`: a Gateway API `Gateway`/`HTTPRoute` pair with
+  `gatewayClassName: istio`.
 
 ## 4. The `manager` binary
 
@@ -304,7 +345,6 @@ sequenceDiagram
 - **Add a new HTTP route** to the informer → register it in
   `Informer.Start()` in [pkg/informer/informer.go](../pkg/informer/informer.go).
 - **Local end-to-end loop** → `make tilt-up` ([Tiltfile](../Tiltfile)).
-- **Ambient-mode roadmap** → [docs/ambient-mode-plan.md](./ambient-mode-plan.md).
 
 ## 9. Glossary
 
@@ -316,3 +356,13 @@ sequenceDiagram
   worker, or both. Shipped as a single container image.
 - **swarmctl** — operator-facing CLI that renders embedded templates and
   server-side applies them across a regex-selected fan-out of kube contexts.
+- **dataplane mode** — `sidecar` or `ambient`; required on every `informer` /
+  `worker` invocation. Selects which Istio resources the templates emit and
+  which namespace labels are applied.
+- **ingress mode** — `none`, `shared` or `dedicated`; controls whether the
+  worker manifest also emits Istio `Gateway`/`VirtualService` (shared) or
+  Gateway API `Gateway`/`HTTPRoute` (dedicated) resources for the synthetic
+  service.
+- **multi-cluster** — ambient-only flag that promotes the worker and waypoint
+  Services to global services (`istio.io/global=true`) and adds a locality
+  failover `DestinationRule` keyed on `topology.istio.io/cluster`.
