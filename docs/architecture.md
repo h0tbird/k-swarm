@@ -97,8 +97,7 @@ Key packages:
   per-kubeconfig-context wrapper holding a REST config plus discovery and
   dynamic clients (used for SSA).
 - [cmd/swarmctl/assets/](../cmd/swarmctl/assets/) — embedded `*.goyaml`
-  templates: `informer.goyaml`, `worker.goyaml`, `telemetry.goyaml` and the
-  Istio `crds.yaml` snapshot.
+  templates: `informer.goyaml`, `worker.goyaml` and `telemetry.goyaml`.
 
 ### Command tree
 

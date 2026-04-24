@@ -516,12 +516,6 @@ func InstallInformer(cmd *cobra.Command, args []string) error {
 	// Set the error prefix
 	cmd.SetErrPrefix("\nError:")
 
-	// Read the CRDs
-	crds, err := Assets.ReadFile("assets/crds.yaml")
-	if err != nil {
-		return err
-	}
-
 	// Parse the template
 	tmpl, err := util.ParseTemplate(Assets, "informer")
 	if err != nil {
@@ -533,13 +527,6 @@ func InstallInformer(cmd *cobra.Command, args []string) error {
 
 		// Print the context
 		fmt.Printf("\n%s\n\n", name)
-
-		// Loop through all CRDs
-		for _, doc := range util.SplitYAML(bytes.NewBuffer(crds)) {
-			if err := context.ApplyYaml(doc); err != nil {
-				fmt.Printf("\nError: %s\n", err)
-			}
-		}
 
 		// Render the template
 		docs, err := util.RenderTemplate(tmpl, struct {
@@ -626,12 +613,6 @@ func InstallInformerTelemetry(cmd *cobra.Command, args []string) error {
 	// Set the error prefix
 	cmd.SetErrPrefix("\nError:")
 
-	// Read the CRDs
-	crds, err := Assets.ReadFile("assets/crds.yaml")
-	if err != nil {
-		return err
-	}
-
 	// Parse the template
 	tmpl, err := util.ParseTemplate(Assets, "telemetry")
 	if err != nil {
@@ -643,13 +624,6 @@ func InstallInformerTelemetry(cmd *cobra.Command, args []string) error {
 
 		// Print the context
 		fmt.Printf("\n%s\n\n", name)
-
-		// Loop through all CRDs
-		for _, doc := range util.SplitYAML(bytes.NewBuffer(crds)) {
-			if err := context.ApplyYaml(doc); err != nil {
-				fmt.Printf("\nError: %s\n", err)
-			}
-		}
 
 		// Render the template
 		docs, err := util.RenderTemplate(tmpl, struct {
@@ -712,12 +686,6 @@ func InstallWorker(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	// Read the CRDs
-	crds, err := Assets.ReadFile("assets/crds.yaml")
-	if err != nil {
-		return err
-	}
-
 	// Parse the template
 	tmpl, err := util.ParseTemplate(Assets, "worker")
 	if err != nil {
@@ -739,13 +707,6 @@ func InstallWorker(cmd *cobra.Command, args []string) error {
 		// Derive cluster name by stripping the kind- prefix (no-op for
 		// non-kind contexts).
 		clusterName := strings.TrimPrefix(context.Name, "kind-")
-
-		// Loop through all CRDs
-		for _, doc := range util.SplitYAML(bytes.NewBuffer(crds)) {
-			if err := context.ApplyYaml(doc); err != nil {
-				fmt.Printf("\nError: %s\n", err)
-			}
-		}
 
 		// Loop trough all services
 		for i := start; i <= end; i++ {
@@ -865,12 +826,6 @@ func InstallWorkerTelemetry(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	// Read the CRDs
-	crds, err := Assets.ReadFile("assets/crds.yaml")
-	if err != nil {
-		return err
-	}
-
 	// Parse the template
 	tmpl, err := util.ParseTemplate(Assets, "telemetry")
 	if err != nil {
@@ -882,13 +837,6 @@ func InstallWorkerTelemetry(cmd *cobra.Command, args []string) error {
 
 		// Print the context
 		fmt.Printf("\n%s\n\n", name)
-
-		// Loop through all CRDs
-		for _, doc := range util.SplitYAML(bytes.NewBuffer(crds)) {
-			if err := context.ApplyYaml(doc); err != nil {
-				fmt.Printf("\nError: %s\n", err)
-			}
-		}
 
 		// Loop trough all services
 		for i := start; i <= end; i++ {
