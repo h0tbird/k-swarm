@@ -15,27 +15,27 @@ kind: Service
 metadata:
   labels:
     app: k-swarm
-  name: worker
+  name: peer
   namespace: {{ .Namespace }}
 spec:
   ports:
   - name: http
     port: 80
     protocol: TCP
-    targetPort: worker
+    targetPort: peer
   selector:
-    k-swarm/worker: enabled
+    k-swarm/peer: enabled
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: worker
+  name: peer
   namespace: {{ .Namespace }}
 spec:
   replicas: {{ .Replicas }}
   selector:
     matchLabels:
-      k-swarm/worker: enabled
+      k-swarm/peer: enabled
   template:
     metadata:
       annotations:
@@ -45,9 +45,9 @@ spec:
         sidecar.istio.io/proxyMemory: 64Mi
         sidecar.istio.io/proxyMemoryLimit: 512Mi
       labels:
-        app: worker
+        app: peer
         version: v1
-        k-swarm/worker: enabled
+        k-swarm/peer: enabled
     spec:
       containers:
       - args:
@@ -89,7 +89,7 @@ spec:
         name: manager
         ports:
         - containerPort: 8082
-          name: worker
+          name: peer
           protocol: TCP
         securityContext:
           allowPrivilegeEscalation: false
@@ -107,10 +107,10 @@ spec:
 apiVersion: networking.istio.io/v1
 kind: DestinationRule
 metadata:
-  name: worker
+  name: peer
   namespace: {{ .Namespace }}
 spec:
-  host: worker
+  host: peer
   trafficPolicy:
     connectionPool:
       http:
@@ -127,24 +127,24 @@ spec:
 apiVersion: security.istio.io/v1
 kind: PeerAuthentication
 metadata:
-  name: worker
+  name: peer
   namespace: {{ .Namespace }}
 spec:
   selector:
     matchLabels:
-      k-swarm/worker: enabled
+      k-swarm/peer: enabled
   mtls:
     mode: STRICT
 ---
 apiVersion: security.istio.io/v1
 kind: AuthorizationPolicy
 metadata:
-  name: worker
+  name: peer
   namespace: {{ .Namespace }}
 spec:
   selector:
     matchLabels:
-      k-swarm/worker: enabled
+      k-swarm/peer: enabled
   action: ALLOW
   rules:
   - to:
@@ -155,12 +155,12 @@ spec:
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: worker
+  name: peer
   namespace: {{ .Namespace }}
 spec:
   duration: 24h0m0s
   renewBefore: 12h0m0s
-  secretName: worker-{{ .Namespace }}
+  secretName: peer-{{ .Namespace }}
   dnsNames:
   - '{{ .Namespace }}.demo.lab'
   issuerRef:
@@ -178,7 +178,7 @@ spec:
 apiVersion: networking.istio.io/v1
 kind: Gateway
 metadata:
-  name: worker
+  name: peer
   namespace: {{ .Namespace }}
 spec:
   selector:
@@ -192,16 +192,16 @@ spec:
       protocol: HTTPS
     tls:
       mode: SIMPLE
-      credentialName: worker-{{ .Namespace }}
+      credentialName: peer-{{ .Namespace }}
 ---
 apiVersion: networking.istio.io/v1
 kind: VirtualService
 metadata:
-  name: worker
+  name: peer
   namespace: {{ .Namespace }}
 spec:
   gateways:
-  - worker
+  - peer
   hosts:
   - '{{ .Namespace }}.demo.lab'
   http:
@@ -209,7 +209,7 @@ spec:
     - port: 443
     route:
     - destination:
-        host: 'worker.{{ .Namespace }}.svc.{{ .ClusterDomain }}'
+        host: 'peer.{{ .Namespace }}.svc.{{ .ClusterDomain }}'
         port:
           number: 80
       weight: 100
@@ -218,7 +218,7 @@ spec:
 apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
 metadata:
-  name: worker-ingress
+  name: peer-ingress
   namespace: {{ .Namespace }}
 spec:
   gatewayClassName: istio
@@ -231,7 +231,7 @@ spec:
       mode: Terminate
       certificateRefs:
       - kind: Secret
-        name: worker-{{ .Namespace }}
+        name: peer-{{ .Namespace }}
     allowedRoutes:
       namespaces:
         from: Same
@@ -239,15 +239,15 @@ spec:
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
-  name: worker
+  name: peer
   namespace: {{ .Namespace }}
 spec:
   parentRefs:
-  - name: worker-ingress
+  - name: peer-ingress
   hostnames:
   - '{{ .Namespace }}.demo.lab'
   rules:
   - backendRefs:
-    - name: worker
+    - name: peer
       port: 80
 {{- end }}

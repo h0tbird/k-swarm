@@ -502,13 +502,13 @@ func InstallWorkerExample() string {
   # Install the workers 1 to 1 to all contexts that match a regex in Istio ambient mode
   swarmctl w 1:1 --dataplane-mode ambient --context 'kind-pizza-.*'
 
-  # Expose the worker Service via the shared istio-system/istio-nsgw gateway.
+  # Expose the peer Service via the shared istio-system/istio-nsgw gateway.
   swarmctl w 1:1 --dataplane-mode sidecar --context 'kind-pasta-.*' --ingress-mode shared
 
-  # Expose the worker Service via a dedicated Gateway API Gateway+HTTPRoute.
+  # Expose the peer Service via a dedicated Gateway API Gateway+HTTPRoute.
   swarmctl w 1:1 --dataplane-mode ambient --context 'kind-pasta-.*' --ingress-mode dedicated
 
-  # Enable cross-cluster failover for ambient-mode workers: labels the worker
+  # Enable cross-cluster failover for ambient-mode workers: labels the peer
   # and waypoint Services with istio.io/global=true and emits a DestinationRule
   # with locality failover by topology.istio.io/cluster (ambient-only).
   swarmctl w 1:1 --dataplane-mode ambient --context 'kind-pasta-.*' --multi-cluster

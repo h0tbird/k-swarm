@@ -27,7 +27,7 @@ import (
 
 var (
 	serviceList = []string{}
-	log         = ctrl.Log.WithName("worker")
+	log         = ctrl.Log.WithName("peer")
 )
 
 //-----------------------------------------------------------------------------

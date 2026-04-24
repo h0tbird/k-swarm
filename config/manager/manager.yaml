@@ -30,7 +30,7 @@ spec:
         control-plane: controller-manager
         app.kubernetes.io/name: k-swarm
         k-swarm/informer: enabled
-        k-swarm/worker: enabled
+        k-swarm/peer: enabled
     spec:
       # TODO(user): Uncomment the following code to configure the nodeAffinity expression
       # according to the platforms which are supported by your solution.
@@ -94,7 +94,7 @@ spec:
               fieldPath: spec.nodeName
         ports:
         - containerPort: 8082
-          name: worker
+          name: peer
           protocol: TCP
         - containerPort: 8083
           name: informer
@@ -147,14 +147,14 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: worker
+  name: peer
   labels:
     app: k-swarm
 spec:
   selector:
-    k-swarm/worker: enabled
+    k-swarm/peer: enabled
   ports:
     - name: http
       protocol: TCP
       port: 80
-      targetPort: worker
+      targetPort: peer
