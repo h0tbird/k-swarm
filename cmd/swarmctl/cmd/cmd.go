@@ -44,13 +44,6 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&profiling.MemProfileFile, "mem-profile-file", "mem.prof", "file for memory profiling output")
 	rootCmd.PersistentFlags().StringVar(&profiling.TracingFile, "tracing-file", "trace.out", "file for tracing output")
 
-	//------------
-	// dump flags
-	//------------
-
-	// --stdout flag
-	dumpCmd.Flags().Bool("stdout", false, "Output to stdout")
-
 	//---------------------------
 	// informer and worker flags
 	//---------------------------
@@ -152,13 +145,12 @@ var rootCmd = &cobra.Command{
 }
 
 var dumpCmd = &cobra.Command{
-	Use:          "dump [informer] [worker]",
-	Short:        "Dumps templates to ~/.swarmctl or stdout.",
+	Use:          "dump",
+	Short:        "Dumps every embedded template to ~/.swarmctl.",
 	SilenceUsage: true,
 	Example:      swarmctl.DumpExample(),
 	Aliases:      []string{"d"},
-	ValidArgs:    []string{"informer", "worker"},
-	Args:         cobra.MatchAll(cobra.MaximumNArgs(2), cobra.OnlyValidArgs),
+	Args:         cobra.NoArgs,
 	RunE:         swarmctl.Dump,
 }
 
