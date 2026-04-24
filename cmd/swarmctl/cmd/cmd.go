@@ -555,15 +555,6 @@ func validateFlags(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	// --multi-cluster requires --dataplane-mode=ambient
-	if cmd.Flags().Changed("multi-cluster") {
-		multiCluster, _ := cmd.Flags().GetBool("multi-cluster")
-		dataplaneMode, _ := cmd.Flags().GetString("dataplane-mode")
-		if multiCluster && dataplaneMode != "ambient" {
-			return errors.New("--multi-cluster requires --dataplane-mode=ambient")
-		}
-	}
-
 	// Return
 	return nil
 }
