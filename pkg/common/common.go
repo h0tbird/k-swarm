@@ -16,15 +16,16 @@ type FlagPack struct {
 	ProbeAddr            string
 	EnableHTTP2          bool
 
-	// Informer flags
-	EnableInformer   bool
-	InformerBindAddr string
-
 	// Worker flags
 	EnableWorker          bool
 	WorkerBindAddr        string
-	InformerPollInterval  time.Duration
 	WorkerRequestInterval time.Duration
-	InformerURL           string
 	WorkerLogResponses    bool
+
+	// Memberlist flags
+	ServiceName             string
+	MemberlistBindAddr      string
+	MemberlistAdvertiseAddr string
+	MemberlistJoinDNS       string
+	MemberlistRejoinPeriod  time.Duration
 }

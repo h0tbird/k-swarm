@@ -25,18 +25,7 @@ import (
 // Global variables
 //-----------------------------------------------------------------------------
 
-var (
-	serviceList = []string{}
-	log         = ctrl.Log.WithName("peer")
-)
-
-//-----------------------------------------------------------------------------
-// Structs
-//-----------------------------------------------------------------------------
-
-type InformerData struct {
-	Services []string `json:"services"`
-}
+var log = ctrl.Log.WithName("peer")
 
 //-----------------------------------------------------------------------------
 // Start starts the worker
@@ -46,18 +35,43 @@ func Start(ctx context.Context, wg *sync.WaitGroup, flags *common.FlagPack) {
 
 	defer wg.Done()
 
-	// Worker server respons /data
-	go server(flags)
+	// Build local node identity from downward-API env vars and flags.
+	self := nodeMeta{
+		Cluster:   os.Getenv("CLUSTER_NAME"),
+		Namespace: os.Getenv("POD_NAMESPACE"),
+		Service:   flags.ServiceName,
+	}
 
-	// Worker client requests /data
-	client(ctx, flags)
+	advertise := flags.MemberlistAdvertiseAddr
+	if advertise == "" {
+		advertise = os.Getenv("POD_IP")
+	}
+
+	cl, err := newCluster(ctx, log, self,
+		flags.MemberlistBindAddr, advertise,
+		flags.MemberlistJoinDNS, flags.MemberlistRejoinPeriod,
+	)
+	if err != nil {
+		log.Error(err, "unable to start memberlist cluster")
+		os.Exit(1)
+	}
+
+	// Worker server responds to /data and /members
+	go server(flags, cl)
+
+	// Worker client requests /data on each known peer Service
+	go client(ctx, flags, cl)
+
+	// Block until ctx is cancelled, then leave the gossip ring.
+	<-ctx.Done()
+	cl.Shutdown(5 * time.Second)
 }
 
 //-----------------------------------------------------------------------------
-// server starts the worker server
+// server starts the worker HTTP server
 //-----------------------------------------------------------------------------
 
-func server(flags *common.FlagPack) {
+func server(flags *common.FlagPack, cl *cluster) {
 
 	// Setup the router
 	gin.SetMode(gin.ReleaseMode)
@@ -70,6 +84,13 @@ func server(flags *common.FlagPack) {
 
 	// Routes
 	router.GET("/data", getData)
+	router.GET("/members", func(c *gin.Context) {
+		members, services := cl.Members()
+		c.JSON(200, gin.H{
+			"members":  members,
+			"services": services,
+		})
+	})
 
 	// Start the server
 	if err := endless.ListenAndServe(flags.WorkerBindAddr, router); err != nil {
@@ -79,7 +100,7 @@ func server(flags *common.FlagPack) {
 }
 
 //-----------------------------------------------------------------------------
-// getData
+// getData returns this pod's identity to the caller.
 //-----------------------------------------------------------------------------
 
 func getData(c *gin.Context) {
@@ -102,26 +123,27 @@ func localPeer() peerInfo {
 }
 
 //-----------------------------------------------------------------------------
-// client starts the worker client
+// client loops over every Service discovered via gossip and issues GET /data.
 //-----------------------------------------------------------------------------
 
-func client(ctx context.Context, flags *common.FlagPack) {
+func client(ctx context.Context, flags *common.FlagPack, cl *cluster) {
 
 	// Bind the worker's own identity to the logger so every line is
 	// self-describing as "src -> dst" when tailing logs from many pods.
 	log := log.WithValues("src", localPeer())
 
-	// Get the service list from the informer
-	go pollServiceList(ctx, flags, &serviceList)
-
-	// Loop over the service list and make requests to /data
 	for {
 		select {
 		case <-ctx.Done():
 			log.Info("client context done")
 			return
 		default:
-			for _, service := range serviceList {
+			services := cl.Services()
+			if len(services) == 0 {
+				time.Sleep(flags.WorkerRequestInterval)
+				continue
+			}
+			for _, service := range services {
 				time.Sleep(flags.WorkerRequestInterval)
 				start := time.Now()
 				resp, err := http.Get(fmt.Sprintf("http://%s/data", service))
@@ -182,85 +204,4 @@ type peerInfo struct {
 
 type httpInfo struct {
 	Status int `json:"status"`
-}
-
-//-----------------------------------------------------------------------------
-// pollServiceList polls the service list from the informer
-//-----------------------------------------------------------------------------
-
-func pollServiceList(ctx context.Context, flags *common.FlagPack, serviceList *[]string) {
-
-	// Setup a ticker
-	ticker := time.NewTicker(flags.InformerPollInterval)
-	defer ticker.Stop()
-
-	// Loop
-	for {
-		select {
-		case <-ticker.C:
-			log.Info("polling service list", "url", flags.InformerURL+"/services")
-			newServices, err := fetchServices(flags.InformerURL+"/services", flags.WorkerLogResponses)
-			if err != nil {
-				log.Error(err, "failed to fetch services")
-				continue
-			}
-			*serviceList = newServices
-		case <-ctx.Done():
-			log.Info("client context done")
-			return
-		}
-	}
-}
-
-//-----------------------------------------------------------------------------
-// fetchServices fetches the services from the informer
-//-----------------------------------------------------------------------------
-
-func fetchServices(url string, logBody bool) ([]string, error) {
-
-	// Get the services
-	resp, err := http.Get(url)
-	if err != nil {
-		return nil, err
-	}
-
-	// Defer closing the response body
-	defer func() {
-		if err := resp.Body.Close(); err != nil {
-			log.Error(err, "failed to close response body")
-		}
-	}()
-
-	// Check the status code
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("server returned non-200 status code: %d", resp.StatusCode)
-	}
-
-	// Read the body
-	bodyBytes, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	// Optionally log the raw response body
-	if logBody {
-		log.Info("services response", "url", url, "body", string(bodyBytes))
-	}
-
-	// Unmarshal the body
-	var data InformerData
-	if err := json.Unmarshal(bodyBytes, &data); err != nil {
-		return nil, err
-	}
-
-	// Filter out any services with empty names
-	var services []string
-	for _, service := range data.Services {
-		if service != "" {
-			services = append(services, service)
-		}
-	}
-
-	// Return the list
-	return services, nil
 }

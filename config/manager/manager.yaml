@@ -29,7 +29,6 @@ spec:
       labels:
         control-plane: controller-manager
         app.kubernetes.io/name: k-swarm
-        k-swarm/informer: enabled
         k-swarm/peer: enabled
     spec:
       # TODO(user): Uncomment the following code to configure the nodeAffinity expression
@@ -64,18 +63,19 @@ spec:
         - /manager
         args:
         - --leader-elect=false
-        - --enable-informer=true
         - --enable-worker=true
         - --worker-bind-address=:8082
-        - --informer-bind-address=:8083
-        - --informer-url=http://k-swarm-informer.k-swarm-system
-        - --informer-poll-interval=10s
+        - --service-name=$(SERVICE_NAME)
+        - --memberlist-bind-address=:7946
+        - --memberlist-join-dns=peers.k-swarm-system.svc.cluster.local
         - --worker-request-interval=2s
         image: controller:latest
         name: manager
         env:
         - name: CLUSTER_NAME
           value: "kind-dev"
+        - name: SERVICE_NAME
+          value: "peer"
         - name: POD_NAME
           valueFrom:
             fieldRef:
@@ -96,9 +96,12 @@ spec:
         - containerPort: 8082
           name: peer
           protocol: TCP
-        - containerPort: 8083
-          name: informer
+        - containerPort: 7946
+          name: gossip-tcp
           protocol: TCP
+        - containerPort: 7946
+          name: gossip-udp
+          protocol: UDP
         securityContext:
           readOnlyRootFilesystem: true
           allowPrivilegeEscalation: false
@@ -134,19 +137,6 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: informer
-spec:
-  selector:
-    k-swarm/informer: enabled
-  ports:
-    - name: http
-      protocol: TCP
-      port: 80
-      targetPort: informer
----
-apiVersion: v1
-kind: Service
-metadata:
   name: peer
   labels:
     app: k-swarm
@@ -158,3 +148,26 @@ spec:
       protocol: TCP
       port: 80
       targetPort: peer
+---
+# Headless Service whose A records list every peer pod IP. Used by
+# memberlist as the bootstrap DNS for joining the gossip ring.
+apiVersion: v1
+kind: Service
+metadata:
+  name: peers
+  labels:
+    app: k-swarm
+spec:
+  clusterIP: None
+  publishNotReadyAddresses: true
+  selector:
+    k-swarm/peer: enabled
+  ports:
+    - name: gossip-tcp
+      protocol: TCP
+      port: 7946
+      targetPort: gossip-tcp
+    - name: gossip-udp
+      protocol: UDP
+      port: 7946
+      targetPort: gossip-udp

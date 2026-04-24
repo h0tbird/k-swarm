@@ -8,6 +8,8 @@ import (
 
 	// Stdlib
 	"flag"
+	"fmt"
+	"os"
 	"sync"
 	"time"
 
@@ -19,9 +21,7 @@ import (
 
 	// Internal
 	"github.com/h0tbird/k-swarm/pkg/common"
-	"github.com/h0tbird/k-swarm/pkg/informer"
 	"github.com/h0tbird/k-swarm/pkg/worker"
-	//+kubebuilder:scaffold:imports
 )
 
 //-----------------------------------------------------------------------------
@@ -32,20 +32,9 @@ func initFlags(fs *pflag.FlagSet) *common.FlagPack {
 
 	flags := &common.FlagPack{}
 
-	//----------------
-	// Informer flags
-	//----------------
-
-	fs.BoolVar(
-		&flags.EnableInformer,
-		"enable-informer",
-		false,
-		"Enable the informer.")
-
-	fs.StringVar(
-		&flags.InformerBindAddr,
-		"informer-bind-address", ":8083",
-		"The address the informer binds to.")
+	//---------------
+	// Common flags
+	//---------------
 
 	fs.StringVar(
 		&flags.MetricsAddr,
@@ -116,18 +105,6 @@ func initFlags(fs *pflag.FlagSet) *common.FlagPack {
 		"worker-bind-address", ":8082",
 		"The address the worker binds to.")
 
-	fs.StringVar(
-		&flags.InformerURL,
-		"informer-url",
-		"http://localhost:8083",
-		"The URL of the informer.")
-
-	fs.DurationVar(
-		&flags.InformerPollInterval,
-		"informer-poll-interval",
-		10*time.Second,
-		"The interval at which the worker polls the informer.")
-
 	fs.DurationVar(
 		&flags.WorkerRequestInterval,
 		"worker-request-interval",
@@ -138,7 +115,41 @@ func initFlags(fs *pflag.FlagSet) *common.FlagPack {
 		&flags.WorkerLogResponses,
 		"worker-log-responses",
 		false,
-		"If set, log the raw JSON response bodies received from the informer's /services endpoint and from peer workers' /data endpoint.")
+		"If set, log the raw JSON response bodies received from peer workers' /data endpoint.")
+
+	//------------------
+	// Memberlist flags
+	//------------------
+
+	fs.StringVar(
+		&flags.ServiceName,
+		"service-name",
+		"",
+		"The Kubernetes Service this worker pod belongs to. Advertised to other peers via gossip. Required when --enable-worker is set.")
+
+	fs.StringVar(
+		&flags.MemberlistBindAddr,
+		"memberlist-bind-address",
+		":7946",
+		"The address (host:port) memberlist binds to for gossip (TCP+UDP).")
+
+	fs.StringVar(
+		&flags.MemberlistAdvertiseAddr,
+		"memberlist-advertise-address",
+		"",
+		"The address memberlist advertises to other peers. Defaults to POD_IP env var.")
+
+	fs.StringVar(
+		&flags.MemberlistJoinDNS,
+		"memberlist-join-dns",
+		"",
+		"DNS name (typically a headless Service) whose A records list peer pod IPs used to bootstrap the gossip ring.")
+
+	fs.DurationVar(
+		&flags.MemberlistRejoinPeriod,
+		"memberlist-rejoin-period",
+		30*time.Second,
+		"Interval at which to re-resolve --memberlist-join-dns and re-attempt joining stragglers.")
 
 	return flags
 }
@@ -163,15 +174,14 @@ func main() {
 	ctrl.SetLogger(log)
 	ctrl.Log.WithName("main").Info("Starting")
 
+	// Validate worker-required flags.
+	if flags.EnableWorker && flags.ServiceName == "" {
+		fmt.Fprintln(os.Stderr, "--service-name is required when --enable-worker is set")
+		os.Exit(2)
+	}
+
 	// Setup a common context
 	ctx := ctrl.SetupSignalHandler()
-
-	// Run as an informer
-	if flags.EnableInformer {
-		wg.Add(1)
-		ctrl.Log.WithName("main").Info("Starting informer")
-		go informer.Start(ctx, &wg, flags)
-	}
 
 	// Run as a worker
 	if flags.EnableWorker {
