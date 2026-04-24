@@ -34,14 +34,10 @@ func init() {
 	// Command grouping
 	rootCmd.AddGroup(&cobra.Group{ID: "install", Title: "Install subcommands:"})
 	manifestInstallCmd.AddGroup(&cobra.Group{ID: "install", Title: "Install subcommands:"})
-	manifestGenerateCmd.AddGroup(&cobra.Group{ID: "generate", Title: "Generate subcommands:"})
 
 	// Add commands
 	rootCmd.AddCommand(manifestCmd, manifestInstallInformerCmd, manifestInstallWorkerCmd)
-	manifestCmd.AddCommand(manifestDumpCmd, manifestGenerateCmd, manifestInstallCmd)
-	manifestGenerateCmd.AddCommand(manifestGenerateInformerCmd, manifestGenerateWorkerCmd)
-	manifestGenerateInformerCmd.AddCommand(manifestGenerateInformerTelemetryCmd)
-	manifestGenerateWorkerCmd.AddCommand(manifestGenerateWorkerTelemetryCmd)
+	manifestCmd.AddCommand(manifestDumpCmd, manifestInstallCmd)
 	manifestInstallCmd.AddCommand(manifestInstallInformerCmd, manifestInstallWorkerCmd)
 	manifestInstallInformerCmd.AddCommand(manifestInstallInformerTelemetryCmd)
 	manifestInstallWorkerCmd.AddCommand(manifestInstallWorkerTelemetryCmd)
@@ -60,73 +56,6 @@ func init() {
 
 	// --stdout flag
 	manifestDumpCmd.Flags().Bool("stdout", false, "Output to stdout")
-
-	//-------------------------
-	// manifest generate flags
-	//-------------------------
-
-	// --context flag
-	manifestGenerateCmd.PersistentFlags().String("context", "", "regex to match the context name.")
-	if err := manifestGenerateCmd.RegisterFlagCompletionFunc("context", contextCompletion); err != nil {
-		panic(err)
-	}
-
-	// --replicas flag
-	manifestGenerateCmd.PersistentFlags().Int("replicas", 1, "Number of replicas to deploy.")
-	if err := manifestGenerateCmd.RegisterFlagCompletionFunc("replicas", replicasCompletion); err != nil {
-		panic(err)
-	}
-
-	// --node-selector flag
-	manifestGenerateCmd.PersistentFlags().String("node-selector", "", "Node selector to use for deployment.")
-	if err := manifestGenerateCmd.RegisterFlagCompletionFunc("node-selector", nodeSelectorCompletion); err != nil {
-		panic(err)
-	}
-
-	// --image-tag flag
-	manifestGenerateCmd.PersistentFlags().String("image-tag", "", "Image tag to use for deployment.")
-	if err := manifestGenerateCmd.RegisterFlagCompletionFunc("image-tag", imageTagCompletion); err != nil {
-		panic(err)
-	}
-
-	// --istio-revision flag
-	manifestGenerateCmd.PersistentFlags().String("istio-revision", "", "Istio revision label to use for the namespace.")
-	if err := manifestGenerateCmd.RegisterFlagCompletionFunc("istio-revision", istioRevisionCompletion); err != nil {
-		panic(err)
-	}
-
-	// --cluster-domain flag
-	manifestGenerateCmd.PersistentFlags().String("cluster-domain", "", "Cluster domain suffix (default: cluster.local for generate, auto-detect for install).")
-	if err := manifestGenerateCmd.RegisterFlagCompletionFunc("cluster-domain", clusterDomainCompletion); err != nil {
-		panic(err)
-	}
-
-	// --dataplane-mode flag
-	manifestGenerateCmd.PersistentFlags().String("dataplane-mode", "", "Istio dataplane mode: sidecar or ambient (required).")
-	if err := manifestGenerateCmd.RegisterFlagCompletionFunc("dataplane-mode", dataplaneModeCompletion); err != nil {
-		panic(err)
-	}
-	if err := manifestGenerateCmd.MarkPersistentFlagRequired("dataplane-mode"); err != nil {
-		panic(err)
-	}
-
-	// --waypoint-name flag
-	manifestGenerateCmd.PersistentFlags().String("waypoint-name", "waypoint", "Name of the per-namespace ambient waypoint Gateway.")
-	if err := manifestGenerateCmd.RegisterFlagCompletionFunc("waypoint-name", waypointNameCompletion); err != nil {
-		panic(err)
-	}
-
-	// --ingress-mode flag
-	manifestGenerateCmd.PersistentFlags().String("ingress-mode", "none", "Ingress mode: 'none', 'shared' (classic Istio Gateway/VirtualService selecting istio: nsgw) or 'dedicated' (per-service Gateway API Gateway/HTTPRoute).")
-	if err := manifestGenerateCmd.RegisterFlagCompletionFunc("ingress-mode", ingressModeCompletion); err != nil {
-		panic(err)
-	}
-
-	// --multi-cluster flag
-	manifestGenerateCmd.PersistentFlags().Bool("multi-cluster", false, "Enable cross-cluster failover for ambient mode: labels the worker and waypoint Services with istio.io/global=true and emits a DestinationRule with locality failover by topology.istio.io/cluster.")
-
-	// --log-responses flag
-	manifestGenerateCmd.PersistentFlags().Bool("log-responses", false, "If set, the worker logs the raw JSON response bodies received from the informer's /services endpoint and from peer workers' /data endpoint.")
 
 	//------------------------
 	// manifest install flags
@@ -163,7 +92,7 @@ func init() {
 	}
 
 	// --cluster-domain flag
-	manifestInstallCmd.PersistentFlags().String("cluster-domain", "", "Cluster domain suffix (default: cluster.local for generate, auto-detect for install).")
+	manifestInstallCmd.PersistentFlags().String("cluster-domain", "", "Cluster domain suffix (default: auto-detect from CoreDNS, or 'cluster.local' in --dry-run).")
 	if err := manifestInstallCmd.RegisterFlagCompletionFunc("cluster-domain", clusterDomainCompletion); err != nil {
 		panic(err)
 	}
@@ -237,60 +166,6 @@ var manifestDumpCmd = &cobra.Command{
 	ValidArgs:    []string{"informer", "worker"},
 	Args:         cobra.MatchAll(cobra.MaximumNArgs(2), cobra.OnlyValidArgs),
 	RunE:         swarmctl.Dump,
-}
-
-var manifestGenerateCmd = &cobra.Command{
-	Use:     "generate",
-	Short:   "Generates a manifest and outputs it.",
-	Aliases: []string{"g"},
-}
-
-var manifestGenerateInformerCmd = &cobra.Command{
-	Use:          "informer",
-	Short:        "Generates the informer's manifests.",
-	GroupID:      "generate",
-	SilenceUsage: true,
-	Example:      swarmctl.GenerateInformerExample(),
-	Aliases:      []string{"i"},
-	Args:         cobra.ExactArgs(0),
-	PreRunE:      validateFlags,
-	RunE:         swarmctl.GenerateInformer,
-}
-
-var manifestGenerateInformerTelemetryCmd = &cobra.Command{
-	Use:          "telemetry (on|off)",
-	Short:        "Generates the informer's telemetry manifests.",
-	SilenceUsage: true,
-	Example:      swarmctl.GenerateInformerTelemetryExample(),
-	Aliases:      []string{"t"},
-	Args:         cobra.ExactArgs(1),
-	ValidArgs:    []string{"on", "off"},
-	PreRunE:      validateFlags,
-	RunE:         swarmctl.GenerateInformerTelemetry,
-}
-
-var manifestGenerateWorkerCmd = &cobra.Command{
-	Use:          "worker <start:end>",
-	Short:        "Generates the worker's manifests.",
-	GroupID:      "generate",
-	SilenceUsage: true,
-	Example:      swarmctl.GenerateWorkerExample(),
-	Aliases:      []string{"w"},
-	Args:         cobra.RangeArgs(1, 3),
-	PreRunE:      validateFlags,
-	RunE:         swarmctl.GenerateWorker,
-}
-
-var manifestGenerateWorkerTelemetryCmd = &cobra.Command{
-	Use:          "telemetry (on|off)",
-	Short:        "Generates the worker's telemetry manifests.",
-	SilenceUsage: true,
-	Example:      swarmctl.GenerateWorkerTelemetryExample(),
-	Aliases:      []string{"t"},
-	Args:         cobra.ExactArgs(1),
-	ValidArgs:    []string{"on", "off"},
-	PreRunE:      validateFlags,
-	RunE:         swarmctl.GenerateWorkerTelemetry,
 }
 
 var manifestInstallCmd = &cobra.Command{
