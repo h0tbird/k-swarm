@@ -132,9 +132,6 @@ func init() {
 	// manifest install flags
 	//------------------------
 
-	// --yes flag
-	manifestInstallCmd.PersistentFlags().Bool("yes", false, "Automatically confirm all prompts with 'yes'.")
-
 	// --context flag
 	manifestInstallCmd.PersistentFlags().String("context", "", "regex to match the context name.")
 	if err := manifestInstallCmd.RegisterFlagCompletionFunc("context", contextCompletion); err != nil {
@@ -191,6 +188,9 @@ func init() {
 	if err := manifestInstallCmd.RegisterFlagCompletionFunc("ingress-mode", ingressModeCompletion); err != nil {
 		panic(err)
 	}
+
+	// --yes flag
+	manifestInstallCmd.PersistentFlags().Bool("yes", false, "Automatically confirm all prompts with 'yes'.")
 
 	// --multi-cluster flag
 	manifestInstallCmd.PersistentFlags().Bool("multi-cluster", false, "Enable cross-cluster failover for ambient mode: labels the worker and waypoint Services with istio.io/global=true and emits a DestinationRule with locality failover by topology.istio.io/cluster.")
