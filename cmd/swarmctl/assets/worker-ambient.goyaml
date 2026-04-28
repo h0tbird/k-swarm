@@ -67,7 +67,7 @@ spec:
         - --enable-informer=false
         - --enable-worker=true
         - --worker-bind-address=:8082
-        - --informer-url=http://informer.informer
+        - --informer-url=http://informer.swarm-informer
         - --informer-poll-interval=60s
         - --worker-request-interval=2s
         {{- if .LogResponses }}

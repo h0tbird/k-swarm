@@ -11,7 +11,7 @@ metadata:
     {{- else }}
     istio-injection: enabled
     {{- end }}
-  name: informer
+  name: swarm-informer
 ---
 apiVersion: v1
 kind: Service
@@ -21,7 +21,7 @@ metadata:
     app.kubernetes.io/name: informer
     app.kubernetes.io/part-of: k-swarm
   name: informer
-  namespace: informer
+  namespace: swarm-informer
 spec:
   ports:
   - name: http
@@ -39,7 +39,7 @@ metadata:
     app.kubernetes.io/name: informer
     app.kubernetes.io/part-of: k-swarm
   name: informer
-  namespace: informer
+  namespace: swarm-informer
 spec:
   replicas: {{ .Replicas }}
   selector:
@@ -123,7 +123,7 @@ metadata:
     app.kubernetes.io/name: informer
     app.kubernetes.io/part-of: k-swarm
   name: informer
-  namespace: informer
+  namespace: swarm-informer
 spec:
   selector:
     matchLabels:
@@ -139,7 +139,7 @@ metadata:
     app.kubernetes.io/name: informer
     app.kubernetes.io/part-of: k-swarm
   name: informer
-  namespace: informer
+  namespace: swarm-informer
 spec:
   selector:
     matchLabels:
