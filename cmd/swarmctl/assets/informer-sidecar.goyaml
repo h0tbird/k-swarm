@@ -116,22 +116,6 @@ spec:
       terminationGracePeriodSeconds: 10
 ---
 apiVersion: security.istio.io/v1
-kind: PeerAuthentication
-metadata:
-  labels:
-    app.kubernetes.io/managed-by: swarmctl
-    app.kubernetes.io/name: informer
-    app.kubernetes.io/part-of: k-swarm
-  name: informer
-  namespace: swarm-informer
-spec:
-  selector:
-    matchLabels:
-      k-swarm/informer: enabled
-  mtls:
-    mode: STRICT
----
-apiVersion: security.istio.io/v1
 kind: AuthorizationPolicy
 metadata:
   labels:
@@ -150,4 +134,20 @@ spec:
     - operation:
         methods: ["GET"]
         paths: ["/services"]
+---
+apiVersion: security.istio.io/v1
+kind: PeerAuthentication
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: swarmctl
+    app.kubernetes.io/name: informer
+    app.kubernetes.io/part-of: k-swarm
+  name: informer
+  namespace: swarm-informer
+spec:
+  selector:
+    matchLabels:
+      k-swarm/informer: enabled
+  mtls:
+    mode: STRICT
 {{ template "informer-common" . }}

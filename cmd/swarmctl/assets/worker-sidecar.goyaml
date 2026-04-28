@@ -114,6 +114,26 @@ spec:
       serviceAccountName: default
       terminationGracePeriodSeconds: 10
 ---
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: swarmctl
+    app.kubernetes.io/name: peer
+    app.kubernetes.io/part-of: k-swarm
+  name: peer
+  namespace: {{ .Namespace }}
+spec:
+  selector:
+    matchLabels:
+      k-swarm/peer: enabled
+  action: ALLOW
+  rules:
+  - to:
+    - operation:
+        methods: ["GET"]
+        paths: ["/data"]
+---
 apiVersion: networking.istio.io/v1
 kind: DestinationRule
 metadata:
@@ -153,24 +173,4 @@ spec:
       k-swarm/peer: enabled
   mtls:
     mode: STRICT
----
-apiVersion: security.istio.io/v1
-kind: AuthorizationPolicy
-metadata:
-  labels:
-    app.kubernetes.io/managed-by: swarmctl
-    app.kubernetes.io/name: peer
-    app.kubernetes.io/part-of: k-swarm
-  name: peer
-  namespace: {{ .Namespace }}
-spec:
-  selector:
-    matchLabels:
-      k-swarm/peer: enabled
-  action: ALLOW
-  rules:
-  - to:
-    - operation:
-        methods: ["GET"]
-        paths: ["/data"]
 {{ template "worker-common" . }}
