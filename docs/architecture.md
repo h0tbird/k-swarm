@@ -41,16 +41,16 @@ flowchart LR
 
     subgraph Cluster[Kubernetes cluster]
         direction TB
-        subgraph NSI[namespace informer]
+        subgraph NSI[namespace swarm-informer]
             Inf[informer Deployment]
         end
-        subgraph NS1[namespace sidecar-n1]
+        subgraph NS1[namespace swarm-sidecar-n1]
             W1[peer Deployment]
         end
-        subgraph NS2[namespace sidecar-n2]
+        subgraph NS2[namespace swarm-sidecar-n2]
             W2[peer Deployment]
         end
-        subgraph NSN[namespace sidecar-nN]
+        subgraph NSN[namespace swarm-sidecar-nN]
             WN[peer Deployment]
         end
     end
@@ -97,24 +97,34 @@ Key packages:
   per-kubeconfig-context wrapper holding a REST config plus discovery and
   dynamic clients (used for SSA).
 - [cmd/swarmctl/assets/](../cmd/swarmctl/assets/) — embedded `*.goyaml`
-  templates: `informer-sidecar.goyaml`, `informer-ambient.goyaml`,
-  `worker-sidecar.goyaml`, `worker-ambient.goyaml` and `telemetry.goyaml`.
-  The informer/worker templates are split per `--dataplane-mode` so each
-  file contains only the manifests relevant to one Istio dataplane mode.
+  templates: `informer-common.goyaml`, `informer-sidecar.goyaml`,
+  `informer-ambient.goyaml`, `worker-common.goyaml`, `worker-sidecar.goyaml`,
+  `worker-ambient.goyaml` and `telemetry.goyaml`. The `-common.goyaml` files
+  hold resources shared by both dataplane modes (RBAC, certificates, ingress
+  Gateways/VirtualServices/HTTPRoutes); the `-sidecar` / `-ambient` files
+  hold only the manifests specific to one Istio dataplane mode.
 - [cmd/swarmctl/pkg/profiling/](../cmd/swarmctl/pkg/profiling/) — opt-in CPU,
   memory and trace profiling toggled by global `--cpu-profile`,
-  `--mem-profile` and `--tracing` flags.
+  `--mem-profile` and `--tracing` flags. The output paths default to
+  `cpu.prof`, `mem.prof` and `trace.out` and can be overridden with
+  `--cpu-profile-file`, `--mem-profile-file` and `--tracing-file`.
 
 ### Command tree
 
 ```
 swarmctl
-├── dump (d) [informer] [worker]          # write embedded templates to ~/.swarmctl (or stdout with --stdout)
+├── dump (d)                              # write every embedded template to ~/.swarmctl
+├── delete (rm)                           # delete everything swarmctl has installed
 ├── informer (i)                          # render + server-side apply the informer
 │   └── telemetry (t) on|off              # toggle informer telemetry overlay
 └── worker (w) <start:end>                # render + server-side apply N workers
     └── telemetry (t) <start:end> on|off  # toggle worker telemetry overlay
 ```
+
+`delete` accepts only `--context`, `--yes` and `--dry-run`; it discovers the
+swarm namespaces in each matching cluster (those prefixed with `swarm-`) and
+removes them along with the cluster-scoped RBAC bindings created for the
+informer.
 
 Both `informer` and `worker` accept `--context '<regex>'`; matching kubeconfig
 contexts are discovered, the user is prompted (unless `--yes`), and the
@@ -155,14 +165,14 @@ sequenceDiagram
     SC-->>User: list matched contexts, prompt y/N
     User-->>SC: y
     loop for each context
-        SC->>SC: render worker-sidecar.goyaml for i in 1..5 (namespace sidecar-nN)
+        SC->>SC: render worker-sidecar.goyaml for i in 1..5 (namespace swarm-sidecar-nN)
         SC->>API: server-side apply manifests (dynamic client)
     end
 ```
 
 The `worker` subcommand takes a numeric range (`<start:end>`); for each `i` it
-renders the worker template into namespace `<dataplane-mode>-n<i>` (e.g.
-`sidecar-n1`, `ambient-n3`). This is how a single `swarmctl w 1:5` produces
+renders the worker template into namespace `swarm-<dataplane-mode>-n<i>` (e.g.
+`swarm-sidecar-n1`, `swarm-ambient-n3`). This is how a single `swarmctl w 1:5` produces
 five Deployments / Services across five namespaces.
 
 The rendered `worker-<mode>.goyaml` is more than just a Deployment + Service. Per
@@ -210,7 +220,7 @@ booleans, and both can technically run in the same process (tests do this).
 Source: [pkg/informer/informer.go](../pkg/informer/informer.go) and the
 controller in [internal/controller/service_controller.go](../internal/controller/service_controller.go).
 
-There is **one informer Deployment per cluster**, in the `informer` namespace.
+There is **one informer Deployment per cluster**, in the `swarm-informer` namespace.
 Internally it runs two cooperating components inside a single
 `controller-runtime` manager:
 
@@ -264,7 +274,7 @@ Notable details:
 Source: [pkg/worker/worker.go](../pkg/worker/worker.go).
 
 The `worker` is the in-pod process; its Deployment and Service are rendered
-under the name `peer` in each `<dataplane-mode>-n<i>` namespace. A worker pod
+under the name `peer` in each `swarm-<dataplane-mode>-n<i>` namespace. A worker pod
 is **simultaneously a client and a server**:
 
 - **Server** (`server`): a Gin handler at `GET /data` that returns a small JSON
@@ -304,8 +314,8 @@ informer keeps using the last known peer set.
 Workers are deployed **once per namespace**, with multiple replicas inside each
 namespace. A typical lab might have:
 
-- `informer/`               — 1 Deployment, N replicas (HA via leader election)
-- `sidecar-n1/` … `sidecar-n5/` — one worker Deployment each, R replicas
+- `swarm-informer/`               — 1 Deployment, N replicas (HA via leader election)
+- `swarm-sidecar-n1/` … `swarm-sidecar-n5/` — one worker Deployment each, R replicas
 
 This namespace-per-service shape is what makes the synthetic mesh useful for
 mesh experiments: each namespace can carry different Istio
@@ -324,10 +334,10 @@ sequenceDiagram
     participant W as Worker pods
 
     Op->>SC: swarmctl i --context kind-dev --replicas 1 --dataplane-mode sidecar
-    SC->>API: SSA Namespace, RBAC, Deployment, Service for informer
+    SC->>API: SSA Namespace, RBAC, Deployment, Service for swarm-informer
     API-->>CTRL: pod starts, manager and runnable boot
     Op->>SC: swarmctl w --context kind-dev 1:3 --dataplane-mode sidecar
-    SC->>API: SSA Namespace plus Deployment and Service for sidecar-n1..n3
+    SC->>API: SSA Namespace plus Deployment and Service for swarm-sidecar-n1..n3
     API-->>CTRL: Service add events with label app=k-swarm
     CTRL->>SRV: commChan receives new service list
     W->>SRV: GET /services
