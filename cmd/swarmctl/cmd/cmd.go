@@ -32,7 +32,7 @@ var version = "0.0.0"
 func init() {
 
 	// Add commands
-	rootCmd.AddCommand(dumpCmd, informerCmd, workerCmd)
+	rootCmd.AddCommand(dumpCmd, informerCmd, workerCmd, deleteCmd)
 	informerCmd.AddCommand(informerTelemetryCmd)
 	workerCmd.AddCommand(workerTelemetryCmd)
 
@@ -122,6 +122,19 @@ func init() {
 		// --log-responses flag
 		c.PersistentFlags().Bool("log-responses", false, "If set, the worker logs the raw JSON response bodies received from the informer's /services endpoint and from peer pods' /data endpoint.")
 	}
+
+	//---------------------------
+	// delete flags
+	//---------------------------
+
+	// Registered separately on deleteCmd so they don't leak into the
+	// install/worker subtrees and vice versa.
+	deleteCmd.Flags().String("context", "", "regex to match the context name.")
+	if err := deleteCmd.RegisterFlagCompletionFunc("context", contextCompletion); err != nil {
+		panic(err)
+	}
+	deleteCmd.Flags().Bool("yes", false, "Automatically confirm all prompts with 'yes'.")
+	deleteCmd.Flags().Bool("dry-run", false, "Print what would be deleted without contacting the cluster.")
 }
 
 //-----------------------------------------------------------------------------
@@ -154,6 +167,17 @@ var dumpCmd = &cobra.Command{
 	RunE:         swarmctl.Dump,
 }
 
+var deleteCmd = &cobra.Command{
+	Use:          "delete",
+	Short:        "Deletes everything swarmctl has installed.",
+	SilenceUsage: true,
+	Example:      swarmctl.DeleteExample(),
+	Aliases:      []string{"rm"},
+	Args:         cobra.NoArgs,
+	PreRunE:      validateFlags,
+	RunE:         swarmctl.Delete,
+}
+
 var informerCmd = &cobra.Command{
 	Use:               "informer",
 	Short:             "Installs the informer's manifests.",
@@ -181,7 +205,7 @@ var informerTelemetryCmd = &cobra.Command{
 var workerCmd = &cobra.Command{
 	Use:               "worker <start:end>",
 	Short:             "Installs the worker's manifests.",
-	Long:              "Installs the worker's manifests. Each invocation renders a Deployment named 'peer' (and matching Service) into namespace <dataplane-mode>-n<i> for every i in <start:end>; pods carry the label k-swarm/peer=enabled.",
+	Long:              "Installs the worker's manifests. Each invocation renders a Deployment named 'peer' (and matching Service) into namespace swarm-<dataplane-mode>-n<i> for every i in <start:end>; pods carry the label k-swarm/peer=enabled.",
 	SilenceUsage:      true,
 	Example:           swarmctl.InstallWorkerExample(),
 	Aliases:           []string{"w"},

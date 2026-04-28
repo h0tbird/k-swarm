@@ -8,6 +8,7 @@ import (
 
 	// Stdlib
 	"bufio"
+	stdctx "context"
 	"embed"
 	"errors"
 	"fmt"
@@ -16,6 +17,7 @@ import (
 
 	// Community
 	"github.com/spf13/cobra"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 
 	// Local
 	"github.com/h0tbird/k-swarm/cmd/swarmctl/pkg/k8sctx"
@@ -322,7 +324,7 @@ func InstallInformerTelemetry(cmd *cobra.Command, args []string) error {
 			Namespace string
 		}{
 			OnOff:     args[0],
-			Namespace: "informer",
+			Namespace: "swarm-informer",
 		})
 		if err != nil {
 			return err
@@ -420,7 +422,7 @@ func InstallWorker(cmd *cobra.Command, args []string) error {
 				fmt.Printf("\n")
 			}
 
-			namespace := fmt.Sprintf("%s-n%d", dataplaneMode, i)
+			namespace := fmt.Sprintf("swarm-%s-n%d", dataplaneMode, i)
 
 			// Render the template
 			docs, err := util.RenderTemplate(tmpl, struct {
@@ -478,7 +480,7 @@ func InstallWorker(cmd *cobra.Command, args []string) error {
 func InstallWorkerExample() string {
 	return `
   # Install the workers 1 to 1 to the current context
-  # (namespaces follow <mode>-n<index>, e.g. sidecar-n1)
+  # (namespaces follow swarm-<mode>-n<index>, e.g. swarm-sidecar-n1)
   swarmctl worker 1:1 --dataplane-mode sidecar
 
   # Same using the command alias
@@ -564,7 +566,7 @@ func InstallWorkerTelemetry(cmd *cobra.Command, args []string) error {
 				Namespace string
 			}{
 				OnOff:     args[1],
-				Namespace: fmt.Sprintf("%s-n%d", dataplaneMode, i),
+				Namespace: fmt.Sprintf("swarm-%s-n%d", dataplaneMode, i),
 			})
 			if err != nil {
 				return err
@@ -607,5 +609,216 @@ func InstallWorkerTelemetryExample() string {
 
   # Same using command aliases
   swarmctl w t 1:1 on
+  `
+}
+
+//-----------------------------------------------------------------------------
+// Delete removes everything swarmctl has installed in the matching contexts.
+// Targets are identified by the label app.kubernetes.io/managed-by=swarmctl,
+// which is set by every embedded template:
+//   - cluster-scoped: ClusterRole, ClusterRoleBinding
+//   - namespaced:     Namespace (cascades all child resources)
+//-----------------------------------------------------------------------------
+
+const deleteLabelSelector = "app.kubernetes.io/managed-by=swarmctl"
+
+var (
+	deleteNsGVR         = schema.GroupVersionResource{Group: "", Version: "v1", Resource: "namespaces"}
+	deleteClusterScoped = []struct {
+		Kind string
+		GVR  schema.GroupVersionResource
+	}{
+		{"ClusterRoleBinding", schema.GroupVersionResource{Group: "rbac.authorization.k8s.io", Version: "v1", Resource: "clusterrolebindings"}},
+		{"ClusterRole", schema.GroupVersionResource{Group: "rbac.authorization.k8s.io", Version: "v1", Resource: "clusterroles"}},
+	}
+)
+
+// deletePlan captures, for a single context, the swarmctl-managed resources
+// discovered on the cluster.
+type deletePlan struct {
+	ctx        *k8sctx.Context
+	namespaces []string
+	cluster    map[string][]string // kind -> names
+}
+
+func (p *deletePlan) empty() bool {
+	if len(p.namespaces) > 0 {
+		return false
+	}
+	for _, names := range p.cluster {
+		if len(names) > 0 {
+			return false
+		}
+	}
+	return true
+}
+
+// discoverDeletePlan lists every swarmctl-managed resource in the given context.
+func discoverDeletePlan(ctx stdctx.Context, c *k8sctx.Context) (*deletePlan, error) {
+	p := &deletePlan{ctx: c, cluster: map[string][]string{}}
+
+	nss, err := c.ListByLabel(ctx, deleteNsGVR, "", deleteLabelSelector)
+	if err != nil {
+		return nil, err
+	}
+	p.namespaces = nss
+
+	for _, t := range deleteClusterScoped {
+		names, err := c.ListByLabel(ctx, t.GVR, "", deleteLabelSelector)
+		if err != nil {
+			return nil, err
+		}
+		p.cluster[t.Kind] = names
+	}
+	return p, nil
+}
+
+// printDeletePreview prints the discovered targets for a single context.
+func printDeletePreview(cmd *cobra.Command, name string, p *deletePlan) {
+	cmd.Printf("  - %s\n", name)
+	for _, ns := range p.namespaces {
+		cmd.Printf("      Namespace/%s\n", ns)
+	}
+	for _, t := range deleteClusterScoped {
+		for _, n := range p.cluster[t.Kind] {
+			cmd.Printf("      %s/%s\n", t.Kind, n)
+		}
+	}
+}
+
+// executeDeletePlan deletes cluster-scoped resources first (bindings before
+// roles) then namespaces. Per-resource errors are printed and execution
+// continues, mirroring the ApplyYaml loop in the install commands.
+func executeDeletePlan(ctx stdctx.Context, p *deletePlan) {
+	for _, t := range deleteClusterScoped {
+		for _, n := range p.cluster[t.Kind] {
+			if err := p.ctx.DeleteResource(ctx, t.GVR, t.Kind, "", n); err != nil {
+				fmt.Printf("\nError: %s\n", err)
+			}
+		}
+	}
+	for _, ns := range p.namespaces {
+		if err := p.ctx.DeleteResource(ctx, deleteNsGVR, "Namespace", "", ns); err != nil {
+			fmt.Printf("\nError: %s\n", err)
+		}
+	}
+}
+
+// printDeleteDryRun renders the static deletion plan without contacting any cluster.
+func printDeleteDryRun(cmd *cobra.Command, matches []string) {
+	cmd.Println("\nMatched contexts:")
+	for _, name := range matches {
+		cmd.Printf("  - %s\n", name)
+	}
+	cmd.Printf("\nWould delete in each context (label %q):\n", deleteLabelSelector)
+	for _, t := range deleteClusterScoped {
+		cmd.Printf("  - %s (cluster-scoped)\n", t.Kind)
+	}
+	cmd.Println("  - Namespace (cascades all child resources)")
+}
+
+// confirmDelete prompts the user to confirm a destructive delete.
+func confirmDelete(cmd *cobra.Command) error {
+	cmd.Print("\nProceed with deletion? (y/N) ")
+	reader := bufio.NewReader(os.Stdin)
+	answer, err := util.YesOrNo(cmd, reader)
+	if err != nil {
+		return fmt.Errorf("error reading user input: %w", err)
+	}
+	if answer == "" || answer == "n" || answer == "no" {
+		cmd.SetErrPrefix("aborted:")
+		return errors.New("by user")
+	}
+	return nil
+}
+
+func Delete(cmd *cobra.Command, args []string) error {
+
+	// Get the flags
+	ctxRegex, _ := cmd.Flags().GetString("context")
+	assumeYes, _ := cmd.Flags().GetBool("yes")
+	dryRun, _ := cmd.Flags().GetBool("dry-run")
+
+	// Set the error prefix
+	cmd.SetErrPrefix("\nError:")
+
+	// Run the root PersistentPreRunE (profiling, etc.)
+	if err := cmd.Root().PersistentPreRunE(cmd, args); err != nil {
+		return err
+	}
+
+	// Get the contexts that match the regex
+	matches, err := k8sctx.Filter(ctxRegex)
+	if err != nil {
+		return err
+	}
+
+	// Dry-run: print the static plan per matched context, no live client
+	if dryRun {
+		printDeleteDryRun(cmd, matches)
+		return nil
+	}
+
+	// Build live contexts and discover what's actually there
+	plans := make(map[string]*deletePlan, len(matches))
+	cmd.Println("\nMatched contexts:")
+	for _, name := range matches {
+		c, err := k8sctx.New(name)
+		if err != nil {
+			return err
+		}
+		p, err := discoverDeletePlan(cmd.Context(), c)
+		if err != nil {
+			return err
+		}
+		plans[name] = p
+		printDeletePreview(cmd, name, p)
+	}
+
+	// Bail out early if nothing to do
+	nothing := true
+	for _, p := range plans {
+		if !p.empty() {
+			nothing = false
+			break
+		}
+	}
+	if nothing {
+		cmd.Println("\nNothing to delete.")
+		return nil
+	}
+
+	// A chance to cancel
+	if !assumeYes {
+		if err := confirmDelete(cmd); err != nil {
+			return err
+		}
+	}
+
+	// Perform deletes per context
+	for name, p := range plans {
+		fmt.Printf("\n%s\n", name)
+		executeDeletePlan(cmd.Context(), p)
+	}
+
+	return nil
+}
+
+func DeleteExample() string {
+	return `
+  # Delete everything swarmctl has installed in the current context
+  swarmctl delete
+
+  # Same using the command alias
+  swarmctl rm
+
+  # Delete everything in all contexts that match a regex
+  swarmctl delete --context 'kind-pasta-.*'
+
+  # Skip the confirmation prompt
+  swarmctl delete --context 'kind-pasta-.*' --yes
+
+  # Show what would be deleted without contacting the cluster
+  swarmctl delete --context 'kind-pasta-.*' --dry-run
   `
 }

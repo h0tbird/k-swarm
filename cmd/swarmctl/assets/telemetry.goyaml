@@ -8,6 +8,11 @@
 apiVersion: telemetry.istio.io/v1alpha1
 kind: Telemetry
 metadata:
+  labels:
+    app.kubernetes.io/component: telemetry
+    app.kubernetes.io/managed-by: swarmctl
+    app.kubernetes.io/name: telemetry
+    app.kubernetes.io/part-of: k-swarm
   name: istio-metrics
   namespace: {{ .Namespace }}
 spec:
@@ -30,6 +35,11 @@ spec:
 apiVersion: telemetry.istio.io/v1alpha1
 kind: Telemetry
 metadata:
+  labels:
+    app.kubernetes.io/component: telemetry
+    app.kubernetes.io/managed-by: swarmctl
+    app.kubernetes.io/name: telemetry
+    app.kubernetes.io/part-of: k-swarm
   name: istio-metrics
   namespace: {{ .Namespace }}
 spec:

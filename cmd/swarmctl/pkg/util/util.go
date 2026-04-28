@@ -69,17 +69,36 @@ func ParseTemplate(assets embed.FS, component string) (*template.Template, error
 	var tmpl *template.Template
 	var err error
 
+	// Optional sibling template: <prefix>-common.goyaml where prefix is the part
+	// of component before the last '-' (e.g. "informer" for "informer-ambient"),
+	// or the component name itself when it contains no '-'.
+	commonName := component + "-common"
+	if i := strings.LastIndex(component, "-"); i > 0 {
+		commonName = component[:i] + "-common"
+	}
+
 	// Check for the ~/.swarmctl/<component>.goyaml file
-	_, err = os.Stat(SwarmDir + "/" + component + ".goyaml")
+	_, statErr := os.Stat(SwarmDir + "/" + component + ".goyaml")
 
 	// Use the embedded template
-	if os.IsNotExist(err) {
-		tmpl, err = template.ParseFS(assets, "assets/"+component+".goyaml")
+	if os.IsNotExist(statErr) {
+		files := []string{
+			"assets/" + component + ".goyaml",
+			"assets/" + commonName + ".goyaml",
+		}
+		tmpl, err = template.ParseFS(assets, files...)
 		if err != nil {
 			return nil, err
 		}
-	} else if err == nil {
-		tmpl, err = template.ParseFiles(SwarmDir + "/" + component + ".goyaml")
+	}
+
+	// Use the override template from ~/.swarmctl
+	if statErr == nil {
+		files := []string{
+			SwarmDir + "/" + component + ".goyaml",
+			SwarmDir + "/" + commonName + ".goyaml",
+		}
+		tmpl, err = template.ParseFiles(files...)
 		if err != nil {
 			return nil, err
 		}
