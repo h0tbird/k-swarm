@@ -8,11 +8,9 @@ metadata:
     app.kubernetes.io/part-of: k-swarm
     {{- if .IstioRevision }}
     istio.io/rev: {{ .IstioRevision }}
-    {{- end }}
-    istio.io/dataplane-mode: ambient
-    {{- if .IstioRevision }}
     istio-injection: disabled
     {{- end }}
+    istio.io/dataplane-mode: ambient
   name: {{ .Namespace }}
 ---
 apiVersion: v1
