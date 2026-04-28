@@ -205,7 +205,7 @@ var informerTelemetryCmd = &cobra.Command{
 var workerCmd = &cobra.Command{
 	Use:               "worker <start:end>",
 	Short:             "Installs the worker's manifests.",
-	Long:              "Installs the worker's manifests. Each invocation renders a Deployment named 'peer' (and matching Service) into namespace <dataplane-mode>-n<i> for every i in <start:end>; pods carry the label k-swarm/peer=enabled.",
+	Long:              "Installs the worker's manifests. Each invocation renders a Deployment named 'peer' (and matching Service) into namespace swarm-<dataplane-mode>-n<i> for every i in <start:end>; pods carry the label k-swarm/peer=enabled.",
 	SilenceUsage:      true,
 	Example:           swarmctl.InstallWorkerExample(),
 	Aliases:           []string{"w"},

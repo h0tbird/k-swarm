@@ -324,7 +324,7 @@ func InstallInformerTelemetry(cmd *cobra.Command, args []string) error {
 			Namespace string
 		}{
 			OnOff:     args[0],
-			Namespace: "informer",
+			Namespace: "swarm-informer",
 		})
 		if err != nil {
 			return err
@@ -422,7 +422,7 @@ func InstallWorker(cmd *cobra.Command, args []string) error {
 				fmt.Printf("\n")
 			}
 
-			namespace := fmt.Sprintf("%s-n%d", dataplaneMode, i)
+			namespace := fmt.Sprintf("swarm-%s-n%d", dataplaneMode, i)
 
 			// Render the template
 			docs, err := util.RenderTemplate(tmpl, struct {
@@ -480,7 +480,7 @@ func InstallWorker(cmd *cobra.Command, args []string) error {
 func InstallWorkerExample() string {
 	return `
   # Install the workers 1 to 1 to the current context
-  # (namespaces follow <mode>-n<index>, e.g. sidecar-n1)
+  # (namespaces follow swarm-<mode>-n<index>, e.g. swarm-sidecar-n1)
   swarmctl worker 1:1 --dataplane-mode sidecar
 
   # Same using the command alias
@@ -566,7 +566,7 @@ func InstallWorkerTelemetry(cmd *cobra.Command, args []string) error {
 				Namespace string
 			}{
 				OnOff:     args[1],
-				Namespace: fmt.Sprintf("%s-n%d", dataplaneMode, i),
+				Namespace: fmt.Sprintf("swarm-%s-n%d", dataplaneMode, i),
 			})
 			if err != nil {
 				return err
