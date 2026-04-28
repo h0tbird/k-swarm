@@ -80,7 +80,7 @@ metadata:
     app.kubernetes.io/managed-by: swarmctl
     app.kubernetes.io/name: informer
     app.kubernetes.io/part-of: k-swarm
-  name: manager-role
+  name: k-swarm-informer-manager-role
 rules:
 - apiGroups:
   - ""
@@ -130,7 +130,7 @@ metadata:
     app.kubernetes.io/managed-by: swarmctl
     app.kubernetes.io/name: informer
     app.kubernetes.io/part-of: k-swarm
-  name: metrics-reader
+  name: k-swarm-informer-metrics-reader
 rules:
 - nonResourceURLs:
   - /metrics
@@ -166,11 +166,11 @@ metadata:
     app.kubernetes.io/managed-by: swarmctl
     app.kubernetes.io/name: informer
     app.kubernetes.io/part-of: k-swarm
-  name: manager-rolebinding
+  name: k-swarm-informer-manager-rolebinding
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: manager-role
+  name: k-swarm-informer-manager-role
 subjects:
 - kind: ServiceAccount
   name: controller-manager
