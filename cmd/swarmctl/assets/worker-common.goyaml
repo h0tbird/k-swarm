@@ -1,0 +1,122 @@
+{{- define "worker-common" -}}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: swarmctl
+    app.kubernetes.io/name: peer
+    app.kubernetes.io/part-of: k-swarm
+  name: peer
+  namespace: {{ .Namespace }}
+spec:
+  duration: 24h0m0s
+  renewBefore: 12h0m0s
+  secretName: peer-{{ .Namespace }}
+  dnsNames:
+  - '{{ .Namespace }}.demo.lab'
+  issuerRef:
+    group: cert-manager.io
+    kind: ClusterIssuer
+    name: ingress-ca
+  revisionHistoryLimit: 2
+  secretTemplate:
+    annotations:
+      replicator.v1.mittwald.de/replicate-to: 'istio-system'
+  privateKey:
+    rotationPolicy: Always
+{{- if eq .IngressMode "shared" }}
+---
+apiVersion: networking.istio.io/v1
+kind: Gateway
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: swarmctl
+    app.kubernetes.io/name: peer
+    app.kubernetes.io/part-of: k-swarm
+  name: peer
+  namespace: {{ .Namespace }}
+spec:
+  selector:
+    istio: nsgw
+  servers:
+  - hosts:
+    - '{{ .Namespace }}.demo.lab'
+    port:
+      name: https
+      number: 443
+      protocol: HTTPS
+    tls:
+      mode: SIMPLE
+      credentialName: peer-{{ .Namespace }}
+---
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: swarmctl
+    app.kubernetes.io/name: peer
+    app.kubernetes.io/part-of: k-swarm
+  name: peer
+  namespace: {{ .Namespace }}
+spec:
+  gateways:
+  - peer
+  hosts:
+  - '{{ .Namespace }}.demo.lab'
+  http:
+  - match:
+    - port: 443
+    route:
+    - destination:
+        host: 'peer.{{ .Namespace }}.svc.{{ .ClusterDomain }}'
+        port:
+          number: 80
+      weight: 100
+{{- else if eq .IngressMode "dedicated" }}
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: swarmctl
+    app.kubernetes.io/name: peer
+    app.kubernetes.io/part-of: k-swarm
+  name: peer-ingress
+  namespace: {{ .Namespace }}
+spec:
+  gatewayClassName: istio
+  listeners:
+  - name: https
+    hostname: '{{ .Namespace }}.demo.lab'
+    port: 443
+    protocol: HTTPS
+    tls:
+      mode: Terminate
+      certificateRefs:
+      - kind: Secret
+        name: peer-{{ .Namespace }}
+    allowedRoutes:
+      namespaces:
+        from: Same
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: swarmctl
+    app.kubernetes.io/name: peer
+    app.kubernetes.io/part-of: k-swarm
+  name: peer
+  namespace: {{ .Namespace }}
+spec:
+  parentRefs:
+  - name: peer-ingress
+  hostnames:
+  - '{{ .Namespace }}.demo.lab'
+  rules:
+  - backendRefs:
+    - name: peer
+      port: 80
+{{- end }}
+{{- end -}}

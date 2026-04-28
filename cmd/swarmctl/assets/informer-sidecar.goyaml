@@ -1,0 +1,153 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: swarmctl
+    app.kubernetes.io/name: informer
+    app.kubernetes.io/part-of: k-swarm
+    {{- if .IstioRevision }}
+    istio.io/rev: {{ .IstioRevision }}
+    {{- else }}
+    istio-injection: enabled
+    {{- end }}
+  name: swarm-informer
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: swarmctl
+    app.kubernetes.io/name: informer
+    app.kubernetes.io/part-of: k-swarm
+  name: informer
+  namespace: swarm-informer
+spec:
+  ports:
+  - name: http
+    port: 80
+    protocol: TCP
+    targetPort: informer
+  selector:
+    k-swarm/informer: enabled
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: swarmctl
+    app.kubernetes.io/name: informer
+    app.kubernetes.io/part-of: k-swarm
+  name: informer
+  namespace: swarm-informer
+spec:
+  replicas: {{ .Replicas }}
+  selector:
+    matchLabels:
+      k-swarm/informer: enabled
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: manager
+        sidecar.istio.io/proxyCPU: 50m
+        sidecar.istio.io/proxyCPULimit: 500m
+        sidecar.istio.io/proxyMemory: 64Mi
+        sidecar.istio.io/proxyMemoryLimit: 512Mi
+      labels:
+        app: informer
+        version: v1
+        k-swarm/informer: enabled
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: k-swarm/informer
+                  operator: In
+                  values:
+                  - enabled
+              topologyKey: kubernetes.io/hostname
+            weight: 100
+      containers:
+      - args:
+        - --leader-elect=false
+        - --enable-informer=true
+        - --enable-worker=false
+        - --informer-bind-address=:8083
+        command:
+        - /manager
+        image: ghcr.io/h0tbird/k-swarm:{{ if .ImageTag }}{{ .ImageTag }}{{ else }}v{{ .Version }}{{ end }}
+        {{- if .ImageTag}}
+        imagePullPolicy: Always
+        {{- end}}
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8081
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        name: manager
+        ports:
+        - containerPort: 8443
+          name: https
+          protocol: TCP
+        - containerPort: 8083
+          name: informer
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 8081
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+      {{- if .NodeSelector}}
+      nodeSelector: {{.NodeSelector}}
+      {{- end}}
+      securityContext:
+        runAsNonRoot: true
+      serviceAccountName: controller-manager
+      terminationGracePeriodSeconds: 10
+---
+apiVersion: security.istio.io/v1
+kind: PeerAuthentication
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: swarmctl
+    app.kubernetes.io/name: informer
+    app.kubernetes.io/part-of: k-swarm
+  name: informer
+  namespace: swarm-informer
+spec:
+  selector:
+    matchLabels:
+      k-swarm/informer: enabled
+  mtls:
+    mode: STRICT
+---
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: swarmctl
+    app.kubernetes.io/name: informer
+    app.kubernetes.io/part-of: k-swarm
+  name: informer
+  namespace: swarm-informer
+spec:
+  selector:
+    matchLabels:
+      k-swarm/informer: enabled
+  action: ALLOW
+  rules:
+  - to:
+    - operation:
+        methods: ["GET"]
+        paths: ["/services"]
+{{ template "informer-common" . }}

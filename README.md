@@ -13,22 +13,35 @@ brew install h0tbird/tap/swarmctl
 
 ### Usage
 
-Install the `informer` with two replicas to all `kind` clusters:
+Install the `informer` with two replicas to all `kind` clusters (the
+`--dataplane-mode` flag is required on every `informer` and `worker`
+invocation):
 ```
-swarmctl i --context 'kind-*' --replicas 2
+swarmctl i --context 'kind-*' --replicas 2 --dataplane-mode sidecar
 ```
 
 Install services 1 to 5 with 2 `workers` each to all `kind` clusters:
 ```
-swarmctl w --context 'kind-*' 1:5 --replicas 2
+swarmctl w --context 'kind-*' 1:5 --replicas 2 --dataplane-mode sidecar
 ```
 
 Enable telemetry for `service-1` on all `kind` clusters:
 ```
-swarmctl w t --context 'kind-*' 1:1 on
+swarmctl w t --context 'kind-*' 1:1 on --dataplane-mode sidecar
 ```
 
-Enable cross-cluster failover for ambient-mode workers (labels the worker
+Render manifests to stdout without applying them (handy for `kubectl diff`
+or reviewing template output):
+```
+swarmctl w --context 'kind-*' 1:1 --dataplane-mode ambient --dry-run
+```
+
+Expose service `1` via a per-namespace Gateway API `Gateway`/`HTTPRoute`:
+```
+swarmctl w --context 'kind-*' 1:1 --dataplane-mode ambient --ingress-mode dedicated
+```
+
+Enable cross-cluster failover for ambient-mode workers (labels the peer
 and waypoint Services with `istio.io/global=true` and emits a
 `DestinationRule` with locality failover by `topology.istio.io/cluster`):
 ```
@@ -40,14 +53,6 @@ swarmctl w --context 'kind-*' 1:1 --dataplane-mode ambient --multi-cluster
 Download all the `Makefile` tooling to `./bin/`:
 ```
 make tooling
-```
-
-Upgrade the telemetry CRD:
-```
-make kind-create
-istioctl --context kind-dev install --set profile=demo -y
-k --context kind-dev get crd telemetries.telemetry.istio.io -o yaml > cmd/swarmctl/assets/crds.yaml
-make kind-delete
 ```
 
 Bring up a local dev environment:

@@ -31,20 +31,10 @@ var version = "0.0.0"
 
 func init() {
 
-	// Command grouping
-	rootCmd.AddGroup(&cobra.Group{ID: "install", Title: "Install subcommands:"})
-	manifestInstallCmd.AddGroup(&cobra.Group{ID: "install", Title: "Install subcommands:"})
-	manifestGenerateCmd.AddGroup(&cobra.Group{ID: "generate", Title: "Generate subcommands:"})
-
 	// Add commands
-	rootCmd.AddCommand(manifestCmd, manifestInstallInformerCmd, manifestInstallWorkerCmd)
-	manifestCmd.AddCommand(manifestDumpCmd, manifestGenerateCmd, manifestInstallCmd)
-	manifestGenerateCmd.AddCommand(manifestGenerateInformerCmd, manifestGenerateWorkerCmd)
-	manifestGenerateInformerCmd.AddCommand(manifestGenerateInformerTelemetryCmd)
-	manifestGenerateWorkerCmd.AddCommand(manifestGenerateWorkerTelemetryCmd)
-	manifestInstallCmd.AddCommand(manifestInstallInformerCmd, manifestInstallWorkerCmd)
-	manifestInstallInformerCmd.AddCommand(manifestInstallInformerTelemetryCmd)
-	manifestInstallWorkerCmd.AddCommand(manifestInstallWorkerTelemetryCmd)
+	rootCmd.AddCommand(dumpCmd, informerCmd, workerCmd, deleteCmd)
+	informerCmd.AddCommand(informerTelemetryCmd)
+	workerCmd.AddCommand(workerTelemetryCmd)
 
 	// Profiling flags
 	rootCmd.PersistentFlags().BoolVar(&profiling.CPUProfile, "cpu-profile", false, "write cpu profile to file")
@@ -54,143 +44,97 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&profiling.MemProfileFile, "mem-profile-file", "mem.prof", "file for memory profiling output")
 	rootCmd.PersistentFlags().StringVar(&profiling.TracingFile, "tracing-file", "trace.out", "file for tracing output")
 
-	// manifestDumpCmd flags
-	manifestDumpCmd.Flags().Bool("stdout", false, "Output to stdout")
+	//---------------------------
+	// informer and worker flags
+	//---------------------------
 
-	// --replicas flag
-	manifestGenerateCmd.PersistentFlags().Int("replicas", 1, "Number of replicas to deploy.")
-	if err := manifestGenerateCmd.RegisterFlagCompletionFunc("replicas", replicasCompletion); err != nil {
-		panic(err)
-	}
+	// Registered separately on informerCmd and workerCmd so they don't leak
+	// into `swarmctl --help` or `swarmctl dump --help`. Telemetry subcommands
+	// inherit them via their parent.
+	for _, c := range []*cobra.Command{informerCmd, workerCmd} {
 
-	// --node-selector flag
-	manifestGenerateCmd.PersistentFlags().String("node-selector", "", "Node selector to use for deployment.")
-	if err := manifestGenerateCmd.RegisterFlagCompletionFunc("node-selector", nodeSelectorCompletion); err != nil {
-		panic(err)
-	}
+		// --context flag
+		c.PersistentFlags().String("context", "", "regex to match the context name.")
+		if err := c.RegisterFlagCompletionFunc("context", contextCompletion); err != nil {
+			panic(err)
+		}
 
-	// --image-tag flag
-	manifestGenerateCmd.PersistentFlags().String("image-tag", "", "Image tag to use for deployment.")
-	if err := manifestGenerateCmd.RegisterFlagCompletionFunc("image-tag", imageTagCompletion); err != nil {
-		panic(err)
-	}
+		// --replicas flag
+		c.PersistentFlags().Int("replicas", 1, "Number of replicas to deploy.")
+		if err := c.RegisterFlagCompletionFunc("replicas", replicasCompletion); err != nil {
+			panic(err)
+		}
 
-	// --istio-revision flag
-	manifestGenerateCmd.PersistentFlags().String("istio-revision", "", "Istio revision label to use for the namespace.")
-	if err := manifestGenerateCmd.RegisterFlagCompletionFunc("istio-revision", istioRevisionCompletion); err != nil {
-		panic(err)
-	}
+		// --node-selector flag
+		c.PersistentFlags().String("node-selector", "", "Node selector to use for deployment.")
+		if err := c.RegisterFlagCompletionFunc("node-selector", nodeSelectorCompletion); err != nil {
+			panic(err)
+		}
 
-	// --cluster-domain flag
-	manifestGenerateCmd.PersistentFlags().String("cluster-domain", "", "Cluster domain suffix (default: cluster.local for generate, auto-detect for install).")
-	if err := manifestGenerateCmd.RegisterFlagCompletionFunc("cluster-domain", clusterDomainCompletion); err != nil {
-		panic(err)
-	}
+		// --image-tag flag
+		c.PersistentFlags().String("image-tag", "", "Image tag to use for deployment.")
+		if err := c.RegisterFlagCompletionFunc("image-tag", imageTagCompletion); err != nil {
+			panic(err)
+		}
 
-	// --dataplane-mode flag (required, no default)
-	manifestGenerateCmd.PersistentFlags().String("dataplane-mode", "", "Istio dataplane mode: sidecar or ambient (required).")
-	if err := manifestGenerateCmd.RegisterFlagCompletionFunc("dataplane-mode", dataplaneModeCompletion); err != nil {
-		panic(err)
-	}
-	if err := manifestGenerateCmd.MarkPersistentFlagRequired("dataplane-mode"); err != nil {
-		panic(err)
-	}
+		// --istio-revision flag
+		c.PersistentFlags().String("istio-revision", "", "Istio revision label to use for the namespace.")
+		if err := c.RegisterFlagCompletionFunc("istio-revision", istioRevisionCompletion); err != nil {
+			panic(err)
+		}
 
-	// --waypoint-name flag
-	manifestGenerateCmd.PersistentFlags().String("waypoint-name", "waypoint", "Name of the per-namespace ambient waypoint Gateway.")
-	if err := manifestGenerateCmd.RegisterFlagCompletionFunc("waypoint-name", waypointNameCompletion); err != nil {
-		panic(err)
-	}
+		// --cluster-domain flag
+		c.PersistentFlags().String("cluster-domain", "", "Cluster domain suffix (default: auto-detect from CoreDNS, or 'cluster.local' in --dry-run).")
+		if err := c.RegisterFlagCompletionFunc("cluster-domain", clusterDomainCompletion); err != nil {
+			panic(err)
+		}
 
-	// --ingress-mode flag
-	manifestGenerateCmd.PersistentFlags().String("ingress-mode", "none", "Ingress mode: 'none', 'shared' (classic Istio Gateway/VirtualService selecting istio: nsgw) or 'dedicated' (per-service Gateway API Gateway/HTTPRoute).")
-	if err := manifestGenerateCmd.RegisterFlagCompletionFunc("ingress-mode", ingressModeCompletion); err != nil {
-		panic(err)
-	}
+		// --dataplane-mode flag
+		c.PersistentFlags().String("dataplane-mode", "", "Istio dataplane mode: sidecar or ambient (required).")
+		if err := c.RegisterFlagCompletionFunc("dataplane-mode", dataplaneModeCompletion); err != nil {
+			panic(err)
+		}
+		if err := c.MarkPersistentFlagRequired("dataplane-mode"); err != nil {
+			panic(err)
+		}
 
-	// --multi-cluster flag (ambient-only)
-	manifestGenerateCmd.PersistentFlags().Bool("multi-cluster", false, "Enable cross-cluster failover for ambient mode: labels the worker and waypoint Services with istio.io/global=true and emits a DestinationRule with locality failover by topology.istio.io/cluster.")
-	if err := manifestGenerateCmd.RegisterFlagCompletionFunc("multi-cluster", multiClusterCompletion); err != nil {
-		panic(err)
-	}
+		// --waypoint-name flag
+		c.PersistentFlags().String("waypoint-name", "waypoint", "Name of the per-namespace ambient waypoint Gateway.")
+		if err := c.RegisterFlagCompletionFunc("waypoint-name", waypointNameCompletion); err != nil {
+			panic(err)
+		}
 
-	// --worker-log-responses flag (worker-only)
-	manifestGenerateCmd.PersistentFlags().Bool("worker-log-responses", false, "If set, the worker logs the raw JSON response bodies received from the informer's /services endpoint and from peer workers' /data endpoint.")
-	if err := manifestGenerateCmd.RegisterFlagCompletionFunc("worker-log-responses", workerLogResponsesCompletion); err != nil {
-		panic(err)
-	}
+		// --ingress-mode flag
+		c.PersistentFlags().String("ingress-mode", "none", "Ingress mode: 'none', 'shared' (classic Istio Gateway/VirtualService selecting istio: nsgw) or 'dedicated' (per-service Gateway API Gateway/HTTPRoute).")
+		if err := c.RegisterFlagCompletionFunc("ingress-mode", ingressModeCompletion); err != nil {
+			panic(err)
+		}
 
-	// --yes flag
-	manifestInstallCmd.PersistentFlags().Bool("yes", false, "Automatically confirm all prompts with 'yes'.")
+		// --yes flag
+		c.PersistentFlags().Bool("yes", false, "Automatically confirm all prompts with 'yes'.")
 
-	// --context flag
-	manifestInstallCmd.PersistentFlags().String("context", "", "regex to match the context name.")
-	if err := manifestInstallCmd.RegisterFlagCompletionFunc("context", contextCompletion); err != nil {
-		panic(err)
-	}
+		// --dry-run flag
+		c.PersistentFlags().Bool("dry-run", false, "Render manifests to stdout without applying them or contacting the cluster.")
 
-	// --replicas flag
-	manifestInstallCmd.PersistentFlags().Int("replicas", 1, "Number of replicas to deploy.")
-	if err := manifestInstallCmd.RegisterFlagCompletionFunc("replicas", replicasCompletion); err != nil {
-		panic(err)
+		// --multi-cluster flag
+		c.PersistentFlags().Bool("multi-cluster", false, "Enable cross-cluster failover for ambient mode: labels the peer and waypoint Services with istio.io/global=true and emits a DestinationRule with locality failover by topology.istio.io/cluster.")
+
+		// --log-responses flag
+		c.PersistentFlags().Bool("log-responses", false, "If set, the worker logs the raw JSON response bodies received from the informer's /services endpoint and from peer pods' /data endpoint.")
 	}
 
-	// --node-selector flag
-	manifestInstallCmd.PersistentFlags().String("node-selector", "", "Node selector to use for deployment.")
-	if err := manifestInstallCmd.RegisterFlagCompletionFunc("node-selector", nodeSelectorCompletion); err != nil {
-		panic(err)
-	}
+	//---------------------------
+	// delete flags
+	//---------------------------
 
-	// --image-tag flag
-	manifestInstallCmd.PersistentFlags().String("image-tag", "", "Image tag to use for deployment.")
-	if err := manifestInstallCmd.RegisterFlagCompletionFunc("image-tag", imageTagCompletion); err != nil {
+	// Registered separately on deleteCmd so they don't leak into the
+	// install/worker subtrees and vice versa.
+	deleteCmd.Flags().String("context", "", "regex to match the context name.")
+	if err := deleteCmd.RegisterFlagCompletionFunc("context", contextCompletion); err != nil {
 		panic(err)
 	}
-
-	// --istio-revision flag
-	manifestInstallCmd.PersistentFlags().String("istio-revision", "", "Istio revision label to use for the namespace.")
-	if err := manifestInstallCmd.RegisterFlagCompletionFunc("istio-revision", istioRevisionCompletion); err != nil {
-		panic(err)
-	}
-
-	// --cluster-domain flag
-	manifestInstallCmd.PersistentFlags().String("cluster-domain", "", "Cluster domain suffix (default: cluster.local for generate, auto-detect for install).")
-	if err := manifestInstallCmd.RegisterFlagCompletionFunc("cluster-domain", clusterDomainCompletion); err != nil {
-		panic(err)
-	}
-
-	// --dataplane-mode flag (required, no default)
-	manifestInstallCmd.PersistentFlags().String("dataplane-mode", "", "Istio dataplane mode: sidecar or ambient (required).")
-	if err := manifestInstallCmd.RegisterFlagCompletionFunc("dataplane-mode", dataplaneModeCompletion); err != nil {
-		panic(err)
-	}
-	if err := manifestInstallCmd.MarkPersistentFlagRequired("dataplane-mode"); err != nil {
-		panic(err)
-	}
-
-	// --waypoint-name flag
-	manifestInstallCmd.PersistentFlags().String("waypoint-name", "waypoint", "Name of the per-namespace ambient waypoint Gateway.")
-	if err := manifestInstallCmd.RegisterFlagCompletionFunc("waypoint-name", waypointNameCompletion); err != nil {
-		panic(err)
-	}
-
-	// --ingress-mode flag
-	manifestInstallCmd.PersistentFlags().String("ingress-mode", "none", "Ingress mode: 'none', 'shared' (classic Istio Gateway/VirtualService selecting istio: nsgw) or 'dedicated' (per-service Gateway API Gateway/HTTPRoute).")
-	if err := manifestInstallCmd.RegisterFlagCompletionFunc("ingress-mode", ingressModeCompletion); err != nil {
-		panic(err)
-	}
-
-	// --multi-cluster flag (ambient-only)
-	manifestInstallCmd.PersistentFlags().Bool("multi-cluster", false, "Enable cross-cluster failover for ambient mode: labels the worker and waypoint Services with istio.io/global=true and emits a DestinationRule with locality failover by topology.istio.io/cluster.")
-	if err := manifestInstallCmd.RegisterFlagCompletionFunc("multi-cluster", multiClusterCompletion); err != nil {
-		panic(err)
-	}
-
-	// --worker-log-responses flag (worker-only)
-	manifestInstallCmd.PersistentFlags().Bool("worker-log-responses", false, "If set, the worker logs the raw JSON response bodies received from the informer's /services endpoint and from peer workers' /data endpoint.")
-	if err := manifestInstallCmd.RegisterFlagCompletionFunc("worker-log-responses", workerLogResponsesCompletion); err != nil {
-		panic(err)
-	}
+	deleteCmd.Flags().Bool("yes", false, "Automatically confirm all prompts with 'yes'.")
+	deleteCmd.Flags().Bool("dry-run", false, "Print what would be deleted without contacting the cluster.")
 }
 
 //-----------------------------------------------------------------------------
@@ -213,97 +157,40 @@ var rootCmd = &cobra.Command{
 	PersistentPreRunE: swarmctl.Root,
 }
 
-var manifestCmd = &cobra.Command{
-	Use:     "manifest",
-	Short:   "Manages manifests.",
-	Aliases: []string{"m"},
-}
-
-var manifestDumpCmd = &cobra.Command{
-	Use:          "dump [informer] [worker]",
-	Short:        "Dumps templates to ~/.swarmctl or stdout.",
+var dumpCmd = &cobra.Command{
+	Use:          "dump",
+	Short:        "Dumps every embedded template to ~/.swarmctl.",
 	SilenceUsage: true,
 	Example:      swarmctl.DumpExample(),
 	Aliases:      []string{"d"},
-	ValidArgs:    []string{"informer", "worker"},
-	Args:         cobra.MatchAll(cobra.MaximumNArgs(2), cobra.OnlyValidArgs),
+	Args:         cobra.NoArgs,
 	RunE:         swarmctl.Dump,
 }
 
-var manifestGenerateCmd = &cobra.Command{
-	Use:     "generate",
-	Short:   "Generates a manifest and outputs it.",
-	Aliases: []string{"g"},
-}
-
-var manifestGenerateInformerCmd = &cobra.Command{
-	Use:          "informer",
-	Short:        "Generates the informer's manifests.",
-	GroupID:      "generate",
+var deleteCmd = &cobra.Command{
+	Use:          "delete",
+	Short:        "Deletes everything swarmctl has installed.",
 	SilenceUsage: true,
-	Example:      swarmctl.GenerateInformerExample(),
-	Aliases:      []string{"i"},
-	Args:         cobra.ExactArgs(0),
+	Example:      swarmctl.DeleteExample(),
+	Aliases:      []string{"rm"},
+	Args:         cobra.NoArgs,
 	PreRunE:      validateFlags,
-	RunE:         swarmctl.GenerateInformer,
+	RunE:         swarmctl.Delete,
 }
 
-var manifestGenerateInformerTelemetryCmd = &cobra.Command{
-	Use:          "telemetry (on|off)",
-	Short:        "Generates the informer's telemetry manifests.",
-	SilenceUsage: true,
-	Example:      swarmctl.GenerateInformerTelemetryExample(),
-	Aliases:      []string{"t"},
-	Args:         cobra.ExactArgs(1),
-	ValidArgs:    []string{"on", "off"},
-	PreRunE:      validateFlags,
-	RunE:         swarmctl.GenerateInformerTelemetry,
-}
-
-var manifestGenerateWorkerCmd = &cobra.Command{
-	Use:          "worker <start:end>",
-	Short:        "Generates the worker's manifests.",
-	GroupID:      "generate",
-	SilenceUsage: true,
-	Example:      swarmctl.GenerateWorkerExample(),
-	Aliases:      []string{"w"},
-	Args:         cobra.RangeArgs(1, 3),
-	PreRunE:      validateFlags,
-	RunE:         swarmctl.GenerateWorker,
-}
-
-var manifestGenerateWorkerTelemetryCmd = &cobra.Command{
-	Use:          "telemetry (on|off)",
-	Short:        "Generates the worker's telemetry manifests.",
-	SilenceUsage: true,
-	Example:      swarmctl.GenerateWorkerTelemetryExample(),
-	Aliases:      []string{"t"},
-	Args:         cobra.ExactArgs(1),
-	ValidArgs:    []string{"on", "off"},
-	PreRunE:      validateFlags,
-	RunE:         swarmctl.GenerateWorkerTelemetry,
-}
-
-var manifestInstallCmd = &cobra.Command{
-	Use:               "install",
-	Short:             "Generates manifests and applies them.",
+var informerCmd = &cobra.Command{
+	Use:               "informer",
+	Short:             "Installs the informer's manifests.",
+	SilenceUsage:      true,
+	Example:           swarmctl.InstallInformerExample(),
 	Aliases:           []string{"i"},
+	Args:              cobra.ExactArgs(0),
 	PersistentPreRunE: swarmctl.Install,
+	PreRunE:           validateFlags,
+	RunE:              swarmctl.InstallInformer,
 }
 
-var manifestInstallInformerCmd = &cobra.Command{
-	Use:          "informer",
-	Short:        "Installs the informer's manifests.",
-	GroupID:      "install",
-	SilenceUsage: true,
-	Example:      swarmctl.InstallInformerExample(),
-	Aliases:      []string{"i"},
-	Args:         cobra.ExactArgs(0),
-	PreRunE:      validateFlags,
-	RunE:         swarmctl.InstallInformer,
-}
-
-var manifestInstallInformerTelemetryCmd = &cobra.Command{
+var informerTelemetryCmd = &cobra.Command{
 	Use:          "telemetry (on|off)",
 	Short:        "Installs the informer's telemetry manifests.",
 	SilenceUsage: true,
@@ -315,20 +202,21 @@ var manifestInstallInformerTelemetryCmd = &cobra.Command{
 	RunE:         swarmctl.InstallInformerTelemetry,
 }
 
-var manifestInstallWorkerCmd = &cobra.Command{
-	Use:          "worker <start:end>",
-	Short:        "Installs the worker's manifests.",
-	GroupID:      "install",
-	SilenceUsage: true,
-	Example:      swarmctl.InstallWorkerExample(),
-	Aliases:      []string{"w"},
-	Args:         cobra.ExactArgs(1),
-	ValidArgs:    []string{"1:1"},
-	PreRunE:      validateFlags,
-	RunE:         swarmctl.InstallWorker,
+var workerCmd = &cobra.Command{
+	Use:               "worker <start:end>",
+	Short:             "Installs the worker's manifests.",
+	Long:              "Installs the worker's manifests. Each invocation renders a Deployment named 'peer' (and matching Service) into namespace swarm-<dataplane-mode>-n<i> for every i in <start:end>; pods carry the label k-swarm/peer=enabled.",
+	SilenceUsage:      true,
+	Example:           swarmctl.InstallWorkerExample(),
+	Aliases:           []string{"w"},
+	Args:              cobra.ExactArgs(1),
+	ValidArgs:         []string{"1:1"},
+	PersistentPreRunE: swarmctl.Install,
+	PreRunE:           validateFlags,
+	RunE:              swarmctl.InstallWorker,
 }
 
-var manifestInstallWorkerTelemetryCmd = &cobra.Command{
+var workerTelemetryCmd = &cobra.Command{
 	Use:               "telemetry <start:end> (on|off)",
 	Short:             "Installs the worker's telemetry manifests.",
 	SilenceUsage:      true,
@@ -487,61 +375,43 @@ func ingressModeIsValid(value string) bool {
 }
 
 //-----------------------------------------------------------------------------
-// multiCluster
-//-----------------------------------------------------------------------------
-
-// multiClusterCompletion
-func multiClusterCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-	return []string{"true", "false"}, cobra.ShellCompDirectiveNoFileComp
-}
-
-//-----------------------------------------------------------------------------
-// workerLogResponses
-//-----------------------------------------------------------------------------
-
-// workerLogResponsesCompletion
-func workerLogResponsesCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-	return []string{"true", "false"}, cobra.ShellCompDirectiveNoFileComp
-}
-
-//-----------------------------------------------------------------------------
 // validateFlags
 //-----------------------------------------------------------------------------
 
 func validateFlags(cmd *cobra.Command, args []string) error {
 
 	if cmd.Flags().Changed("context") {
-		if valid := contextIsValid(); !valid {
+		if !contextIsValid() {
 			return errors.New("invalid context")
 		}
 	}
 
 	if cmd.Flags().Changed("replicas") {
-		if valid := replicasIsValid(); !valid {
+		if !replicasIsValid() {
 			return errors.New("invalid replicas")
 		}
 	}
 
 	if cmd.Flags().Changed("node-selector") {
-		if valid := nodeSelectorIsValid(); !valid {
+		if !nodeSelectorIsValid() {
 			return errors.New("invalid node-selector")
 		}
 	}
 
 	if cmd.Flags().Changed("image-tag") {
-		if valid := imageTagIsValid(); !valid {
+		if !imageTagIsValid() {
 			return errors.New("invalid image-tag")
 		}
 	}
 
 	if cmd.Flags().Changed("istio-revision") {
-		if valid := istioRevisionIsValid(); !valid {
+		if !istioRevisionIsValid() {
 			return errors.New("invalid istio-revision")
 		}
 	}
 
 	if cmd.Flags().Changed("cluster-domain") {
-		if valid := clusterDomainIsValid(); !valid {
+		if !clusterDomainIsValid() {
 			return errors.New("invalid cluster-domain")
 		}
 	}
@@ -564,15 +434,6 @@ func validateFlags(cmd *cobra.Command, args []string) error {
 		value, _ := cmd.Flags().GetString("ingress-mode")
 		if !ingressModeIsValid(value) {
 			return errors.New("invalid ingress-mode (must be 'none', 'shared' or 'dedicated')")
-		}
-	}
-
-	// --multi-cluster requires --dataplane-mode=ambient
-	if cmd.Flags().Changed("multi-cluster") {
-		multiCluster, _ := cmd.Flags().GetBool("multi-cluster")
-		dataplaneMode, _ := cmd.Flags().GetString("dataplane-mode")
-		if multiCluster && dataplaneMode != "ambient" {
-			return errors.New("--multi-cluster requires --dataplane-mode=ambient")
 		}
 	}
 

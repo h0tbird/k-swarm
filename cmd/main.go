@@ -176,7 +176,7 @@ func main() {
 	// Run as a worker
 	if flags.EnableWorker {
 		wg.Add(1)
-		ctrl.Log.WithName("main").Info("Starting worker")
+		ctrl.Log.WithName("main").Info("Starting peer")
 		go worker.Start(ctx, &wg, flags)
 	}
 

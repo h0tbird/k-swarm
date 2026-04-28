@@ -1,0 +1,176 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: swarmctl
+    app.kubernetes.io/name: peer
+    app.kubernetes.io/part-of: k-swarm
+    {{- if .IstioRevision }}
+    istio.io/rev: {{ .IstioRevision }}
+    {{- else }}
+    istio-injection: enabled
+    {{- end }}
+  name: {{ .Namespace }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: k-swarm
+    app.kubernetes.io/managed-by: swarmctl
+    app.kubernetes.io/name: peer
+    app.kubernetes.io/part-of: k-swarm
+  name: peer
+  namespace: {{ .Namespace }}
+spec:
+  ports:
+  - name: http
+    port: 80
+    protocol: TCP
+    targetPort: peer
+  selector:
+    k-swarm/peer: enabled
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: swarmctl
+    app.kubernetes.io/name: peer
+    app.kubernetes.io/part-of: k-swarm
+  name: peer
+  namespace: {{ .Namespace }}
+spec:
+  replicas: {{ .Replicas }}
+  selector:
+    matchLabels:
+      k-swarm/peer: enabled
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: manager
+        sidecar.istio.io/proxyCPU: 50m
+        sidecar.istio.io/proxyCPULimit: 500m
+        sidecar.istio.io/proxyMemory: 64Mi
+        sidecar.istio.io/proxyMemoryLimit: 512Mi
+      labels:
+        app: peer
+        version: v1
+        k-swarm/peer: enabled
+    spec:
+      containers:
+      - args:
+        - --leader-elect=false
+        - --enable-informer=false
+        - --enable-worker=true
+        - --worker-bind-address=:8082
+        - --informer-url=http://informer.swarm-informer
+        - --informer-poll-interval=60s
+        - --worker-request-interval=2s
+        {{- if .LogResponses }}
+        - --worker-log-responses
+        {{- end }}
+        command:
+        - /manager
+        env:
+        - name: CLUSTER_NAME
+          value: {{ .ClusterName }}
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        image: ghcr.io/h0tbird/k-swarm:{{ if .ImageTag }}{{ .ImageTag }}{{ else }}v{{ .Version }}{{ end }}
+        {{- if .ImageTag}}
+        imagePullPolicy: Always
+        {{- end}}
+        name: manager
+        ports:
+        - containerPort: 8082
+          name: peer
+          protocol: TCP
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+      {{- if .NodeSelector}}
+      nodeSelector: {{.NodeSelector}}
+      {{- end}}
+      securityContext:
+        runAsNonRoot: true
+      serviceAccountName: default
+      terminationGracePeriodSeconds: 10
+---
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: swarmctl
+    app.kubernetes.io/name: peer
+    app.kubernetes.io/part-of: k-swarm
+  name: peer
+  namespace: {{ .Namespace }}
+spec:
+  host: peer
+  trafficPolicy:
+    connectionPool:
+      http:
+        maxRequestsPerConnection: 1
+    loadBalancer:
+      simple: LEAST_REQUEST
+      localityLbSetting:
+        enabled: true
+    outlierDetection:
+      consecutive5xxErrors: 1
+      interval: 1s
+      baseEjectionTime: 10s
+---
+apiVersion: security.istio.io/v1
+kind: PeerAuthentication
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: swarmctl
+    app.kubernetes.io/name: peer
+    app.kubernetes.io/part-of: k-swarm
+  name: peer
+  namespace: {{ .Namespace }}
+spec:
+  selector:
+    matchLabels:
+      k-swarm/peer: enabled
+  mtls:
+    mode: STRICT
+---
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: swarmctl
+    app.kubernetes.io/name: peer
+    app.kubernetes.io/part-of: k-swarm
+  name: peer
+  namespace: {{ .Namespace }}
+spec:
+  selector:
+    matchLabels:
+      k-swarm/peer: enabled
+  action: ALLOW
+  rules:
+  - to:
+    - operation:
+        methods: ["GET"]
+        paths: ["/data"]
+{{ template "worker-common" . }}

@@ -3,16 +3,15 @@ apiVersion: v1
 kind: Namespace
 metadata:
   labels:
+    app.kubernetes.io/managed-by: swarmctl
+    app.kubernetes.io/name: peer
+    app.kubernetes.io/part-of: k-swarm
     {{- if .IstioRevision }}
     istio.io/rev: {{ .IstioRevision }}
     {{- end }}
-    {{- if eq .DataplaneMode "ambient" }}
     istio.io/dataplane-mode: ambient
     {{- if .IstioRevision }}
     istio-injection: disabled
-    {{- end }}
-    {{- else if not .IstioRevision }}
-    istio-injection: enabled
     {{- end }}
   name: {{ .Namespace }}
 ---
@@ -21,47 +20,46 @@ kind: Service
 metadata:
   labels:
     app: k-swarm
-    {{- if eq .DataplaneMode "ambient" }}
+    app.kubernetes.io/managed-by: swarmctl
+    app.kubernetes.io/name: peer
+    app.kubernetes.io/part-of: k-swarm
     istio.io/use-waypoint: {{ .WaypointName }}
     {{- if .MultiCluster }}
     istio.io/global: "true"
     {{- end }}
-    {{- end }}
-  name: worker
+  name: peer
   namespace: {{ .Namespace }}
 spec:
   ports:
   - name: http
     port: 80
     protocol: TCP
-    targetPort: worker
+    targetPort: peer
   selector:
-    k-swarm/worker: enabled
+    k-swarm/peer: enabled
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: worker
+  labels:
+    app.kubernetes.io/managed-by: swarmctl
+    app.kubernetes.io/name: peer
+    app.kubernetes.io/part-of: k-swarm
+  name: peer
   namespace: {{ .Namespace }}
 spec:
   replicas: {{ .Replicas }}
   selector:
     matchLabels:
-      k-swarm/worker: enabled
+      k-swarm/peer: enabled
   template:
     metadata:
       annotations:
         kubectl.kubernetes.io/default-container: manager
-        {{- if ne .DataplaneMode "ambient" }}
-        sidecar.istio.io/proxyCPU: 50m
-        sidecar.istio.io/proxyCPULimit: 500m
-        sidecar.istio.io/proxyMemory: 64Mi
-        sidecar.istio.io/proxyMemoryLimit: 512Mi
-        {{- end }}
       labels:
-        app: worker
+        app: peer
         version: v1
-        k-swarm/worker: enabled
+        k-swarm/peer: enabled
     spec:
       containers:
       - args:
@@ -69,7 +67,7 @@ spec:
         - --enable-informer=false
         - --enable-worker=true
         - --worker-bind-address=:8082
-        - --informer-url=http://informer.informer
+        - --informer-url=http://informer.swarm-informer
         - --informer-poll-interval=60s
         - --worker-request-interval=2s
         {{- if .LogResponses }}
@@ -79,7 +77,7 @@ spec:
         - /manager
         env:
         - name: CLUSTER_NAME
-          value: kind-dev
+          value: {{ .ClusterName }}
         - name: POD_NAME
           valueFrom:
             fieldRef:
@@ -103,7 +101,7 @@ spec:
         name: manager
         ports:
         - containerPort: 8082
-          name: worker
+          name: peer
           protocol: TCP
         securityContext:
           allowPrivilegeEscalation: false
@@ -117,61 +115,27 @@ spec:
         runAsNonRoot: true
       serviceAccountName: default
       terminationGracePeriodSeconds: 10
-{{- if ne .DataplaneMode "ambient" }}
----
-apiVersion: networking.istio.io/v1
-kind: DestinationRule
-metadata:
-  name: worker
-  namespace: {{ .Namespace }}
-spec:
-  host: worker
-  trafficPolicy:
-    connectionPool:
-      http:
-        maxRequestsPerConnection: 1
-    loadBalancer:
-      simple: LEAST_REQUEST
-      localityLbSetting:
-        enabled: true
-    outlierDetection:
-      consecutive5xxErrors: 1
-      interval: 1s
-      baseEjectionTime: 10s
----
-apiVersion: security.istio.io/v1
-kind: PeerAuthentication
-metadata:
-  name: worker
-  namespace: {{ .Namespace }}
-spec:
-  selector:
-    matchLabels:
-      k-swarm/worker: enabled
-  mtls:
-    mode: STRICT
-{{- end }}
 ---
 apiVersion: security.istio.io/v1
 kind: AuthorizationPolicy
 metadata:
-  name: worker
+  labels:
+    app.kubernetes.io/managed-by: swarmctl
+    app.kubernetes.io/name: peer
+    app.kubernetes.io/part-of: k-swarm
+  name: peer
   namespace: {{ .Namespace }}
 spec:
-  {{- if and (eq .DataplaneMode "ambient") .MultiCluster }}
+  {{- if .MultiCluster }}
   targetRefs:
   - kind: Gateway
     group: gateway.networking.k8s.io
     name: {{ .WaypointName }}
-  {{- else if eq .DataplaneMode "ambient" }}
+  {{- else }}
   targetRefs:
   - kind: Service
     group: ""
-    name: worker
-  {{- else }}
-  selector:
-    matchLabels:
-      k-swarm/worker: enabled
+    name: peer
   {{- end }}
   action: ALLOW
   rules:
@@ -179,116 +143,19 @@ spec:
     - operation:
         methods: ["GET"]
         paths: ["/data"]
----
-apiVersion: cert-manager.io/v1
-kind: Certificate
-metadata:
-  name: worker
-  namespace: {{ .Namespace }}
-spec:
-  duration: 24h0m0s
-  renewBefore: 12h0m0s
-  secretName: worker-{{ .Namespace }}
-  dnsNames:
-  - '{{ .Namespace }}.demo.lab'
-  issuerRef:
-    group: cert-manager.io
-    kind: ClusterIssuer
-    name: ingress-ca
-  revisionHistoryLimit: 2
-  secretTemplate:
-    annotations:
-      replicator.v1.mittwald.de/replicate-to: 'istio-system'
-  privateKey:
-    rotationPolicy: Always
-{{- if eq .IngressMode "shared" }}
----
-apiVersion: networking.istio.io/v1
-kind: Gateway
-metadata:
-  name: worker
-  namespace: {{ .Namespace }}
-spec:
-  selector:
-    istio: nsgw
-  servers:
-  - hosts:
-    - '{{ .Namespace }}.demo.lab'
-    port:
-      name: https
-      number: 443
-      protocol: HTTPS
-    tls:
-      mode: SIMPLE
-      credentialName: worker-{{ .Namespace }}
----
-apiVersion: networking.istio.io/v1
-kind: VirtualService
-metadata:
-  name: worker
-  namespace: {{ .Namespace }}
-spec:
-  gateways:
-  - worker
-  hosts:
-  - '{{ .Namespace }}.demo.lab'
-  http:
-  - match:
-    - port: 443
-    route:
-    - destination:
-        host: 'worker.{{ .Namespace }}.svc.{{ .ClusterDomain }}'
-        port:
-          number: 80
-      weight: 100
-{{- else if eq .IngressMode "dedicated" }}
----
-apiVersion: gateway.networking.k8s.io/v1
-kind: Gateway
-metadata:
-  name: worker-ingress
-  namespace: {{ .Namespace }}
-spec:
-  gatewayClassName: istio
-  listeners:
-  - name: https
-    hostname: '{{ .Namespace }}.demo.lab'
-    port: 443
-    protocol: HTTPS
-    tls:
-      mode: Terminate
-      certificateRefs:
-      - kind: Secret
-        name: worker-{{ .Namespace }}
-    allowedRoutes:
-      namespaces:
-        from: Same
----
-apiVersion: gateway.networking.k8s.io/v1
-kind: HTTPRoute
-metadata:
-  name: worker
-  namespace: {{ .Namespace }}
-spec:
-  parentRefs:
-  - name: worker-ingress
-  hostnames:
-  - '{{ .Namespace }}.demo.lab'
-  rules:
-  - backendRefs:
-    - name: worker
-      port: 80
-{{- end }}
-{{- if eq .DataplaneMode "ambient" }}
 {{- if .MultiCluster }}
 ---
 apiVersion: networking.istio.io/v1
 kind: DestinationRule
 metadata:
-  name: worker
+  labels:
+    app.kubernetes.io/managed-by: swarmctl
+    app.kubernetes.io/name: peer
+    app.kubernetes.io/part-of: k-swarm
+  name: peer
   namespace: {{ .Namespace }}
 spec:
-  host: worker
+  host: peer
   trafficPolicy:
     outlierDetection:
       consecutive5xxErrors: 1
@@ -308,6 +175,9 @@ metadata:
   name: {{ .WaypointName }}
   namespace: {{ .Namespace }}
   labels:
+    app.kubernetes.io/managed-by: swarmctl
+    app.kubernetes.io/name: peer
+    app.kubernetes.io/part-of: k-swarm
     istio.io/waypoint-for: service
 spec:
   gatewayClassName: istio-waypoint
@@ -322,4 +192,4 @@ spec:
   - name: mesh
     port: 15008
     protocol: HBONE
-{{- end }}
+{{ template "worker-common" . }}
