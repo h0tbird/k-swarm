@@ -13,13 +13,13 @@ metadata:
     {{- if .IstioRevision }}
     istio-injection: disabled
     {{- end }}
-  name: informer
+  name: swarm-informer
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: informer
-  namespace: informer
+  namespace: swarm-informer
   labels:
     app.kubernetes.io/managed-by: swarmctl
     app.kubernetes.io/name: informer
@@ -42,7 +42,7 @@ metadata:
     app.kubernetes.io/name: informer
     app.kubernetes.io/part-of: k-swarm
   name: informer
-  namespace: informer
+  namespace: swarm-informer
 spec:
   replicas: {{ .Replicas }}
   selector:
@@ -122,7 +122,7 @@ metadata:
     app.kubernetes.io/name: informer
     app.kubernetes.io/part-of: k-swarm
   name: informer
-  namespace: informer
+  namespace: swarm-informer
 spec:
   targetRefs:
   - kind: Service
@@ -139,7 +139,7 @@ apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
 metadata:
   name: {{ .WaypointName }}
-  namespace: informer
+  namespace: swarm-informer
   labels:
     app.kubernetes.io/managed-by: swarmctl
     app.kubernetes.io/name: informer

@@ -10,7 +10,7 @@ metadata:
     app.kubernetes.io/name: informer
     app.kubernetes.io/part-of: k-swarm
   name: controller-manager
-  namespace: informer
+  namespace: swarm-informer
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
@@ -22,7 +22,7 @@ metadata:
     app.kubernetes.io/name: informer
     app.kubernetes.io/part-of: k-swarm
   name: leader-election-role
-  namespace: informer
+  namespace: swarm-informer
 rules:
 - apiGroups:
   - ""
@@ -132,7 +132,7 @@ metadata:
     app.kubernetes.io/name: informer
     app.kubernetes.io/part-of: k-swarm
   name: leader-election-rolebinding
-  namespace: informer
+  namespace: swarm-informer
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
@@ -140,7 +140,7 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: controller-manager
-  namespace: informer
+  namespace: swarm-informer
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -159,7 +159,7 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: controller-manager
-  namespace: informer
+  namespace: swarm-informer
 ---
 apiVersion: v1
 kind: Service
@@ -172,7 +172,7 @@ metadata:
     app.kubernetes.io/part-of: k-swarm
     control-plane: controller-manager
   name: controller-manager-metrics-service
-  namespace: informer
+  namespace: swarm-informer
 spec:
   ports:
   - name: https
@@ -191,7 +191,7 @@ metadata:
     app.kubernetes.io/name: informer
     app.kubernetes.io/part-of: k-swarm
   name: informer
-  namespace: informer
+  namespace: swarm-informer
 spec:
   selector:
     istio: nsgw
@@ -211,7 +211,7 @@ metadata:
     app.kubernetes.io/name: informer
     app.kubernetes.io/part-of: k-swarm
   name: informer
-  namespace: informer
+  namespace: swarm-informer
 spec:
   gateways:
   - informer
@@ -234,7 +234,7 @@ metadata:
     app.kubernetes.io/name: informer
     app.kubernetes.io/part-of: k-swarm
   name: informer-ingress
-  namespace: informer
+  namespace: swarm-informer
 spec:
   gatewayClassName: istio
   listeners:
@@ -254,7 +254,7 @@ metadata:
     app.kubernetes.io/name: informer
     app.kubernetes.io/part-of: k-swarm
   name: informer
-  namespace: informer
+  namespace: swarm-informer
 spec:
   parentRefs:
   - name: informer-ingress
