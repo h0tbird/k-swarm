@@ -16,6 +16,7 @@ import (
 	"strings"
 
 	// Community
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -314,4 +315,58 @@ func parseClusterDomainFromCorefile(corefile string) string {
 	domain = strings.TrimSpace(domain)
 
 	return domain
+}
+
+//-----------------------------------------------------------------------------
+// ListByLabel returns the names of objects of the given GVR that carry
+// the supplied label selector. For namespaced resources, namespace=""
+// targets all namespaces.
+//-----------------------------------------------------------------------------
+
+func (c *Context) ListByLabel(ctx context.Context, gvr schema.GroupVersionResource, namespace, labelSelector string) ([]string, error) {
+
+	defer trace.StartRegion(ctx, "ListByLabel").End()
+
+	var ri dynamic.ResourceInterface = c.DynCli.Resource(gvr)
+	if namespace != "" {
+		ri = c.DynCli.Resource(gvr).Namespace(namespace)
+	}
+
+	list, err := ri.List(ctx, metav1.ListOptions{LabelSelector: labelSelector})
+	if err != nil {
+		return nil, fmt.Errorf("listing %s with selector %q: %w", gvr.Resource, labelSelector, err)
+	}
+
+	names := make([]string, 0, len(list.Items))
+	for _, item := range list.Items {
+		names = append(names, item.GetName())
+	}
+	return names, nil
+}
+
+//-----------------------------------------------------------------------------
+// DeleteResource deletes the named object of the given GVR. Missing
+// objects are treated as success (idempotent). If namespace is empty the
+// resource is treated as cluster-scoped.
+//-----------------------------------------------------------------------------
+
+func (c *Context) DeleteResource(ctx context.Context, gvr schema.GroupVersionResource, kind, namespace, name string) error {
+
+	defer trace.StartRegion(ctx, "DeleteResource").End()
+
+	var ri dynamic.ResourceInterface = c.DynCli.Resource(gvr)
+	if namespace != "" {
+		ri = c.DynCli.Resource(gvr).Namespace(namespace)
+	}
+
+	err := ri.Delete(ctx, name, metav1.DeleteOptions{})
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			fmt.Printf("  - %s/%s not found (skipped)\n", kind, name)
+			return nil
+		}
+		return fmt.Errorf("deleting %s/%s: %w", kind, name, err)
+	}
+	fmt.Printf("  - %s/%s deleted\n", kind, name)
+	return nil
 }
