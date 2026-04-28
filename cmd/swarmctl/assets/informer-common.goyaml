@@ -1,0 +1,268 @@
+{{- define "informer-common" -}}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/instance: controller-manager-sa
+    app.kubernetes.io/managed-by: swarmctl
+    app.kubernetes.io/name: informer
+    app.kubernetes.io/part-of: k-swarm
+  name: controller-manager
+  namespace: informer
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  labels:
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/instance: leader-election-role
+    app.kubernetes.io/managed-by: swarmctl
+    app.kubernetes.io/name: informer
+    app.kubernetes.io/part-of: k-swarm
+  name: leader-election-role
+  namespace: informer
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - coordination.k8s.io
+  resources:
+  - leases
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/instance: manager-role
+    app.kubernetes.io/managed-by: swarmctl
+    app.kubernetes.io/name: informer
+    app.kubernetes.io/part-of: k-swarm
+  name: k-swarm-informer-manager-role
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - services/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - ""
+  resources:
+  - services/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - authentication.k8s.io
+  resources:
+  - tokenreviews
+  verbs:
+  - create
+- apiGroups:
+  - authorization.k8s.io
+  resources:
+  - subjectaccessreviews
+  verbs:
+  - create
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/instance: metrics-reader
+    app.kubernetes.io/managed-by: swarmctl
+    app.kubernetes.io/name: informer
+    app.kubernetes.io/part-of: k-swarm
+  name: k-swarm-informer-metrics-reader
+rules:
+- nonResourceURLs:
+  - /metrics
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/instance: leader-election-rolebinding
+    app.kubernetes.io/managed-by: swarmctl
+    app.kubernetes.io/name: informer
+    app.kubernetes.io/part-of: k-swarm
+  name: leader-election-rolebinding
+  namespace: informer
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: leader-election-role
+subjects:
+- kind: ServiceAccount
+  name: controller-manager
+  namespace: informer
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/instance: manager-rolebinding
+    app.kubernetes.io/managed-by: swarmctl
+    app.kubernetes.io/name: informer
+    app.kubernetes.io/part-of: k-swarm
+  name: k-swarm-informer-manager-rolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: k-swarm-informer-manager-role
+subjects:
+- kind: ServiceAccount
+  name: controller-manager
+  namespace: informer
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: metrics
+    app.kubernetes.io/instance: controller-manager-metrics-service
+    app.kubernetes.io/managed-by: swarmctl
+    app.kubernetes.io/name: informer
+    app.kubernetes.io/part-of: k-swarm
+    control-plane: controller-manager
+  name: controller-manager-metrics-service
+  namespace: informer
+spec:
+  ports:
+  - name: https
+    port: 8443
+    protocol: TCP
+    targetPort: https
+  selector:
+    control-plane: controller-manager
+{{- if eq .IngressMode "shared" }}
+---
+apiVersion: networking.istio.io/v1
+kind: Gateway
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: swarmctl
+    app.kubernetes.io/name: informer
+    app.kubernetes.io/part-of: k-swarm
+  name: informer
+  namespace: informer
+spec:
+  selector:
+    istio: nsgw
+  servers:
+  - hosts:
+    - 'informer.demo.lab'
+    port:
+      name: http
+      number: 80
+      protocol: HTTP
+---
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: swarmctl
+    app.kubernetes.io/name: informer
+    app.kubernetes.io/part-of: k-swarm
+  name: informer
+  namespace: informer
+spec:
+  gateways:
+  - informer
+  hosts:
+  - 'informer.demo.lab'
+  http:
+  - route:
+    - destination:
+        host: informer
+        port:
+          number: 80
+      weight: 100
+{{- else if eq .IngressMode "dedicated" }}
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: swarmctl
+    app.kubernetes.io/name: informer
+    app.kubernetes.io/part-of: k-swarm
+  name: informer-ingress
+  namespace: informer
+spec:
+  gatewayClassName: istio
+  listeners:
+  - name: http
+    hostname: 'informer.demo.lab'
+    port: 80
+    protocol: HTTP
+    allowedRoutes:
+      namespaces:
+        from: Same
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: swarmctl
+    app.kubernetes.io/name: informer
+    app.kubernetes.io/part-of: k-swarm
+  name: informer
+  namespace: informer
+spec:
+  parentRefs:
+  - name: informer-ingress
+  hostnames:
+  - 'informer.demo.lab'
+  rules:
+  - backendRefs:
+    - name: informer
+      port: 80
+{{- end }}
+{{- end -}}
