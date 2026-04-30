@@ -510,10 +510,12 @@ func InstallWorkerExample() string {
   # Expose the peer Service via a dedicated Gateway API Gateway+HTTPRoute.
   swarmctl w 1:1 --dataplane-mode ambient --context 'kind-pasta-.*' --ingress-mode dedicated
 
-  # Enable cross-cluster failover for ambient-mode workers: labels the peer
-  # and waypoint Services with istio.io/global=true and emits a DestinationRule
-  # with locality failover by topology.istio.io/cluster (ambient-only).
-  swarmctl w 1:1 --dataplane-mode ambient --context 'kind-pasta-.*' --multi-cluster
+  # Enable cross-cluster failover: labels the peer Service (and ambient
+  # waypoint Service) with istio.io/global=true and emits a DestinationRule
+  # with locality failover by topology.istio.io/cluster. Works for both
+  # ambient and sidecar dataplane modes.
+  swarmctl w 1:1 --dataplane-mode ambient  --context 'kind-pasta-.*' --multi-cluster
+  swarmctl w 1:1 --dataplane-mode sidecar --context 'kind-pasta-.*' --multi-cluster
 
   # Render the worker manifests to stdout without applying them or contacting the cluster.
   swarmctl w 1:1 --dataplane-mode ambient --dry-run | kubectl diff -f -
