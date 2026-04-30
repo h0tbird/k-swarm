@@ -117,7 +117,7 @@ func init() {
 		c.PersistentFlags().Bool("dry-run", false, "Render manifests to stdout without applying them or contacting the cluster.")
 
 		// --multi-cluster flag
-		c.PersistentFlags().Bool("multi-cluster", false, "Enable cross-cluster failover for ambient mode: labels the peer and waypoint Services with istio.io/global=true and emits a DestinationRule with locality failover by topology.istio.io/cluster.")
+		c.PersistentFlags().Bool("multi-cluster", false, "Enable cross-cluster failover: labels the peer Service (and ambient waypoint Service) with istio.io/global=true and emits a DestinationRule with locality failover by topology.istio.io/cluster. Works for both ambient and sidecar dataplane modes.")
 
 		// --log-responses flag
 		c.PersistentFlags().Bool("log-responses", false, "If set, the worker logs the raw JSON response bodies received from the informer's /services endpoint and from peer pods' /data endpoint.")

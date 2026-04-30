@@ -21,6 +21,12 @@ metadata:
     app.kubernetes.io/managed-by: swarmctl
     app.kubernetes.io/name: peer
     app.kubernetes.io/part-of: k-swarm
+    {{- if .MultiCluster }}
+    # Required by the mesh's serviceScopeConfigs filter so this Service
+    # is exported across clusters and istiod publishes its endpoints in
+    # remote sidecar EDS via the cross-network gateway on 15443.
+    istio.io/global: "true"
+    {{- end }}
   name: peer
   namespace: {{ .Namespace }}
 spec:
@@ -152,7 +158,15 @@ spec:
     loadBalancer:
       simple: LEAST_REQUEST
       localityLbSetting:
+        {{- if .MultiCluster }}
+        # Disable locality load balancing to force failover across clusters
+        # so cross-cluster sidecar->sidecar requests are exercised.
+        enabled: false
+        failoverPriority:
+          - topology.istio.io/cluster
+        {{- else }}
         enabled: true
+        {{- end }}
     outlierDetection:
       consecutive5xxErrors: 1
       interval: 1s

@@ -145,7 +145,7 @@ Key persistent flags shared by `informer` and `worker` (and inherited by their
 | `--node-selector` | _empty_ | Inline YAML node selector for the Deployment pod spec. |
 | `--waypoint-name` | `waypoint` | Name of the per-namespace ambient waypoint Gateway. |
 | `--ingress-mode` | `none` | `none`, `shared` (Istio `Gateway`/`VirtualService` selecting `istio: nsgw`) or `dedicated` (per-namespace Gateway API `Gateway`/`HTTPRoute`). |
-| `--multi-cluster` | `false` | Ambient-only: labels peer and waypoint Services with `istio.io/global=true` and emits a `DestinationRule` with locality failover by `topology.istio.io/cluster`. |
+| `--multi-cluster` | `false` | Labels the peer Service (and ambient waypoint Service) with `istio.io/global=true` and emits a `DestinationRule` with locality failover by `topology.istio.io/cluster`. Works for both ambient and sidecar dataplane modes. |
 | `--log-responses` | `false` | Renders the worker manifest with `--worker-log-responses`, causing each pod to log raw JSON bodies received from the informer and peers. |
 | `--dry-run` | `false` | Render YAML to stdout; skip cluster discovery and apply. |
 | `--yes` | `false` | Skip the confirmation prompt before applying. |
@@ -188,8 +188,14 @@ namespace it can emit, depending on flags:
   `Gateway` (`gatewayClassName: istio-waypoint`); the peer Service is
   labeled `istio.io/use-waypoint`.
 - Ambient + `--multi-cluster`: peer and waypoint Services are labeled
-  `istio.io/global=true` and an extra `DestinationRule` with locality
-  failover by `topology.istio.io/cluster` is emitted.
+  `istio.io/global=true` and the `DestinationRule` carries locality
+  failover by `topology.istio.io/cluster`.
+- Sidecar + `--multi-cluster`: peer Service is labeled
+  `istio.io/global=true` and the `DestinationRule` switches to disabled
+  locality LB with failover by `topology.istio.io/cluster` so that
+  cross-cluster sidecar->sidecar traffic is exercised. Requires a
+  cross-network east-west gateway with a TLS Passthrough listener on
+  port 15443 in the mesh.
 - `--ingress-mode shared`: an Istio `Gateway`/`VirtualService` pair selecting
   the shared `istio: nsgw` workload.
 - `--ingress-mode dedicated`: a Gateway API `Gateway`/`HTTPRoute` pair with
