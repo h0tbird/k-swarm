@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	// Community
@@ -26,7 +27,10 @@ import (
 //-----------------------------------------------------------------------------
 
 var (
-	serviceList = []string{}
+	// serviceList is updated by pollServiceList and read by client. Using an
+	// atomic.Pointer makes the swap and load race-free without a mutex;
+	// readers always observe a fully-published slice header.
+	serviceList atomic.Pointer[[]string]
 	log         = ctrl.Log.WithName("peer")
 )
 
@@ -112,7 +116,7 @@ func client(ctx context.Context, flags *common.FlagPack) {
 	log := log.WithValues("src", localPeer())
 
 	// Get the service list from the informer
-	go pollServiceList(ctx, flags, &serviceList)
+	go pollServiceList(ctx, flags)
 
 	// Pace requests with a ticker so an empty service list (e.g. before the
 	// informer has responded for the first time) does not turn the outer loop
@@ -127,7 +131,11 @@ func client(ctx context.Context, flags *common.FlagPack) {
 			log.Info("client context done")
 			return
 		case <-ticker.C:
-			for _, service := range serviceList {
+			services := serviceList.Load()
+			if services == nil {
+				continue
+			}
+			for _, service := range *services {
 				start := time.Now()
 				resp, err := http.Get(fmt.Sprintf("http://%s/data", service))
 				if err != nil {
@@ -193,7 +201,7 @@ type httpInfo struct {
 // pollServiceList polls the service list from the informer
 //-----------------------------------------------------------------------------
 
-func pollServiceList(ctx context.Context, flags *common.FlagPack, serviceList *[]string) {
+func pollServiceList(ctx context.Context, flags *common.FlagPack) {
 
 	// Setup a ticker
 	ticker := time.NewTicker(flags.InformerPollInterval)
@@ -209,7 +217,7 @@ func pollServiceList(ctx context.Context, flags *common.FlagPack, serviceList *[
 				log.Error(err, "failed to fetch services")
 				continue
 			}
-			*serviceList = newServices
+			serviceList.Store(&newServices)
 		case <-ctx.Done():
 			log.Info("client context done")
 			return
