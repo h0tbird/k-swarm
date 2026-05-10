@@ -114,15 +114,20 @@ func client(ctx context.Context, flags *common.FlagPack) {
 	// Get the service list from the informer
 	go pollServiceList(ctx, flags, &serviceList)
 
+	// Pace requests with a ticker so an empty service list (e.g. before the
+	// informer has responded for the first time) does not turn the outer loop
+	// into a busy spin pegging a CPU core.
+	ticker := time.NewTicker(flags.WorkerRequestInterval)
+	defer ticker.Stop()
+
 	// Loop over the service list and make requests to /data
 	for {
 		select {
 		case <-ctx.Done():
 			log.Info("client context done")
 			return
-		default:
+		case <-ticker.C:
 			for _, service := range serviceList {
-				time.Sleep(flags.WorkerRequestInterval)
 				start := time.Now()
 				resp, err := http.Get(fmt.Sprintf("http://%s/data", service))
 				if err != nil {
