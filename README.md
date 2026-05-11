@@ -3,7 +3,7 @@
 [![Dependabot Updates](https://github.com/h0tbird/k-swarm/actions/workflows/dependabot/dependabot-updates/badge.svg)](https://github.com/h0tbird/k-swarm/actions/workflows/dependabot/dependabot-updates)
 
 # k-swarm
-`k-swarm` is used for deploying a series of k8s services that are capable of identifying and communicating with one another, thus establishing a network of synthetic traffic. This interconnected traffic among various workloads provides a foundational platform for a range of laboratory experiments, including the testing and validation of diverse service mesh configurations at scale.
+`k-swarm` deploys a cooperating set of k8s workloads that automatically discover each other and exchange synthetic HTTP traffic. The resulting traffic mesh is used as a foundation for service-mesh experiments — for example, validating Istio sidecar vs. ambient configurations, multi-cluster failover, or telemetry pipelines at scale.
 
 ### Install
 
