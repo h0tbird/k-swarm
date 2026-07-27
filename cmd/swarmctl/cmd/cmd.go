@@ -121,6 +121,9 @@ func init() {
 
 		// --log-responses flag
 		c.PersistentFlags().Bool("log-responses", false, "If set, the worker logs the raw JSON response bodies received from the informer's /services endpoint and from peer pods' /data endpoint.")
+
+		// --disable-keepalives flag
+		c.PersistentFlags().Bool("disable-keepalives", false, "If set, the worker opens a new TCP connection per request instead of reusing HTTP keep-alive connections. L4 proxies such as ztunnel load balance per connection, so a reused connection pins every request to one endpoint; disabling keep-alives spreads traffic across all endpoints, including remote clusters.")
 	}
 
 	//---------------------------

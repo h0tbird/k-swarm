@@ -21,10 +21,11 @@ type FlagPack struct {
 	InformerBindAddr string
 
 	// Worker flags
-	EnableWorker          bool
-	WorkerBindAddr        string
-	InformerPollInterval  time.Duration
-	WorkerRequestInterval time.Duration
-	InformerURL           string
-	WorkerLogResponses    bool
+	EnableWorker            bool
+	WorkerBindAddr          string
+	InformerPollInterval    time.Duration
+	WorkerRequestInterval   time.Duration
+	InformerURL             string
+	WorkerLogResponses      bool
+	WorkerDisableKeepAlives bool
 }

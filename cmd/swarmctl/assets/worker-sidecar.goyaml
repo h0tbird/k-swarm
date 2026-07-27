@@ -77,6 +77,9 @@ spec:
         {{- if .LogResponses }}
         - --worker-log-responses
         {{- end }}
+        {{- if .DisableKeepAlives }}
+        - --worker-disable-keepalives
+        {{- end }}
         command:
         - /manager
         env:
