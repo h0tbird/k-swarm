@@ -375,6 +375,7 @@ func InstallWorker(cmd *cobra.Command, args []string) error {
 	ingressMode, _ := cmd.Flags().GetString("ingress-mode")
 	multiCluster, _ := cmd.Flags().GetBool("multi-cluster")
 	logResponses, _ := cmd.Flags().GetBool("log-responses")
+	disableKeepAlives, _ := cmd.Flags().GetBool("disable-keepalives")
 	dryRun, _ := cmd.Flags().GetBool("dry-run")
 
 	// Set the error prefix
@@ -426,33 +427,35 @@ func InstallWorker(cmd *cobra.Command, args []string) error {
 
 			// Render the template
 			docs, err := util.RenderTemplate(tmpl, struct {
-				Replicas      int
-				Namespace     string
-				NodeSelector  string
-				Version       string
-				ImageTag      string
-				IstioRevision string
-				ClusterDomain string
-				ClusterName   string
-				DataplaneMode string
-				WaypointName  string
-				IngressMode   string
-				MultiCluster  bool
-				LogResponses  bool
+				Replicas          int
+				Namespace         string
+				NodeSelector      string
+				Version           string
+				ImageTag          string
+				IstioRevision     string
+				ClusterDomain     string
+				ClusterName       string
+				DataplaneMode     string
+				WaypointName      string
+				IngressMode       string
+				MultiCluster      bool
+				LogResponses      bool
+				DisableKeepAlives bool
 			}{
-				Replicas:      replicas,
-				Namespace:     namespace,
-				NodeSelector:  nodeSelector,
-				Version:       cmd.Root().Version,
-				ImageTag:      imageTag,
-				IstioRevision: istioRevision,
-				ClusterDomain: clusterDomain,
-				ClusterName:   clusterName,
-				DataplaneMode: dataplaneMode,
-				WaypointName:  waypointName,
-				IngressMode:   ingressMode,
-				MultiCluster:  multiCluster,
-				LogResponses:  logResponses,
+				Replicas:          replicas,
+				Namespace:         namespace,
+				NodeSelector:      nodeSelector,
+				Version:           cmd.Root().Version,
+				ImageTag:          imageTag,
+				IstioRevision:     istioRevision,
+				ClusterDomain:     clusterDomain,
+				ClusterName:       clusterName,
+				DataplaneMode:     dataplaneMode,
+				WaypointName:      waypointName,
+				IngressMode:       ingressMode,
+				MultiCluster:      multiCluster,
+				LogResponses:      logResponses,
+				DisableKeepAlives: disableKeepAlives,
 			})
 			if err != nil {
 				return err

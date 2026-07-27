@@ -140,6 +140,15 @@ func initFlags(fs *pflag.FlagSet) *common.FlagPack {
 		false,
 		"If set, log the raw JSON response bodies received from the informer's /services endpoint and from peer workers' /data endpoint.")
 
+	fs.BoolVar(
+		&flags.WorkerDisableKeepAlives,
+		"worker-disable-keepalives",
+		false,
+		"If set, the worker opens a new TCP connection for every request instead of reusing HTTP keep-alive connections. "+
+			"L4 proxies such as ztunnel load balance per connection, so a reused connection pins every request to a single "+
+			"endpoint. Disabling keep-alives re-runs endpoint selection on every request, which spreads traffic across all "+
+			"endpoints (including remote clusters) at the cost of a connection setup per request.")
+
 	return flags
 }
 

@@ -115,6 +115,17 @@ func client(ctx context.Context, flags *common.FlagPack) {
 	// self-describing as "src -> dst" when tailing logs from many pods.
 	log := log.WithValues("src", localPeer())
 
+	// L4 proxies (ztunnel) select an upstream endpoint once per TCP
+	// connection, so the default keep-alive pooling pins every request from
+	// this pod to whichever endpoint the first connection landed on. Opening a
+	// fresh connection per request re-runs that selection every time, which is
+	// what makes traffic actually spread over all endpoints of a service.
+	httpClient := &http.Client{
+		Transport: &http.Transport{
+			DisableKeepAlives: flags.WorkerDisableKeepAlives,
+		},
+	}
+
 	// Get the service list from the informer
 	go pollServiceList(ctx, flags)
 
@@ -137,7 +148,7 @@ func client(ctx context.Context, flags *common.FlagPack) {
 			}
 			for _, service := range *services {
 				start := time.Now()
-				resp, err := http.Get(fmt.Sprintf("http://%s/data", service))
+				resp, err := httpClient.Get(fmt.Sprintf("http://%s/data", service))
 				if err != nil {
 					log.Error(err, "request failed", "service", service)
 					continue
